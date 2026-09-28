@@ -28,7 +28,7 @@ export const MenuView: React.FC = () => {
           className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#5B7C99] text-white text-xs font-bold transition opacity-90 shadow-sm"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>Thêm món</span>
+          <span>Thêm Món ăn</span>
         </button>
       </div>
 
@@ -39,7 +39,7 @@ export const MenuView: React.FC = () => {
         </div>
         <h3 className="text-sm font-bold text-slate-700">Menu gia đình đang trống</h3>
         <p className="text-xs text-slate-400 mt-1 max-w-[240px]">
-          Hãy thêm các món ăn yêu thích của gia đình để bắt đầu lên kế hoạch cho từng ngày.
+          Hãy thêm các Món ăn yêu thích của gia đình để bắt đầu lên Kế hoạch cho từng ngày.
         </p>
       </div>
     </div>

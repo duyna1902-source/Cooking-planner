@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Share2, Check, Home } from 'lucide-react';
 import { createShareUrl } from '../domain/household';
+import { useClipboardCopy } from '../hooks/useClipboardCopy';
 
 interface AppHeaderProps {
   householdCode: string;
@@ -17,20 +18,13 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onOpenShare,
   onChangeHousehold
 }) => {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useClipboardCopy();
 
   const handleQuickCopy = async () => {
     const url = createShareUrl(householdCode);
-    try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } else if (onOpenShare) {
-        onOpenShare();
-      }
-    } catch {
-      if (onOpenShare) onOpenShare();
+    const success = await copy(url);
+    if (!success && onOpenShare) {
+      onOpenShare();
     }
   };
 

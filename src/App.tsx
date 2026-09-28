@@ -38,18 +38,17 @@ export const App: React.FC<AppProps> = ({
     const storedNick = storage.getNickname();
 
     if (detectedJoin) {
-      setJoinCodeFromUrl(detectedJoin);
-      // If user is opening a join link for a different household than what was stored
-      if (storedCode === detectedJoin && storedNick) {
-        setHouseholdCode(storedCode);
+      // Per spec: URLs containing ?join=<household_code> automatically set the active household in storage
+      storage.setHouseholdCode(detectedJoin);
+      setHouseholdCode(detectedJoin);
+
+      if (storedNick) {
+        // Nickname already set locally: immediately ready
         setNickname(storedNick);
       } else {
-        // Prepare to join the new household
-        setHouseholdCode(null);
-        if (storedNick) {
-          // Keep existing nickname if user already had one, or let them confirm
-          setNickname(storedNick);
-        }
+        // Prompt for nickname once
+        setJoinCodeFromUrl(detectedJoin);
+        setNickname(null);
       }
     } else {
       if (storedCode && storedNick) {

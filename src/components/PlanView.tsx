@@ -127,7 +127,7 @@ export const PlanView: React.FC = () => {
           <div className="flex items-center justify-between mb-2.5">
             <h2 className="text-sm font-bold text-[#334E68] flex items-center gap-1.5">
               <span>{getMealTitle(activeMeal)}</span>
-              <span className="text-xs px-2 py-0.2 rounded-full bg-slate-200/80 text-slate-600">0 món</span>
+              <span className="text-xs px-2 py-0.2 rounded-full bg-slate-200/80 text-slate-600">0 Món ăn</span>
             </h2>
 
             <button
@@ -135,7 +135,7 @@ export const PlanView: React.FC = () => {
               className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#FEF7DC] hover:bg-[#FDF2C7] text-[#334E68] text-xs font-bold transition active:scale-95 border border-[#EFE4B5] shadow-xs"
             >
               <Plus className="w-3.5 h-3.5 text-[#5B7C99]" />
-              Thêm món
+              Thêm Món ăn
             </button>
           </div>
 
@@ -144,9 +144,9 @@ export const PlanView: React.FC = () => {
             <div className="w-12 h-12 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] flex items-center justify-center mb-2">
               <Utensils className="w-5 h-5 text-[#5B7C99]" />
             </div>
-            <p className="text-xs font-bold text-slate-700">Chưa có món nào cho {getMealTitle(activeMeal)}</p>
+            <p className="text-xs font-bold text-slate-700">Chưa có Món ăn nào cho {getMealTitle(activeMeal)}</p>
             <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">
-              Bấm nút thêm món từ Menu của nhà để lên kế hoạch bữa ăn
+              Bấm nút thêm Món ăn từ Menu của nhà để lên Kế hoạch bữa ăn
             </p>
           </div>
         </div>

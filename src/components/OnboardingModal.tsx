@@ -7,6 +7,7 @@ import {
   createShareUrl 
 } from '../domain/household';
 import { Home, Users, ArrowRight, Copy, Check, Sparkles } from 'lucide-react';
+import { useClipboardCopy } from '../hooks/useClipboardCopy';
 
 interface OnboardingModalProps {
   initialCode?: string | null;
@@ -27,7 +28,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [inputCode, setInputCode] = useState<string>(initialCode || '');
   const [nickname, setNickname] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<boolean>(false);
+  const { copied, copy } = useClipboardCopy(2500);
 
   const handleStartCreate = () => {
     setGeneratedCode(generateHouseholdCode());
@@ -69,17 +70,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     onComplete(cleanCode, nickname.trim());
   };
 
-  const handleCopyLink = async () => {
+  const handleCopyLink = () => {
     const url = createShareUrl(generatedCode);
-    try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-      }
-    } catch {
-      // Fallback
-    }
+    copy(url);
   };
 
   return (
@@ -102,7 +95,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               Bếp Gia Đình
             </h2>
             <p className="text-xs text-slate-500 mb-6 leading-relaxed max-w-[260px]">
-              Lập kế hoạch ăn uống và quản lý thực đơn mỗi ngày cùng gia đình bạn
+              Lập Kế hoạch ăn uống và quản lý Menu món ăn mỗi ngày cùng gia đình bạn
             </p>
 
             <div className="w-full space-y-3">
@@ -203,7 +196,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               Đã tạo Nhà thành công!
             </h2>
             <p className="text-xs text-slate-500 mb-4">
-              Chia sẻ mã hoặc link này cho người thân cùng vào lên thực đơn nhé.
+              Chia sẻ mã hoặc link này cho người thân cùng vào lên Kế hoạch nhé.
             </p>
 
             <div className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl mb-4 text-left">

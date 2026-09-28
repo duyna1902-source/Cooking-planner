@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { createShareUrl } from '../domain/household';
 import { Copy, Check, X, Share2 } from 'lucide-react';
+import { useClipboardCopy } from '../hooks/useClipboardCopy';
 
 interface ShareHouseholdModalProps {
   householdCode: string;
@@ -13,22 +14,14 @@ export const ShareHouseholdModal: React.FC<ShareHouseholdModalProps> = ({
   isOpen,
   onClose
 }) => {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useClipboardCopy();
 
   if (!isOpen) return null;
 
   const shareUrl = createShareUrl(householdCode);
 
-  const handleCopy = async () => {
-    try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(shareUrl);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }
-    } catch {
-      // Ignored
-    }
+  const handleCopy = () => {
+    copy(shareUrl);
   };
 
   return (

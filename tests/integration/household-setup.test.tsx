@@ -154,4 +154,22 @@ describe('Household Setup and PWA Shell Integration', () => {
     // Returns to Plan view
     expect(screen.getByTestId('plan-view')).toBeInTheDocument();
   });
+
+  it('automatically sets active household and does not prompt for nickname when user with existing nickname opens ?join=CODE', () => {
+    // User already has nickname set locally
+    storage.setNickname('Bà Nội');
+    storage.setHouseholdCode('BEP-OLD');
+
+    render(<App storage={storage} initialUrl="?join=BEP-NEW" />);
+
+    // Does NOT show onboarding dialog
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    // Automatically switches to the new household
+    expect(screen.getByTestId('household-code-badge')).toHaveTextContent('Mã: BEP-NEW');
+    expect(screen.getByTestId('nickname-badge')).toHaveTextContent('• Bà Nội');
+    expect(storage.getHouseholdCode()).toBe('BEP-NEW');
+    expect(storage.getNickname()).toBe('Bà Nội');
+  });
 });
+
