@@ -180,11 +180,10 @@ export const PlanView: React.FC<PlanViewProps> = ({
             title="Tuần trước"
             aria-label="Tuần trước"
             disabled={!canGoPrev}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition ${
-              canGoPrev
-                ? 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                : 'bg-slate-50 text-slate-300 cursor-not-allowed opacity-50'
-            }`}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition ${canGoPrev
+              ? 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+              : 'bg-slate-50 text-slate-300 cursor-not-allowed opacity-50'
+              }`}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -212,19 +211,17 @@ export const PlanView: React.FC<PlanViewProps> = ({
               key={d.dateStr}
               onClick={() => handleDaySelect(d.dateStr)}
               data-testid={`day-btn-${idx}`}
-              className={`flex-shrink-0 flex flex-col items-center justify-center w-12 py-2 rounded-2xl transition-all ${
-                isSelected
-                  ? 'bg-gradient-to-b from-[#5B7C99] to-[#46637D] text-white shadow-md shadow-[#5B7C99]/30 scale-105'
-                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-              }`}
+              className={`flex-shrink-0 flex flex-col items-center justify-center w-12 py-2 rounded-2xl transition-all ${isSelected
+                ? 'bg-gradient-to-b from-[#5B7C99] to-[#46637D] text-white shadow-md shadow-[#5B7C99]/30 scale-105'
+                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                }`}
             >
               <span className="text-[10px] font-medium opacity-80 uppercase">{d.label}</span>
               <span className="text-xs font-bold mt-0.5">{d.dayNumber}</span>
               {d.isToday && (
                 <span
-                  className={`w-1.5 h-1.5 rounded-full mt-1 ${
-                    isSelected ? 'bg-[#FEF7DC]' : 'bg-[#5B7C99]'
-                  }`}
+                  className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-[#FEF7DC]' : 'bg-[#5B7C99]'
+                    }`}
                 />
               )}
             </button>
@@ -252,33 +249,30 @@ export const PlanView: React.FC<PlanViewProps> = ({
             <button
               onClick={() => setActiveMeal('breakfast')}
               data-testid="meal-tab-breakfast"
-              className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition ${
-                activeMeal === 'breakfast'
-                  ? 'bg-white text-[#334E68] shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition ${activeMeal === 'breakfast'
+                ? 'bg-white text-[#334E68] shadow-sm font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+                }`}
             >
               Sáng
             </button>
             <button
               onClick={() => setActiveMeal('lunch')}
               data-testid="meal-tab-lunch"
-              className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition ${
-                activeMeal === 'lunch'
-                  ? 'bg-white text-[#334E68] shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition ${activeMeal === 'lunch'
+                ? 'bg-white text-[#334E68] shadow-sm font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+                }`}
             >
               Trưa
             </button>
             <button
               onClick={() => setActiveMeal('dinner')}
               data-testid="meal-tab-dinner"
-              className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition relative ${
-                activeMeal === 'dinner'
-                  ? 'bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-[#334E68]'
-              }`}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition relative ${activeMeal === 'dinner'
+                ? 'bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] shadow-sm font-bold'
+                : 'text-slate-600 hover:text-[#334E68]'
+                }`}
             >
               Tối
               {activeMeal === 'dinner' && (
@@ -304,7 +298,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
               className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#FEF7DC] hover:bg-[#FDF2C7] text-[#334E68] text-xs font-bold transition active:scale-95 border border-[#EFE4B5] shadow-xs"
             >
               <Plus className="w-3.5 h-3.5 text-[#5B7C99]" />
-              + Thêm món
+              Thêm món
             </button>
           </div>
 
