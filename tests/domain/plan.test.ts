@@ -11,6 +11,12 @@ import {
   addDishesToPlanList,
   removeDishFromPlanList,
   PlanItem,
+  PlanComment,
+  createPlanCommentEntity,
+  validateCommentInput,
+  filterCommentsForPlanItem,
+  deleteCommentsForPlanItem,
+  deleteCommentsForPlanItems,
 } from '../../src/domain/plan';
 
 describe('Plan Domain Logic', () => {
@@ -123,6 +129,176 @@ describe('Plan Domain Logic', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].mealType).toBe('lunch');
+    });
+  });
+
+  describe('PlanComment creation, validation, and filtering', () => {
+    it('creates a valid PlanComment entity with generated ID and timestamp', () => {
+      const comment = createPlanCommentEntity(
+        'BEP-892',
+        'plan-item-1',
+        'Mẹ Bắp',
+        'Nêm ít đường, mua thêm hành lá'
+      );
+
+      expect(comment.id).toMatch(/^comment_/);
+      expect(comment.householdCode).toBe('BEP-892');
+      expect(comment.planItemId).toBe('plan-item-1');
+      expect(comment.authorNickname).toBe('Mẹ Bắp');
+      expect(comment.content).toBe('Nêm ít đường, mua thêm hành lá');
+      expect(comment.createdAt).toBeDefined();
+    });
+
+    it('validates comment input', () => {
+      // Valid input
+      expect(
+        validateCommentInput({
+          householdCode: 'BEP-892',
+          planItemId: 'plan-item-1',
+          authorNickname: 'Bố Ken',
+          content: 'Nấu cay một chút nhé',
+        })
+      ).toEqual({ valid: true });
+
+      // Empty content or whitespace only
+      expect(
+        validateCommentInput({
+          householdCode: 'BEP-892',
+          planItemId: 'plan-item-1',
+          authorNickname: 'Bố Ken',
+          content: '   ',
+        }).valid
+      ).toBe(false);
+
+      // Missing author nickname
+      expect(
+        validateCommentInput({
+          householdCode: 'BEP-892',
+          planItemId: 'plan-item-1',
+          authorNickname: '',
+          content: 'Nấu cay một chút nhé',
+        }).valid
+      ).toBe(false);
+
+      // Missing plan item id
+      expect(
+        validateCommentInput({
+          householdCode: 'BEP-892',
+          planItemId: '',
+          authorNickname: 'Bố Ken',
+          content: 'Nấu cay một chút nhé',
+        }).valid
+      ).toBe(false);
+
+      // Missing household code
+      expect(
+        validateCommentInput({
+          householdCode: '',
+          planItemId: 'plan-item-1',
+          authorNickname: 'Bố Ken',
+          content: 'Nấu cay một chút nhé',
+        }).valid
+      ).toBe(false);
+    });
+
+    it('filters and sorts comments for a specific planItem in chronological order', () => {
+      const comments: PlanComment[] = [
+        {
+          id: 'c2',
+          householdCode: 'BEP-892',
+          planItemId: 'item-1',
+          authorNickname: 'Bố Ken',
+          content: 'Nhớ mua rau sống ăn kèm',
+          createdAt: '2026-09-29T10:05:00.000Z',
+        },
+        {
+          id: 'c1',
+          householdCode: 'BEP-892',
+          planItemId: 'item-1',
+          authorNickname: 'Mẹ Bắp',
+          content: 'Kho thịt mềm nhé',
+          createdAt: '2026-09-29T09:00:00.000Z',
+        },
+        {
+          id: 'c3',
+          householdCode: 'BEP-892',
+          planItemId: 'item-2',
+          authorNickname: 'Mẹ Bắp',
+          content: 'Canh chua nấu bắp cải',
+          createdAt: '2026-09-29T09:10:00.000Z',
+        },
+        {
+          id: 'c4',
+          householdCode: 'OTHER',
+          planItemId: 'item-1',
+          authorNickname: 'Ai Đó',
+          content: 'Comment nhà khác',
+          createdAt: '2026-09-29T08:00:00.000Z',
+        },
+      ];
+
+      const result = filterCommentsForPlanItem(comments, 'BEP-892', 'item-1');
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('c1'); // Earlier timestamp first
+      expect(result[1].id).toBe('c2');
+    });
+
+    it('deletes comments for a specific planItem', () => {
+      const comments: PlanComment[] = [
+        {
+          id: 'c1',
+          householdCode: 'BEP-892',
+          planItemId: 'item-1',
+          authorNickname: 'Mẹ Bắp',
+          content: 'Kho thịt',
+          createdAt: '2026-09-29T09:00:00.000Z',
+        },
+        {
+          id: 'c2',
+          householdCode: 'BEP-892',
+          planItemId: 'item-2',
+          authorNickname: 'Mẹ Bắp',
+          content: 'Nấu canh',
+          createdAt: '2026-09-29T09:05:00.000Z',
+        },
+      ];
+
+      const remaining = deleteCommentsForPlanItem(comments, 'BEP-892', 'item-1');
+      expect(remaining).toHaveLength(1);
+      expect(remaining[0].id).toBe('c2');
+    });
+
+    it('deletes comments for multiple planItems', () => {
+      const comments: PlanComment[] = [
+        {
+          id: 'c1',
+          householdCode: 'BEP-892',
+          planItemId: 'item-1',
+          authorNickname: 'Mẹ Bắp',
+          content: 'Note 1',
+          createdAt: '2026-09-29T09:00:00.000Z',
+        },
+        {
+          id: 'c2',
+          householdCode: 'BEP-892',
+          planItemId: 'item-2',
+          authorNickname: 'Bố Ken',
+          content: 'Note 2',
+          createdAt: '2026-09-29T09:05:00.000Z',
+        },
+        {
+          id: 'c3',
+          householdCode: 'BEP-892',
+          planItemId: 'item-3',
+          authorNickname: 'Con Gái',
+          content: 'Note 3',
+          createdAt: '2026-09-29T09:10:00.000Z',
+        },
+      ];
+
+      const remaining = deleteCommentsForPlanItems(comments, 'BEP-892', ['item-1', 'item-3']);
+      expect(remaining).toHaveLength(1);
+      expect(remaining[0].id).toBe('c2');
     });
   });
 });

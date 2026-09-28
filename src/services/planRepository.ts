@@ -2,9 +2,14 @@ import {
   PlanItem,
   MealType,
   MealSlot,
+  PlanComment,
   filterPlanItems,
   addDishesToPlanList,
   removeDishFromPlanList,
+  createPlanCommentEntity,
+  filterCommentsForPlanItem,
+  deleteCommentsForPlanItem,
+  deleteCommentsForPlanItems,
 } from '../domain/plan';
 
 export interface PlanRepository {
@@ -22,13 +27,23 @@ export interface PlanRepository {
     dishId: string
   ): Promise<void>;
   deletePlanItemsByDishId(householdCode: string, dishId: string): Promise<void>;
+  getComments(householdCode: string, planItemId: string): Promise<PlanComment[]>;
+  addComment(
+    householdCode: string,
+    planItemId: string,
+    authorNickname: string,
+    content: string
+  ): Promise<PlanComment>;
+  deleteCommentsByPlanItemId(householdCode: string, planItemId: string): Promise<void>;
 }
 
 export class InMemoryPlanRepository implements PlanRepository {
   private items: PlanItem[] = [];
+  private comments: PlanComment[] = [];
 
-  constructor(initialItems: PlanItem[] = []) {
+  constructor(initialItems: PlanItem[] = [], initialComments: PlanComment[] = []) {
     this.items = [...initialItems];
+    this.comments = [...initialComments];
   }
 
   async getPlanItems(householdCode: string, startDate?: string, endDate?: string): Promise<PlanItem[]> {
@@ -54,19 +69,62 @@ export class InMemoryPlanRepository implements PlanRepository {
     dishId: string
   ): Promise<void> {
     const slot: MealSlot = { householdCode, date, mealType };
+    const removedItemIds = this.items
+      .filter(
+        (i) =>
+          i.householdCode === householdCode &&
+          i.date === date &&
+          i.mealType === mealType &&
+          i.dishId === dishId
+      )
+      .map((i) => i.id);
+
     this.items = removeDishFromPlanList(this.items, slot, dishId);
+    if (removedItemIds.length > 0) {
+      this.comments = deleteCommentsForPlanItems(this.comments, householdCode, removedItemIds);
+    }
   }
 
   async deletePlanItemsByDishId(householdCode: string, dishId: string): Promise<void> {
+    const removedItemIds = this.items
+      .filter((i) => i.householdCode === householdCode && i.dishId === dishId)
+      .map((i) => i.id);
+
     this.items = this.items.filter(
       (i) => !(i.householdCode === householdCode && i.dishId === dishId)
     );
+    if (removedItemIds.length > 0) {
+      this.comments = deleteCommentsForPlanItems(this.comments, householdCode, removedItemIds);
+    }
+  }
+
+  async getComments(householdCode: string, planItemId: string): Promise<PlanComment[]> {
+    return filterCommentsForPlanItem(this.comments, householdCode, planItemId);
+  }
+
+  async addComment(
+    householdCode: string,
+    planItemId: string,
+    authorNickname: string,
+    content: string
+  ): Promise<PlanComment> {
+    const newComment = createPlanCommentEntity(householdCode, planItemId, authorNickname, content);
+    this.comments.push(newComment);
+    return newComment;
+  }
+
+  async deleteCommentsByPlanItemId(householdCode: string, planItemId: string): Promise<void> {
+    this.comments = deleteCommentsForPlanItem(this.comments, householdCode, planItemId);
   }
 }
 
 export class LocalStoragePlanRepository implements PlanRepository {
   private getStorageKey(householdCode: string): string {
     return `cooking_plan_items_${householdCode}`;
+  }
+
+  private getCommentsStorageKey(householdCode: string): string {
+    return `cooking_plan_comments_${householdCode}`;
   }
 
   private readItems(householdCode: string): PlanItem[] {
@@ -81,6 +139,23 @@ export class LocalStoragePlanRepository implements PlanRepository {
   private writeItems(householdCode: string, items: PlanItem[]): void {
     try {
       localStorage.setItem(this.getStorageKey(householdCode), JSON.stringify(items));
+    } catch {
+      // Ignored in quota/restricted cases
+    }
+  }
+
+  private readComments(householdCode: string): PlanComment[] {
+    try {
+      const data = localStorage.getItem(this.getCommentsStorageKey(householdCode));
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private writeComments(householdCode: string, comments: PlanComment[]): void {
+    try {
+      localStorage.setItem(this.getCommentsStorageKey(householdCode), JSON.stringify(comments));
     } catch {
       // Ignored in quota/restricted cases
     }
@@ -112,16 +187,66 @@ export class LocalStoragePlanRepository implements PlanRepository {
   ): Promise<void> {
     const items = this.readItems(householdCode);
     const slot: MealSlot = { householdCode, date, mealType };
+    const removedItemIds = items
+      .filter(
+        (i) =>
+          i.householdCode === householdCode &&
+          i.date === date &&
+          i.mealType === mealType &&
+          i.dishId === dishId
+      )
+      .map((i) => i.id);
+
     const updatedItems = removeDishFromPlanList(items, slot, dishId);
     this.writeItems(householdCode, updatedItems);
+
+    if (removedItemIds.length > 0) {
+      const comments = this.readComments(householdCode);
+      const updatedComments = deleteCommentsForPlanItems(comments, householdCode, removedItemIds);
+      this.writeComments(householdCode, updatedComments);
+    }
   }
 
   async deletePlanItemsByDishId(householdCode: string, dishId: string): Promise<void> {
     const items = this.readItems(householdCode);
+    const removedItemIds = items
+      .filter((i) => i.householdCode === householdCode && i.dishId === dishId)
+      .map((i) => i.id);
+
     const filtered = items.filter(
       (i) => !(i.householdCode === householdCode && i.dishId === dishId)
     );
     this.writeItems(householdCode, filtered);
+
+    if (removedItemIds.length > 0) {
+      const comments = this.readComments(householdCode);
+      const updatedComments = deleteCommentsForPlanItems(comments, householdCode, removedItemIds);
+      this.writeComments(householdCode, updatedComments);
+    }
+  }
+
+  async getComments(householdCode: string, planItemId: string): Promise<PlanComment[]> {
+    const comments = this.readComments(householdCode);
+    return filterCommentsForPlanItem(comments, householdCode, planItemId);
+  }
+
+  async addComment(
+    householdCode: string,
+    planItemId: string,
+    authorNickname: string,
+    content: string
+  ): Promise<PlanComment> {
+    const comments = this.readComments(householdCode);
+    const newComment = createPlanCommentEntity(householdCode, planItemId, authorNickname, content);
+    comments.push(newComment);
+    this.writeComments(householdCode, comments);
+    return newComment;
+  }
+
+  async deleteCommentsByPlanItemId(householdCode: string, planItemId: string): Promise<void> {
+    const comments = this.readComments(householdCode);
+    const updatedComments = deleteCommentsForPlanItem(comments, householdCode, planItemId);
+    this.writeComments(householdCode, updatedComments);
   }
 }
 

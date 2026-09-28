@@ -204,3 +204,92 @@ export function removeDishFromPlanList(
       )
   );
 }
+
+export interface PlanComment {
+  id: string;
+  householdCode: string;
+  planItemId: string;
+  authorNickname: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface PlanCommentInput {
+  householdCode: string;
+  planItemId: string;
+  authorNickname: string;
+  content: string;
+}
+
+export function generateCommentId(): string {
+  return `comment_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+}
+
+export function validateCommentInput(input: PlanCommentInput): { valid: boolean; error?: string } {
+  if (!input.householdCode || !input.householdCode.trim()) {
+    return { valid: false, error: 'Mã nhà không được để trống' };
+  }
+  if (!input.planItemId || !input.planItemId.trim()) {
+    return { valid: false, error: 'Món ăn trong Kế hoạch không hợp lệ' };
+  }
+  if (!input.authorNickname || !input.authorNickname.trim()) {
+    return { valid: false, error: 'Biệt danh người gửi không được để trống' };
+  }
+  if (!input.content || !input.content.trim()) {
+    return { valid: false, error: 'Nội dung dặn dò không được để trống' };
+  }
+  return { valid: true };
+}
+
+export function createPlanCommentEntity(
+  householdCode: string,
+  planItemId: string,
+  authorNickname: string,
+  content: string
+): PlanComment {
+  const validation = validateCommentInput({ householdCode, planItemId, authorNickname, content });
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  return {
+    id: generateCommentId(),
+    householdCode: householdCode.trim(),
+    planItemId: planItemId.trim(),
+    authorNickname: authorNickname.trim(),
+    content: content.trim(),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export function filterCommentsForPlanItem(
+  comments: PlanComment[],
+  householdCode: string,
+  planItemId: string
+): PlanComment[] {
+  return comments
+    .filter((c) => c.householdCode === householdCode && c.planItemId === planItemId)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+}
+
+export function deleteCommentsForPlanItem(
+  comments: PlanComment[],
+  householdCode: string,
+  planItemId: string
+): PlanComment[] {
+  return comments.filter(
+    (c) => !(c.householdCode === householdCode && c.planItemId === planItemId)
+  );
+}
+
+export function deleteCommentsForPlanItems(
+  comments: PlanComment[],
+  householdCode: string,
+  planItemIds: string[]
+): PlanComment[] {
+  const idsSet = new Set(planItemIds);
+  return comments.filter(
+    (c) => !(c.householdCode === householdCode && idsSet.has(c.planItemId))
+  );
+}
+

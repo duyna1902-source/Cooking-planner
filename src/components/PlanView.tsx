@@ -12,10 +12,12 @@ import { Dish } from '../domain/dish';
 import { DishRepository, defaultDishRepository } from '../services/dishRepository';
 import { PlanRepository, defaultPlanRepository } from '../services/planRepository';
 import { DishPickerDrawer } from './DishPickerDrawer';
+import { DishDetailDrawer } from './DishDetailDrawer';
 import { Plus, Trash2, Utensils, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 
 export interface PlanViewProps {
   householdCode?: string;
+  nickname?: string;
   dishRepository?: DishRepository;
   planRepository?: PlanRepository;
   initialDate?: string;
@@ -23,6 +25,7 @@ export interface PlanViewProps {
 
 export const PlanView: React.FC<PlanViewProps> = ({
   householdCode = '',
+  nickname = '',
   dishRepository = defaultDishRepository,
   planRepository = defaultPlanRepository,
   initialDate,
@@ -36,6 +39,11 @@ export const PlanView: React.FC<PlanViewProps> = ({
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
+  const [activeDishDetail, setActiveDishDetail] = useState<{
+    planItemId: string;
+    dishName: string;
+    dishTag?: string;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Generate 7 days for the active week
@@ -115,6 +123,12 @@ export const PlanView: React.FC<PlanViewProps> = ({
 
   const handleRemoveDish = async (dishId: string) => {
     if (!householdCode) return;
+    if (activeDishDetail) {
+      const currentDish = dishes.find((d) => d.id === dishId);
+      if (currentDish && currentDish.name === activeDishDetail.dishName) {
+        setActiveDishDetail(null);
+      }
+    }
     await planRepository.removeDishFromMeal(householdCode, activeDate, activeMeal, dishId);
     await loadData();
   };
@@ -308,7 +322,17 @@ export const PlanView: React.FC<PlanViewProps> = ({
                     data-testid={`plan-dish-card-${dish.id}`}
                     className="group bg-white hover:bg-slate-50 border border-slate-100 p-3.5 rounded-2xl shadow-sm hover:shadow transition flex items-center justify-between"
                   >
-                    <div className="flex items-center gap-3">
+                    <div
+                      data-testid={`plan-dish-card-trigger-${dish.name}`}
+                      onClick={() =>
+                        setActiveDishDetail({
+                          planItemId: item.id,
+                          dishName: dish.name,
+                          dishTag: dish.tag,
+                        })
+                      }
+                      className="flex items-center gap-3 flex-1 cursor-pointer"
+                    >
                       <div className="w-10 h-10 rounded-xl bg-[#EBF1F6] text-[#5B7C99] flex items-center justify-center font-bold text-sm">
                         🍲
                       </div>
@@ -329,9 +353,12 @@ export const PlanView: React.FC<PlanViewProps> = ({
                     </div>
 
                     <button
-                      onClick={() => handleRemoveDish(dish.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveDish(dish.id);
+                      }}
                       data-testid={`remove-dish-from-meal-${dish.id}`}
-                      className="w-7 h-7 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition"
+                      className="w-7 h-7 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition ml-2 flex-shrink-0"
                       title="Gỡ Món ăn khỏi bữa"
                       aria-label="Gỡ Món ăn khỏi bữa"
                     >
@@ -354,6 +381,20 @@ export const PlanView: React.FC<PlanViewProps> = ({
         alreadyAddedDishIds={currentMealDishIds}
         onConfirm={handleConfirmAddDishes}
       />
+
+      {/* Dish Detail & Comments Bottom Sheet Drawer */}
+      {activeDishDetail && (
+        <DishDetailDrawer
+          isOpen={!!activeDishDetail}
+          onClose={() => setActiveDishDetail(null)}
+          dishName={activeDishDetail.dishName}
+          dishTag={activeDishDetail.dishTag}
+          planItemId={activeDishDetail.planItemId}
+          householdCode={householdCode}
+          nickname={nickname}
+          planRepository={planRepository}
+        />
+      )}
     </div>
   );
 };

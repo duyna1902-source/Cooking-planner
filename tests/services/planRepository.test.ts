@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InMemoryPlanRepository } from '../../src/services/planRepository';
+import { InMemoryPlanRepository, LocalStoragePlanRepository } from '../../src/services/planRepository';
 
 describe('PlanRepository', () => {
   let repo: InMemoryPlanRepository;
@@ -82,5 +82,78 @@ describe('PlanRepository', () => {
     expect(h1[0].dishId).toBe('dish-1');
     expect(h2).toHaveLength(1);
     expect(h2[0].dishId).toBe('dish-2');
+  });
+
+  describe('Comment operations and cascade cleanup', () => {
+    it('adds and retrieves comments for a specific planItem in chronological order', async () => {
+      const addedDishes = await repo.addDishesToMeal('BEP-892', '2026-09-29', 'dinner', ['dish-1']);
+      const planItemId = addedDishes[0].id;
+
+      const comment1 = await repo.addComment('BEP-892', planItemId, 'Mẹ Bắp', 'Mua thịt ba chỉ ít mỡ');
+      expect(comment1.id).toBeDefined();
+      expect(comment1.content).toBe('Mua thịt ba chỉ ít mỡ');
+      expect(comment1.authorNickname).toBe('Mẹ Bắp');
+
+      const comment2 = await repo.addComment('BEP-892', planItemId, 'Bố Ken', 'Nêm nhạt một chút');
+      expect(comment2.id).toBeDefined();
+
+      const comments = await repo.getComments('BEP-892', planItemId);
+      expect(comments).toHaveLength(2);
+      expect(comments[0].content).toBe('Mua thịt ba chỉ ít mỡ');
+      expect(comments[1].content).toBe('Nêm nhạt một chút');
+    });
+
+    it('isolates comments by household and planItemId', async () => {
+      const dishesH1 = await repo.addDishesToMeal('BEP-111', '2026-09-29', 'dinner', ['dish-1', 'dish-2']);
+      const item1Id = dishesH1[0].id;
+      const item2Id = dishesH1[1].id;
+
+      await repo.addComment('BEP-111', item1Id, 'Mẹ', 'Comment cho món 1');
+      await repo.addComment('BEP-111', item2Id, 'Mẹ', 'Comment cho món 2');
+
+      const commentsItem1 = await repo.getComments('BEP-111', item1Id);
+      expect(commentsItem1).toHaveLength(1);
+      expect(commentsItem1[0].content).toBe('Comment cho món 1');
+
+      const commentsOtherHousehold = await repo.getComments('BEP-222', item1Id);
+      expect(commentsOtherHousehold).toHaveLength(0);
+    });
+
+    it('automatically wipes all comments for a dish instance when removing dish from meal', async () => {
+      const addedDishes = await repo.addDishesToMeal('BEP-892', '2026-09-29', 'dinner', ['dish-1']);
+      const planItemId = addedDishes[0].id;
+
+      await repo.addComment('BEP-892', planItemId, 'Mẹ Bắp', 'Ghi chú quan trọng');
+      const commentsBefore = await repo.getComments('BEP-892', planItemId);
+      expect(commentsBefore).toHaveLength(1);
+
+      // Remove dish from meal
+      await repo.removeDishFromMeal('BEP-892', '2026-09-29', 'dinner', 'dish-1');
+
+      // Comments must be gone
+      const commentsAfter = await repo.getComments('BEP-892', planItemId);
+      expect(commentsAfter).toHaveLength(0);
+    });
+
+    it('persists comments and handles cascade deletion in LocalStoragePlanRepository', async () => {
+      localStorage.clear();
+      const localRepo = new LocalStoragePlanRepository();
+
+      const added = await localRepo.addDishesToMeal('BEP-892', '2026-09-29', 'dinner', ['dish-1']);
+      const planItemId = added[0].id;
+
+      await localRepo.addComment('BEP-892', planItemId, 'Bố Ken', 'Ướp sẵn từ chiều');
+
+      // Verify a new instance of LocalStoragePlanRepository can read the comments
+      const newRepoInstance = new LocalStoragePlanRepository();
+      const comments = await newRepoInstance.getComments('BEP-892', planItemId);
+      expect(comments).toHaveLength(1);
+      expect(comments[0].content).toBe('Ướp sẵn từ chiều');
+
+      // When dish is removed, verify cascade delete works in localStorage
+      await newRepoInstance.removeDishFromMeal('BEP-892', '2026-09-29', 'dinner', 'dish-1');
+      const commentsAfter = await newRepoInstance.getComments('BEP-892', planItemId);
+      expect(commentsAfter).toHaveLength(0);
+    });
   });
 });

@@ -123,6 +123,7 @@ export const App: React.FC<AppProps> = ({
           {activeTab === 'plan' ? (
             <PlanView
               householdCode={householdCode || ''}
+              nickname={nickname || ''}
               dishRepository={dishRepository}
               planRepository={planRepository}
             />

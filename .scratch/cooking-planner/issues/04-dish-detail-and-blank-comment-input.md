@@ -4,11 +4,11 @@
 
 **Blocked by:** 03: Lịch Kế hoạch tuần, Bữa Tối mặc định và Chọn món kèm Tìm kiếm
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Bấm vào một Món ăn trong Kế hoạch hiển thị màn hình chi tiết chỉ gồm Tên món và ô nhập comment
-- [ ] Ô nhập comment ban đầu hoàn toàn trống, không chứa bất kỳ nội dung mặc định nào
-- [ ] Người dùng nhập dặn dò nấu nướng/nguyên liệu và bấm gửi thì comment xuất hiện ngay kèm Biệt danh và thời gian gửi
-- [ ] Các thành viên khác trong Nhà có thể đọc được các dặn dò này khi mở chi tiết món ăn
-- [ ] Khi người dùng gỡ Món ăn khỏi bữa ăn, hệ thống tự động xóa sạch toàn bộ comment của món đó trong bữa
-- [ ] Có bộ test tích hợp kiểm tra quy trình gửi comment, hiển thị dòng dặn dò và dọn sạch comment khi gỡ món
+- [x] Bấm vào một Món ăn trong Kế hoạch hiển thị màn hình chi tiết chỉ gồm Tên món và ô nhập comment
+- [x] Ô nhập comment ban đầu hoàn toàn trống, không chứa bất kỳ nội dung mặc định nào
+- [x] Người dùng nhập dặn dò nấu nướng/nguyên liệu và bấm gửi thì comment xuất hiện ngay kèm Biệt danh và thời gian gửi
+- [x] Các thành viên khác trong Nhà có thể đọc được các dặn dò này khi mở chi tiết món ăn
+- [x] Khi người dùng gỡ Món ăn khỏi bữa ăn, hệ thống tự động xóa sạch toàn bộ comment của món đó trong bữa
+- [x] Có bộ test tích hợp kiểm tra quy trình gửi comment, hiển thị dòng dặn dò và dọn sạch comment khi gỡ món
