@@ -47,7 +47,9 @@ Một ứng dụng web di động (Mobile-first PWA) tinh gọn, dùng chung cho
 
 ### Architectural Shape and Technology Choices
 - **Frontend & PWA**: Mobile-first Responsive Web Application built with React and Tailwind CSS, configured with a Web App Manifest and Service Worker for PWA installation on iOS and Android.
-- **Backend & Data Persistence**: Supabase (PostgreSQL with Realtime subscriptions enabled).
+- **Backend & Data Persistence (Dual Mode)**: Supabase (PostgreSQL with Realtime subscriptions enabled). The application employs a Repository Factory (Dual Mode) pattern: it automatically uses `SupabaseDishRepository` and `SupabasePlanRepository` when `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are provided, and seamlessly falls back to `LocalStorage` for local offline usage or tests.
+- **Real-Time Cross-Device Synchronization**: When connected to Supabase, clients subscribe to Postgres changes via WebSocket channels filtered by `household_code`. Changes to Menu, Kế hoạch, or comments made on one device immediately trigger reactive updates on all other household devices without page refreshes.
+- **Connection Status Indicator**: AppHeader displays a discrete status badge (🟢 Online Cloud / 🟡 Local Mode) informing users of active synchronization status.
 - **Authentication**: Zero-credential shared access model. The household is identified by a short alphanumeric code (`household_code`). Individual members are distinguished by a local `nickname` stored in `localStorage` on each client device. No passwords or email sign-ins.
 - **Direct Join Mechanism**: URLs containing `?join=<household_code>` automatically set the active household in storage and prompt for a nickname if one is not yet set.
 

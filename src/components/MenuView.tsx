@@ -43,6 +43,16 @@ export const MenuView: React.FC<MenuViewProps> = ({
     loadDishes();
   }, [loadDishes]);
 
+  useEffect(() => {
+    if (!householdCode) return;
+    const unsubDish = dishRepository.subscribe?.(householdCode, () => {
+      loadDishes();
+    });
+    return () => {
+      unsubDish?.();
+    };
+  }, [householdCode, dishRepository, loadDishes]);
+
   const handleOpenAdd = () => {
     setEditingDish(null);
     setIsModalOpen(true);

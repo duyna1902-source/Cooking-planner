@@ -7,6 +7,7 @@ export interface DishRepository {
   updateDish(householdCode: string, id: string, input: DishInput): Promise<Dish>;
   deleteDish(householdCode: string, id: string): Promise<void>;
   setPlanRepository?(planRepository: PlanRepository): void;
+  subscribe?(householdCode: string, callback: () => void): () => void;
 }
 
 export class InMemoryDishRepository implements DishRepository {
@@ -49,6 +50,10 @@ export class InMemoryDishRepository implements DishRepository {
       await this.planRepository.deletePlanItemsByDishId(householdCode, id);
     }
   }
+
+  subscribe?(_householdCode: string, _callback: () => void): () => void {
+    return () => {};
+  }
 }
 
 export class LocalStorageDishRepository implements DishRepository {
@@ -56,6 +61,10 @@ export class LocalStorageDishRepository implements DishRepository {
 
   constructor(planRepository?: PlanRepository) {
     this.planRepository = planRepository;
+  }
+
+  subscribe?(_householdCode: string, _callback: () => void): () => void {
+    return () => {};
   }
 
   setPlanRepository(planRepository: PlanRepository): void {

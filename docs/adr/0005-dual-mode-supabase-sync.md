@@ -1,0 +1,3 @@
+# Kiến trúc Đồng bộ Chế độ kép (Dual Mode) với Supabase Realtime
+
+Để hỗ trợ đồng bộ dữ liệu giữa nhiều thiết bị trong gia đình mà không gây gián đoạn trải nghiệm khi chưa có hạ tầng Cloud, hệ thống áp dụng kiến trúc Repository Chế độ kép (Dual Mode). Ứng dụng tự động kích hoạt `SupabaseDishRepository` và `SupabasePlanRepository` khi phát hiện biến môi trường cấu hình Supabase (`VITE_SUPABASE_URL` và `VITE_SUPABASE_ANON_KEY`), và tự động fallback về `LocalStorage` khi chưa được cấu hình hoặc trong môi trường kiểm thử không mạng. Dữ liệu trên Cloud được phân vùng theo `household_code`, kích hoạt Postgres Realtime subscriptions để đồng bộ tức thì giữa các thiết bị mà không cần cơ chế xác thực tài khoản cá nhân.

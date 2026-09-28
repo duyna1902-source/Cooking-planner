@@ -81,6 +81,20 @@ export const PlanView: React.FC<PlanViewProps> = ({
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    if (!householdCode) return;
+    const unsubPlan = planRepository.subscribe?.(householdCode, () => {
+      loadData();
+    });
+    const unsubDish = dishRepository.subscribe?.(householdCode, () => {
+      loadData();
+    });
+    return () => {
+      unsubPlan?.();
+      unsubDish?.();
+    };
+  }, [householdCode, planRepository, dishRepository, loadData]);
+
   // Check 2-week history boundary
   const canGoPrev = useMemo(() => {
     return canNavigatePrevWeek(activeDate, initialIso);

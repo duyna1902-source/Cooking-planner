@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { HouseholdStorage, defaultHouseholdStorage } from './services/storage';
-import { DishRepository, defaultDishRepository } from './services/dishRepository';
-import { PlanRepository, defaultPlanRepository } from './services/planRepository';
+import { DishRepository } from './services/dishRepository';
+import { PlanRepository } from './services/planRepository';
+import { resolveRepositories } from './services/repositoryFactory';
+import { SupabaseDishRepository } from './services/supabaseDishRepository';
+import { SupabasePlanRepository } from './services/supabasePlanRepository';
 import { extractJoinCodeFromSearch } from './domain/household';
 import { AppHeader } from './components/AppHeader';
 import { BottomNav, NavigationTab } from './components/BottomNav';
@@ -15,14 +18,30 @@ export interface AppProps {
   dishRepository?: DishRepository;
   planRepository?: PlanRepository;
   initialUrl?: string;
+  isOnline?: boolean;
 }
 
 export const App: React.FC<AppProps> = ({
   storage = defaultHouseholdStorage,
-  dishRepository = defaultDishRepository,
-  planRepository = defaultPlanRepository,
-  initialUrl
+  dishRepository,
+  planRepository,
+  initialUrl,
+  isOnline,
 }) => {
+  const resolved = useMemo(() => resolveRepositories(), []);
+  const activeDishRepo = dishRepository || resolved.dishRepository;
+  const activePlanRepo = planRepository || resolved.planRepository;
+
+  const activeIsOnline = useMemo(() => {
+    if (isOnline !== undefined) return isOnline;
+    if (activeDishRepo instanceof SupabaseDishRepository || activePlanRepo instanceof SupabasePlanRepository) {
+      return true;
+    }
+    if (!dishRepository && !planRepository) {
+      return resolved.isOnline;
+    }
+    return false;
+  }, [isOnline, activeDishRepo, activePlanRepo, dishRepository, planRepository, resolved.isOnline]);
   const [householdCode, setHouseholdCode] = useState<string | null>(null);
   const [nickname, setNickname] = useState<string | null>(null);
   const [joinCodeFromUrl, setJoinCodeFromUrl] = useState<string | null>(null);
@@ -67,8 +86,8 @@ export const App: React.FC<AppProps> = ({
   }, [storage, initialUrl]);
 
   useEffect(() => {
-    dishRepository.setPlanRepository?.(planRepository);
-  }, [dishRepository, planRepository]);
+    activeDishRepo.setPlanRepository?.(activePlanRepo);
+  }, [activeDishRepo, activePlanRepo]);
 
   const handleOnboardingComplete = (code: string, nick: string) => {
     storage.setHouseholdCode(code);
@@ -115,6 +134,7 @@ export const App: React.FC<AppProps> = ({
             householdCode={householdCode}
             nickname={nickname}
             activeTab={activeTab}
+            isOnline={activeIsOnline}
             onOpenShare={() => setIsShareModalOpen(true)}
             onChangeHousehold={handleSwitchHousehold}
           />
@@ -128,14 +148,14 @@ export const App: React.FC<AppProps> = ({
             <PlanView
               householdCode={householdCode || ''}
               nickname={nickname || ''}
-              dishRepository={dishRepository}
-              planRepository={planRepository}
+              dishRepository={activeDishRepo}
+              planRepository={activePlanRepo}
             />
           ) : (
             <MenuView
               householdCode={householdCode || ''}
-              dishRepository={dishRepository}
-              planRepository={planRepository}
+              dishRepository={activeDishRepo}
+              planRepository={activePlanRepo}
             />
           )}
         </main>

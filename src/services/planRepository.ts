@@ -38,6 +38,7 @@ export interface PlanRepository {
   ): Promise<PlanComment>;
   deleteCommentsByPlanItemId(householdCode: string, planItemId: string): Promise<void>;
   pruneOldHistory(householdCode: string, basePlanningDate: string): Promise<{ prunedCount: number }>;
+  subscribe?(householdCode: string, callback: () => void): () => void;
 }
 
 export class InMemoryPlanRepository implements PlanRepository {
@@ -139,6 +140,10 @@ export class InMemoryPlanRepository implements PlanRepository {
     this.comments = [...otherComments, ...remainingComments];
 
     return { prunedCount };
+  }
+
+  subscribe?(_householdCode: string, _callback: () => void): () => void {
+    return () => {};
   }
 }
 
@@ -290,6 +295,10 @@ export class LocalStoragePlanRepository implements PlanRepository {
     }
 
     return { prunedCount: items.length - remainingItems.length };
+  }
+
+  subscribe?(_householdCode: string, _callback: () => void): () => void {
+    return () => {};
   }
 }
 

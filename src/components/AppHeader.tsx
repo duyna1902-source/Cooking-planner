@@ -3,10 +3,11 @@ import { Share2, Check, Home } from 'lucide-react';
 import { createShareUrl } from '../domain/household';
 import { useClipboardCopy } from '../hooks/useClipboardCopy';
 
-interface AppHeaderProps {
+export interface AppHeaderProps {
   householdCode: string;
   nickname: string;
   activeTab: 'plan' | 'menu';
+  isOnline?: boolean;
   onOpenShare?: () => void;
   onChangeHousehold?: () => void;
 }
@@ -15,6 +16,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   householdCode,
   nickname,
   activeTab,
+  isOnline = false,
   onOpenShare,
   onChangeHousehold
 }) => {
@@ -31,10 +33,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   return (
     <header className="px-5 pt-4 pb-3 bg-white border-b border-slate-100 flex items-center justify-between sticky top-0 z-20">
       <div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span 
             data-testid="household-code-badge"
-            className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5]"
+            className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5]"
           >
             <Home className="w-3 h-3 text-[#5B7C99]" />
             Mã: {householdCode}
@@ -44,6 +46,18 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             className="text-xs text-slate-500 font-medium"
           >
             • {nickname}
+          </span>
+          <span
+            data-testid="sync-status-badge"
+            title={isOnline ? 'Đang đồng bộ Online' : 'Chế độ máy Local'}
+            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+              isOnline
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-amber-50 text-amber-700 border border-amber-200'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-amber-400'}`} />
+            {isOnline ? '🟢 Online' : '🟡 Chế độ máy'}
           </span>
         </div>
         <h1 className="text-lg font-bold text-[#334E68] mt-1">

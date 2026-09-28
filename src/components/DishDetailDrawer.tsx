@@ -54,6 +54,16 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
     }
   }, [isOpen, loadComments]);
 
+  useEffect(() => {
+    if (!isOpen || !householdCode) return;
+    const unsub = planRepository.subscribe?.(householdCode, () => {
+      loadComments();
+    });
+    return () => {
+      unsub?.();
+    };
+  }, [isOpen, householdCode, planRepository, loadComments]);
+
   if (!isOpen) return null;
 
   const handleSend = async (e?: React.FormEvent) => {
