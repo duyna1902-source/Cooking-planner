@@ -17,6 +17,12 @@ export interface DayInfo {
   fullLabel: string;
 }
 
+export interface MealSlot {
+  householdCode: string;
+  date: string;
+  mealType: MealType;
+}
+
 export interface PlanItemInput {
   householdCode: string;
   date: string;
@@ -140,4 +146,61 @@ export function groupPlanItemsByMeal(
   }
 
   return result;
+}
+
+export function filterPlanItems(
+  items: PlanItem[],
+  householdCode: string,
+  startDate?: string,
+  endDate?: string
+): PlanItem[] {
+  return items.filter((item) => {
+    if (item.householdCode !== householdCode) return false;
+    if (startDate && item.date < startDate) return false;
+    if (endDate && item.date > endDate) return false;
+    return true;
+  });
+}
+
+export function addDishesToPlanList(
+  items: PlanItem[],
+  slot: MealSlot,
+  dishIds: string[]
+): { updatedItems: PlanItem[]; addedItems: PlanItem[] } {
+  const updatedItems = [...items];
+  const addedItems: PlanItem[] = [];
+
+  for (const dishId of dishIds) {
+    const alreadyExists = updatedItems.some(
+      (i) =>
+        i.householdCode === slot.householdCode &&
+        i.date === slot.date &&
+        i.mealType === slot.mealType &&
+        i.dishId === dishId
+    );
+
+    if (!alreadyExists) {
+      const newItem = createPlanItemEntity(slot.householdCode, slot.date, slot.mealType, dishId);
+      updatedItems.push(newItem);
+      addedItems.push(newItem);
+    }
+  }
+
+  return { updatedItems, addedItems };
+}
+
+export function removeDishFromPlanList(
+  items: PlanItem[],
+  slot: MealSlot,
+  dishId: string
+): PlanItem[] {
+  return items.filter(
+    (i) =>
+      !(
+        i.householdCode === slot.householdCode &&
+        i.date === slot.date &&
+        i.mealType === slot.mealType &&
+        i.dishId === dishId
+      )
+  );
 }

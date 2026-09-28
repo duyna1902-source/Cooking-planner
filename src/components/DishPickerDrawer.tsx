@@ -27,6 +27,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
   const filteredDishes = filterDishes(dishes, searchQuery);
 
   const toggleDishSelection = (dishId: string) => {
+    if (alreadyAddedDishIds.includes(dishId)) return;
     setSelectedDishIds((prev) =>
       prev.includes(dishId) ? prev.filter((id) => id !== dishId) : [...prev, dishId]
     );
@@ -128,10 +129,13 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
                   key={dish.id}
                   data-testid={`picker-dish-item-${dish.id}`}
                   onClick={() => toggleDishSelection(dish.id)}
-                  className={`p-3 rounded-2xl border transition cursor-pointer flex items-center justify-between ${
-                    isChecked
-                      ? 'bg-[#FEF7DC] border-[#EFE4B5] shadow-xs'
-                      : 'bg-slate-50 border-slate-100 hover:bg-slate-100/70'
+                  aria-disabled={isAlreadyInMeal}
+                  className={`p-3 rounded-2xl border transition flex items-center justify-between ${
+                    isAlreadyInMeal
+                      ? 'bg-slate-100/70 border-slate-200 opacity-60 cursor-not-allowed'
+                      : isChecked
+                      ? 'bg-[#FEF7DC] border-[#EFE4B5] shadow-xs cursor-pointer'
+                      : 'bg-slate-50 border-slate-100 hover:bg-slate-100/70 cursor-pointer'
                   }`}
                 >
                   <div className="pr-2">
@@ -143,7 +147,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
                         </span>
                       )}
                       {isAlreadyInMeal && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-200/80 text-slate-600">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-200 text-slate-500 font-medium">
                           Đã lên lịch
                         </span>
                       )}
@@ -153,7 +157,9 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
                   <div
                     data-testid={`picker-checkbox-${dish.id}`}
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition flex-shrink-0 ${
-                      isChecked
+                      isAlreadyInMeal
+                        ? 'border-slate-300 bg-slate-200 text-slate-400'
+                        : isChecked
                         ? 'bg-[#5B7C99] border-[#5B7C99] text-white'
                         : 'border-slate-300 bg-white'
                     }`}

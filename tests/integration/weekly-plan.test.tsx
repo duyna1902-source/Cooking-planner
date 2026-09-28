@@ -256,4 +256,40 @@ describe('Weekly Plan Integration', () => {
     await user.click(prevWeekBtn);
     expect(screen.getByText('28')).toBeInTheDocument();
   });
+
+  it('marks already scheduled dishes as disabled in drawer and prevents duplicate selection', async () => {
+    const user = userEvent.setup();
+    const dishes = await dishRepo.getDishes(householdCode);
+    const scheduledDish = dishes[0]; // 'Thịt kho trứng'
+
+    // Pre-schedule dish in dinner
+    await planRepo.addDishesToMeal(householdCode, fixedDate, 'dinner', [scheduledDish.id]);
+
+    render(
+      <PlanView
+        householdCode={householdCode}
+        dishRepository={dishRepo}
+        planRepository={planRepo}
+        initialDate={fixedDate}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(scheduledDish.name)).toBeInTheDocument();
+    });
+
+    // Open drawer
+    await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+
+    // The scheduled dish should have "Đã lên lịch" badge and aria-disabled="true"
+    const scheduledItem = screen.getByTestId(`picker-dish-item-${scheduledDish.id}`);
+    expect(scheduledItem).toHaveAttribute('aria-disabled', 'true');
+    expect(scheduledItem).toHaveTextContent('Đã lên lịch');
+
+    // Clicking it should not select it
+    await user.click(scheduledItem);
+    const confirmBtn = screen.getByTestId('confirm-add-dishes-btn');
+    expect(confirmBtn).toHaveTextContent('0 Món ăn');
+    expect(confirmBtn).toBeDisabled();
+  });
 });

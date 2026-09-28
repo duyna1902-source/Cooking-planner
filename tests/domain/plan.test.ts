@@ -7,6 +7,9 @@ import {
   createPlanItemEntity,
   validatePlanItemInput,
   groupPlanItemsByMeal,
+  filterPlanItems,
+  addDishesToPlanList,
+  removeDishFromPlanList,
   PlanItem,
 } from '../../src/domain/plan';
 
@@ -83,6 +86,43 @@ describe('Plan Domain Logic', () => {
       expect(grouped.lunch[0].dishId).toBe('d3');
       expect(grouped.dinner).toHaveLength(2);
       expect(grouped.dinner.map((i) => i.dishId)).toEqual(['d1', 'd2']);
+    });
+
+    it('filters plan items by household and date range', () => {
+      const items: PlanItem[] = [
+        { id: '1', householdCode: 'BEP-892', date: '2026-09-20', mealType: 'dinner', dishId: 'd1', createdAt: '2026-09-20T10:00:00Z' },
+        { id: '2', householdCode: 'BEP-892', date: '2026-09-28', mealType: 'dinner', dishId: 'd2', createdAt: '2026-09-28T10:00:00Z' },
+        { id: '3', householdCode: 'BEP-892', date: '2026-10-04', mealType: 'dinner', dishId: 'd3', createdAt: '2026-10-04T10:00:00Z' },
+        { id: '4', householdCode: 'OTHER', date: '2026-09-28', mealType: 'dinner', dishId: 'd4', createdAt: '2026-09-28T10:00:00Z' },
+      ];
+
+      const filtered = filterPlanItems(items, 'BEP-892', '2026-09-28', '2026-10-04');
+      expect(filtered).toHaveLength(2);
+      expect(filtered.map((i) => i.dishId)).toEqual(['d2', 'd3']);
+    });
+
+    it('adds dishes to plan list without duplicates in the same slot', () => {
+      const initial: PlanItem[] = [
+        { id: '1', householdCode: 'BEP-892', date: '2026-09-29', mealType: 'dinner', dishId: 'd1', createdAt: '2026-09-29T10:00:00Z' },
+      ];
+      const slot = { householdCode: 'BEP-892', date: '2026-09-29', mealType: 'dinner' as const };
+      const { updatedItems, addedItems } = addDishesToPlanList(initial, slot, ['d1', 'd2']);
+
+      expect(addedItems).toHaveLength(1);
+      expect(addedItems[0].dishId).toBe('d2');
+      expect(updatedItems).toHaveLength(2);
+    });
+
+    it('removes a dish from plan list for a specific slot', () => {
+      const initial: PlanItem[] = [
+        { id: '1', householdCode: 'BEP-892', date: '2026-09-29', mealType: 'dinner', dishId: 'd1', createdAt: '2026-09-29T10:00:00Z' },
+        { id: '2', householdCode: 'BEP-892', date: '2026-09-29', mealType: 'lunch', dishId: 'd1', createdAt: '2026-09-29T10:00:00Z' },
+      ];
+      const slot = { householdCode: 'BEP-892', date: '2026-09-29', mealType: 'dinner' as const };
+      const result = removeDishFromPlanList(initial, slot, 'd1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].mealType).toBe('lunch');
     });
   });
 });

@@ -1,4 +1,11 @@
-import { PlanItem, MealType, createPlanItemEntity } from '../domain/plan';
+import {
+  PlanItem,
+  MealType,
+  MealSlot,
+  filterPlanItems,
+  addDishesToPlanList,
+  removeDishFromPlanList,
+} from '../domain/plan';
 
 export interface PlanRepository {
   getPlanItems(householdCode: string, startDate?: string, endDate?: string): Promise<PlanItem[]>;
@@ -25,12 +32,7 @@ export class InMemoryPlanRepository implements PlanRepository {
   }
 
   async getPlanItems(householdCode: string, startDate?: string, endDate?: string): Promise<PlanItem[]> {
-    return this.items.filter((item) => {
-      if (item.householdCode !== householdCode) return false;
-      if (startDate && item.date < startDate) return false;
-      if (endDate && item.date > endDate) return false;
-      return true;
-    });
+    return filterPlanItems(this.items, householdCode, startDate, endDate);
   }
 
   async addDishesToMeal(
@@ -39,25 +41,10 @@ export class InMemoryPlanRepository implements PlanRepository {
     mealType: MealType,
     dishIds: string[]
   ): Promise<PlanItem[]> {
-    const added: PlanItem[] = [];
-
-    for (const dishId of dishIds) {
-      const alreadyExists = this.items.some(
-        (i) =>
-          i.householdCode === householdCode &&
-          i.date === date &&
-          i.mealType === mealType &&
-          i.dishId === dishId
-      );
-
-      if (!alreadyExists) {
-        const newItem = createPlanItemEntity(householdCode, date, mealType, dishId);
-        this.items.push(newItem);
-        added.push(newItem);
-      }
-    }
-
-    return added;
+    const slot: MealSlot = { householdCode, date, mealType };
+    const { updatedItems, addedItems } = addDishesToPlanList(this.items, slot, dishIds);
+    this.items = updatedItems;
+    return addedItems;
   }
 
   async removeDishFromMeal(
@@ -66,15 +53,8 @@ export class InMemoryPlanRepository implements PlanRepository {
     mealType: MealType,
     dishId: string
   ): Promise<void> {
-    this.items = this.items.filter(
-      (i) =>
-        !(
-          i.householdCode === householdCode &&
-          i.date === date &&
-          i.mealType === mealType &&
-          i.dishId === dishId
-        )
-    );
+    const slot: MealSlot = { householdCode, date, mealType };
+    this.items = removeDishFromPlanList(this.items, slot, dishId);
   }
 
   async deletePlanItemsByDishId(householdCode: string, dishId: string): Promise<void> {
@@ -108,12 +88,7 @@ export class LocalStoragePlanRepository implements PlanRepository {
 
   async getPlanItems(householdCode: string, startDate?: string, endDate?: string): Promise<PlanItem[]> {
     const items = this.readItems(householdCode);
-    return items.filter((item) => {
-      if (item.householdCode !== householdCode) return false;
-      if (startDate && item.date < startDate) return false;
-      if (endDate && item.date > endDate) return false;
-      return true;
-    });
+    return filterPlanItems(items, householdCode, startDate, endDate);
   }
 
   async addDishesToMeal(
@@ -123,26 +98,10 @@ export class LocalStoragePlanRepository implements PlanRepository {
     dishIds: string[]
   ): Promise<PlanItem[]> {
     const items = this.readItems(householdCode);
-    const added: PlanItem[] = [];
-
-    for (const dishId of dishIds) {
-      const alreadyExists = items.some(
-        (i) =>
-          i.householdCode === householdCode &&
-          i.date === date &&
-          i.mealType === mealType &&
-          i.dishId === dishId
-      );
-
-      if (!alreadyExists) {
-        const newItem = createPlanItemEntity(householdCode, date, mealType, dishId);
-        items.push(newItem);
-        added.push(newItem);
-      }
-    }
-
-    this.writeItems(householdCode, items);
-    return added;
+    const slot: MealSlot = { householdCode, date, mealType };
+    const { updatedItems, addedItems } = addDishesToPlanList(items, slot, dishIds);
+    this.writeItems(householdCode, updatedItems);
+    return addedItems;
   }
 
   async removeDishFromMeal(
@@ -152,16 +111,9 @@ export class LocalStoragePlanRepository implements PlanRepository {
     dishId: string
   ): Promise<void> {
     const items = this.readItems(householdCode);
-    const filtered = items.filter(
-      (i) =>
-        !(
-          i.householdCode === householdCode &&
-          i.date === date &&
-          i.mealType === mealType &&
-          i.dishId === dishId
-        )
-    );
-    this.writeItems(householdCode, filtered);
+    const slot: MealSlot = { householdCode, date, mealType };
+    const updatedItems = removeDishFromPlanList(items, slot, dishId);
+    this.writeItems(householdCode, updatedItems);
   }
 
   async deletePlanItemsByDishId(householdCode: string, dishId: string): Promise<void> {

@@ -6,6 +6,7 @@ import {
   formatDateToISO,
   parseISODate,
   getShiftedWeekDate,
+  groupPlanItemsByMeal,
 } from '../domain/plan';
 import { Dish } from '../domain/dish';
 import { DishRepository, defaultDishRepository } from '../services/dishRepository';
@@ -31,7 +32,6 @@ export const PlanView: React.FC<PlanViewProps> = ({
 
   const [activeDate, setActiveDate] = useState<string>(initialIso);
   const [activeMeal, setActiveMeal] = useState<MealType>('dinner'); // Dinner-first rule!
-  const [weekBaseDate, setWeekBaseDate] = useState<string>(initialIso);
 
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
@@ -40,8 +40,8 @@ export const PlanView: React.FC<PlanViewProps> = ({
 
   // Generate 7 days for the active week
   const weekDays = useMemo(() => {
-    return getWeekDays(weekBaseDate, today);
-  }, [weekBaseDate, today]);
+    return getWeekDays(activeDate, today);
+  }, [activeDate, today]);
 
   const loadData = useCallback(async () => {
     if (!householdCode) {
@@ -70,10 +70,12 @@ export const PlanView: React.FC<PlanViewProps> = ({
     loadData();
   }, [loadData]);
 
-  // Dishes for the current active date and active meal
-  const currentMealItems = useMemo(() => {
-    return planItems.filter((item) => item.date === activeDate && item.mealType === activeMeal);
-  }, [planItems, activeDate, activeMeal]);
+  // Group plan items by meal for the active date
+  const groupedPlan = useMemo(() => {
+    return groupPlanItemsByMeal(planItems, activeDate);
+  }, [planItems, activeDate]);
+
+  const currentMealItems = groupedPlan[activeMeal];
 
   const currentMealDishIds = useMemo(() => {
     return currentMealItems.map((item) => item.dishId);
@@ -96,16 +98,12 @@ export const PlanView: React.FC<PlanViewProps> = ({
   };
 
   const handlePrevWeek = () => {
-    const newBase = getShiftedWeekDate(weekBaseDate, -1);
-    setWeekBaseDate(newBase);
-    setActiveDate(newBase);
+    setActiveDate(getShiftedWeekDate(activeDate, -1));
     setActiveMeal('dinner');
   };
 
   const handleNextWeek = () => {
-    const newBase = getShiftedWeekDate(weekBaseDate, 1);
-    setWeekBaseDate(newBase);
-    setActiveDate(newBase);
+    setActiveDate(getShiftedWeekDate(activeDate, 1));
     setActiveMeal('dinner');
   };
 
@@ -135,7 +133,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
       <div className="px-5 pt-3 pb-2 bg-white border-b border-slate-100 flex items-center justify-between">
         <div>
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-            Lịch Kế hoạch
+            Kế hoạch
           </span>
           <h2 className="text-base font-bold text-[#334E68] -mt-0.5">
             {activeDayInfo.fullLabel || 'Tuần này'}
@@ -267,7 +265,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
               className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#FEF7DC] hover:bg-[#FDF2C7] text-[#334E68] text-xs font-bold transition active:scale-95 border border-[#EFE4B5] shadow-xs"
             >
               <Plus className="w-3.5 h-3.5 text-[#5B7C99]" />
-              Thêm Món ăn
+              + Thêm món
             </button>
           </div>
 
@@ -291,7 +289,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
                 onClick={() => setIsPickerOpen(true)}
                 className="mt-3 px-4 py-1.5 rounded-full bg-[#5B7C99] text-white text-xs font-bold hover:bg-[#4a6b88] transition shadow-sm"
               >
-                + Chọn từ Menu
+                + Thêm món
               </button>
             </div>
           ) : (
@@ -325,7 +323,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
                         </div>
                         <p className="text-[11px] text-[#5B7C99] font-medium mt-0.5 flex items-center gap-1">
                           <MessageSquare className="w-3 h-3" />
-                          <span>Dặn dò món ăn</span>
+                          <span>Dặn dò Món ăn</span>
                         </p>
                       </div>
                     </div>
