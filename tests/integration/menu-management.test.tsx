@@ -99,8 +99,8 @@ describe('Menu / Dish Management Integration', () => {
 
     const searchInput = screen.getByTestId('dish-search-input');
 
-    // Filter by name
-    await user.type(searchInput, 'sườn');
+    // Filter by name (including unaccented Vietnamese search)
+    await user.type(searchInput, 'suon');
     expect(screen.getByText('Sườn xào chua ngọt')).toBeInTheDocument();
     expect(screen.queryByText('Canh chua cá lóc')).not.toBeInTheDocument();
 
@@ -108,15 +108,14 @@ describe('Menu / Dish Management Integration', () => {
     await user.clear(searchInput);
     expect(screen.getByText('Canh chua cá lóc')).toBeInTheDocument();
 
-    // Filter by tag
-    await user.type(searchInput, 'Canh');
-    expect(screen.getByText('Canh chua cá lóc')).toBeInTheDocument();
-    expect(screen.getByText('Canh cua mồng tơi')).toBeInTheDocument();
-    expect(screen.queryByText('Sườn xào chua ngọt')).not.toBeInTheDocument();
+    // Filter by tag (unaccented)
+    await user.type(searchInput, 'mon man');
+    expect(screen.getByText('Sườn xào chua ngọt')).toBeInTheDocument();
+    expect(screen.queryByText('Canh chua cá lóc')).not.toBeInTheDocument();
 
     // Filter with no match
     await user.clear(searchInput);
-    await user.type(searchInput, 'Món không có');
+    await user.type(searchInput, 'Khong ton tai');
     expect(screen.getByText(/Không tìm thấy Món ăn nào phù hợp/)).toBeInTheDocument();
   });
 
@@ -158,7 +157,7 @@ describe('Menu / Dish Management Integration', () => {
     expect(stored[0].tag).toBe('Món chính');
   });
 
-  it('allows user to delete a Món ăn from Menu', async () => {
+  it('allows user to safely delete a Món ăn with confirmation', async () => {
     const dish = await dishRepo.addDish(householdCode, { name: 'Cá kho tộ' });
 
     const user = userEvent.setup();
@@ -171,7 +170,19 @@ describe('Menu / Dish Management Integration', () => {
     const deleteBtn = screen.getByTestId(`delete-dish-${dish.id}`);
     await user.click(deleteBtn);
 
-    // Confirmation or instant delete
+    // Confirmation dialog appears
+    expect(screen.getByText('Xóa Món ăn')).toBeInTheDocument();
+    expect(screen.getByText(/Bạn có chắc chắn muốn xóa/)).toBeInTheDocument();
+
+    // Cancel first
+    await user.click(screen.getByText('Hủy'));
+    expect(screen.getByText('Cá kho tộ')).toBeInTheDocument();
+
+    // Click delete again and confirm
+    await user.click(deleteBtn);
+    const confirmBtn = screen.getByTestId('confirm-delete-dish-btn');
+    await user.click(confirmBtn);
+
     await waitFor(() => {
       expect(screen.queryByText('Cá kho tộ')).not.toBeInTheDocument();
     });

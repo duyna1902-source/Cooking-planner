@@ -118,7 +118,7 @@ export const DishModal: React.FC<DishModalProps> = ({
               className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] focus:bg-white transition"
             />
             <span className="text-[11px] text-slate-400 mt-1 block">
-              Gõ tự do để dễ tìm kiếm và lọc khi chọn món.
+              Gõ tự do để dễ tìm kiếm và lọc khi chọn Món ăn.
             </span>
           </div>
 

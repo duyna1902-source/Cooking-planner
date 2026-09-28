@@ -1,4 +1,4 @@
-import { Dish, DishInput, generateDishId, validateDishInput } from '../domain/dish';
+import { Dish, DishInput, createDishEntity, updateDishEntity } from '../domain/dish';
 
 export interface DishRepository {
   getDishes(householdCode: string): Promise<Dish[]>;
@@ -19,40 +19,18 @@ export class InMemoryDishRepository implements DishRepository {
   }
 
   async addDish(householdCode: string, input: DishInput): Promise<Dish> {
-    const validation = validateDishInput(input);
-    if (!validation.valid) {
-      throw new Error(validation.error);
-    }
-
-    const newDish: Dish = {
-      id: generateDishId(),
-      householdCode,
-      name: input.name.trim(),
-      tag: input.tag ? input.tag.trim() : undefined,
-      createdAt: new Date().toISOString(),
-    };
-
+    const newDish = createDishEntity(householdCode, input);
     this.dishes.push(newDish);
     return newDish;
   }
 
   async updateDish(householdCode: string, id: string, input: DishInput): Promise<Dish> {
-    const validation = validateDishInput(input);
-    if (!validation.valid) {
-      throw new Error(validation.error);
-    }
-
     const index = this.dishes.findIndex((d) => d.householdCode === householdCode && d.id === id);
     if (index === -1) {
       throw new Error('Món ăn không tồn tại');
     }
 
-    const updated: Dish = {
-      ...this.dishes[index],
-      name: input.name.trim(),
-      tag: input.tag ? input.tag.trim() : undefined,
-    };
-
+    const updated = updateDishEntity(this.dishes[index], input);
     this.dishes[index] = updated;
     return updated;
   }
@@ -89,19 +67,8 @@ export class LocalStorageDishRepository implements DishRepository {
   }
 
   async addDish(householdCode: string, input: DishInput): Promise<Dish> {
-    const validation = validateDishInput(input);
-    if (!validation.valid) {
-      throw new Error(validation.error);
-    }
-
     const dishes = this.readDishes(householdCode);
-    const newDish: Dish = {
-      id: generateDishId(),
-      householdCode,
-      name: input.name.trim(),
-      tag: input.tag ? input.tag.trim() : undefined,
-      createdAt: new Date().toISOString(),
-    };
+    const newDish = createDishEntity(householdCode, input);
 
     dishes.push(newDish);
     this.writeDishes(householdCode, dishes);
@@ -109,23 +76,13 @@ export class LocalStorageDishRepository implements DishRepository {
   }
 
   async updateDish(householdCode: string, id: string, input: DishInput): Promise<Dish> {
-    const validation = validateDishInput(input);
-    if (!validation.valid) {
-      throw new Error(validation.error);
-    }
-
     const dishes = this.readDishes(householdCode);
     const index = dishes.findIndex((d) => d.id === id);
     if (index === -1) {
       throw new Error('Món ăn không tồn tại');
     }
 
-    const updated: Dish = {
-      ...dishes[index],
-      name: input.name.trim(),
-      tag: input.tag ? input.tag.trim() : undefined,
-    };
-
+    const updated = updateDishEntity(dishes[index], input);
     dishes[index] = updated;
     this.writeDishes(householdCode, dishes);
     return updated;

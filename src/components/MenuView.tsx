@@ -50,6 +50,8 @@ export const MenuView: React.FC<MenuViewProps> = ({
     setIsModalOpen(true);
   };
 
+  const [dishToDelete, setDishToDelete] = useState<Dish | null>(null);
+
   const handleSaveDish = async (input: DishInput) => {
     if (!householdCode) return;
     if (editingDish) {
@@ -60,9 +62,10 @@ export const MenuView: React.FC<MenuViewProps> = ({
     await loadDishes();
   };
 
-  const handleDeleteDish = async (dishId: string) => {
-    if (!householdCode) return;
-    await dishRepository.deleteDish(householdCode, dishId);
+  const handleConfirmDelete = async () => {
+    if (!householdCode || !dishToDelete) return;
+    await dishRepository.deleteDish(householdCode, dishToDelete.id);
+    setDishToDelete(null);
     await loadDishes();
   };
 
@@ -198,7 +201,7 @@ export const MenuView: React.FC<MenuViewProps> = ({
                   <Edit3 className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => handleDeleteDish(dish.id)}
+                  onClick={() => setDishToDelete(dish)}
                   data-testid={`delete-dish-${dish.id}`}
                   title="Xóa Món ăn"
                   className="w-7 h-7 rounded-full text-slate-300 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition"
@@ -218,6 +221,52 @@ export const MenuView: React.FC<MenuViewProps> = ({
         onSave={handleSaveDish}
         onClose={() => setIsModalOpen(false)}
       />
+
+      {/* Delete Confirmation Dialog */}
+      {dishToDelete && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs"
+          onClick={() => setDishToDelete(null)}
+        >
+          <div
+            className="w-full max-w-xs bg-white rounded-3xl p-5 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mb-3">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <h3 id="delete-dialog-title" className="text-sm font-bold text-[#334E68] mb-1">
+                Xóa Món ăn
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Bạn có chắc chắn muốn xóa "<strong>{dishToDelete.name}</strong>" khỏi Menu không?
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setDishToDelete(null)}
+                className="flex-1 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                data-testid="confirm-delete-dish-btn"
+                className="flex-1 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/30 transition active:scale-98"
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
