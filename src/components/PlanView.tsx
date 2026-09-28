@@ -238,9 +238,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
               {activeDayInfo.fullLabel}
             </span>
             {activeMeal === 'dinner' && (
-              <span className="text-[11px] font-semibold text-[#334E68] bg-[#FEF7DC] px-2.5 py-0.5 rounded-full border border-[#EFE4B5]">
-                ✨ Bữa chính
-              </span>
+              
             )}
           </div>
 
