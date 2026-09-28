@@ -41,6 +41,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
   const [activeDishDetail, setActiveDishDetail] = useState<{
     planItemId: string;
+    dishId: string;
     dishName: string;
     dishTag?: string;
   } | null>(null);
@@ -123,11 +124,8 @@ export const PlanView: React.FC<PlanViewProps> = ({
 
   const handleRemoveDish = async (dishId: string) => {
     if (!householdCode) return;
-    if (activeDishDetail) {
-      const currentDish = dishes.find((d) => d.id === dishId);
-      if (currentDish && currentDish.name === activeDishDetail.dishName) {
-        setActiveDishDetail(null);
-      }
+    if (activeDishDetail && activeDishDetail.dishId === dishId) {
+      setActiveDishDetail(null);
     }
     await planRepository.removeDishFromMeal(householdCode, activeDate, activeMeal, dishId);
     await loadData();
@@ -327,6 +325,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
                       onClick={() =>
                         setActiveDishDetail({
                           planItemId: item.id,
+                          dishId: dish.id,
                           dishName: dish.name,
                           dishTag: dish.tag,
                         })

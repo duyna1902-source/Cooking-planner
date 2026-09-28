@@ -17,6 +17,7 @@ import {
   filterCommentsForPlanItem,
   deleteCommentsForPlanItem,
   deleteCommentsForPlanItems,
+  formatCommentTimestamp,
 } from '../../src/domain/plan';
 
 describe('Plan Domain Logic', () => {
@@ -299,6 +300,15 @@ describe('Plan Domain Logic', () => {
       const remaining = deleteCommentsForPlanItems(comments, 'BEP-892', ['item-1', 'item-3']);
       expect(remaining).toHaveLength(1);
       expect(remaining[0].id).toBe('c2');
+    });
+
+    it('formats comment timestamp cleanly as HH:mm, DD/MM', () => {
+      // 2026-09-29 18:30:00 local time
+      const testDate = new Date(2026, 8, 29, 18, 30);
+      const isoStr = testDate.toISOString();
+      const formatted = formatCommentTimestamp(isoStr);
+
+      expect(formatted).toBe('18:30, 29/09');
     });
   });
 });

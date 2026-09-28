@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { PlanComment } from '../domain/plan';
+import { PlanComment, formatCommentTimestamp } from '../domain/plan';
 import { PlanRepository } from '../services/planRepository';
 import { Send, MessageSquare } from 'lucide-react';
 
@@ -59,11 +59,11 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmed = commentText.trim();
-    if (!trimmed || isSubmitting || !householdCode || !planItemId) return;
+    const author = nickname.trim();
+    if (!trimmed || !author || isSubmitting || !householdCode || !planItemId) return;
 
     try {
       setIsSubmitting(true);
-      const author = nickname.trim() || 'Thành viên';
       const created = await planRepository.addComment(householdCode, planItemId, author, trimmed);
       setComments((prev) => [...prev, created]);
       setCommentText('');
@@ -78,19 +78,6 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
-    }
-  };
-
-  const formatTimestamp = (isoStr: string) => {
-    try {
-      const date = new Date(isoStr);
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      return `${hours}:${minutes}, ${day}/${month}`;
-    } catch {
-      return isoStr;
     }
   };
 
@@ -112,21 +99,18 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
 
         {/* Minimalist Header: Dish Name & Tag */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 data-testid="detail-dish-name" className="text-base font-bold text-[#334E68]">
-                {dishName}
-              </h3>
-              {dishTag && (
-                <span
-                  data-testid="detail-dish-tag"
-                  className="text-[10px] px-2 py-0.5 rounded-md bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] font-semibold"
-                >
-                  {dishTag}
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Dặn dò cách nấu, chuẩn bị nguyên liệu</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 data-testid="detail-dish-name" className="text-base font-bold text-[#334E68]">
+              {dishName}
+            </h3>
+            {dishTag && (
+              <span
+                data-testid="detail-dish-tag"
+                className="text-[10px] px-2 py-0.5 rounded-md bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] font-semibold"
+              >
+                {dishTag}
+              </span>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -169,7 +153,7 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
                     {comment.authorNickname}
                   </span>
                   <span data-testid="comment-time" className="text-[10px] text-slate-400">
-                    {formatTimestamp(comment.createdAt)}
+                    {formatCommentTimestamp(comment.createdAt)}
                   </span>
                 </div>
                 <p
@@ -198,9 +182,9 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
             <button
               type="submit"
               data-testid="send-comment-btn"
-              disabled={!commentText.trim() || isSubmitting}
+              disabled={!commentText.trim() || !nickname.trim() || isSubmitting}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition active:scale-95 flex-shrink-0 ${
-                commentText.trim() && !isSubmitting
+                commentText.trim() && nickname.trim() && !isSubmitting
                   ? 'bg-[#5B7C99] hover:bg-[#46637D] text-white shadow-sm'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}
@@ -210,7 +194,7 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
             </button>
           </div>
           <p className="text-[10px] text-slate-400 mt-1.5 px-1">
-            Gửi với tư cách: <span className="font-semibold text-slate-600">{nickname || 'Thành viên'}</span>
+            Gửi với tư cách: <span className="font-semibold text-slate-600">{nickname.trim() || 'Chưa đặt biệt danh'}</span>
           </p>
         </form>
       </div>
