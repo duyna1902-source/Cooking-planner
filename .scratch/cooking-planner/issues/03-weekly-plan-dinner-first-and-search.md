@@ -4,12 +4,12 @@
 
 **Blocked by:** 02: Quản lý Menu (Thêm, Sửa, Xóa Món ăn)
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] Hiển thị dải ngày tuần Ribbon cuộn ngang từ Thứ 2 đến Chủ nhật, hỗ trợ chuyển đổi ngày mượt mà
-- [ ] Bữa Tối luôn là bữa mặc định được hiển thị và active ngay khi chọn một ngày
-- [ ] Cung cấp thanh chuyển đổi tab bo tròn mềm mại cho phép xem và lên kế hoạch cho Bữa Sáng và Bữa Trưa
-- [ ] Bấm "+ Thêm món" mở Bottom Sheet Drawer chọn món từ Menu với ô tìm kiếm tức thì theo tên món/tag
-- [ ] Người dùng có thể tick chọn một hoặc nhiều Món ăn và bấm xác nhận để đưa vào bữa ăn đang chọn
-- [ ] Người dùng có thể gỡ Món ăn khỏi một bữa ăn cụ thể
-- [ ] Có bộ test tích hợp kiểm tra luồng mặc định Bữa Tối, tìm kiếm món ăn trong Drawer và thêm/gỡ món khỏi Kế hoạch
+- [x] Hiển thị dải ngày tuần Ribbon cuộn ngang từ Thứ 2 đến Chủ nhật, hỗ trợ chuyển đổi ngày mượt mà
+- [x] Bữa Tối luôn là bữa mặc định được hiển thị và active ngay khi chọn một ngày
+- [x] Cung cấp thanh chuyển đổi tab bo tròn mềm mại cho phép xem và lên kế hoạch cho Bữa Sáng và Bữa Trưa
+- [x] Bấm "+ Thêm món" mở Bottom Sheet Drawer chọn món từ Menu với ô tìm kiếm tức thì theo tên món/tag
+- [x] Người dùng có thể tick chọn một hoặc nhiều Món ăn và bấm xác nhận để đưa vào bữa ăn đang chọn
+- [x] Người dùng có thể gỡ Món ăn khỏi một bữa ăn cụ thể
+- [x] Có bộ test tích hợp kiểm tra luồng mặc định Bữa Tối, tìm kiếm món ăn trong Drawer và thêm/gỡ món khỏi Kế hoạch

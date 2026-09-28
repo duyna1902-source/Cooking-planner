@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../../src/App';
 import { InMemoryHouseholdStorage } from '../../src/services/storage';
@@ -155,7 +155,7 @@ describe('Household Setup and PWA Shell Integration', () => {
     expect(screen.getByTestId('plan-view')).toBeInTheDocument();
   });
 
-  it('automatically sets active household and does not prompt for nickname when user with existing nickname opens ?join=CODE', () => {
+  it('automatically sets active household and does not prompt for nickname when user with existing nickname opens ?join=CODE', async () => {
     // User already has nickname set locally
     storage.setNickname('Bà Nội');
     storage.setHouseholdCode('BEP-OLD');
@@ -166,7 +166,9 @@ describe('Household Setup and PWA Shell Integration', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     // Automatically switches to the new household
-    expect(screen.getByTestId('household-code-badge')).toHaveTextContent('Mã: BEP-NEW');
+    await waitFor(() => {
+      expect(screen.getByTestId('household-code-badge')).toHaveTextContent('Mã: BEP-NEW');
+    });
     expect(screen.getByTestId('nickname-badge')).toHaveTextContent('• Bà Nội');
     expect(storage.getHouseholdCode()).toBe('BEP-NEW');
     expect(storage.getNickname()).toBe('Bà Nội');

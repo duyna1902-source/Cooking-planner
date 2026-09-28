@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HouseholdStorage, defaultHouseholdStorage } from './services/storage';
 import { DishRepository, defaultDishRepository } from './services/dishRepository';
+import { PlanRepository, defaultPlanRepository } from './services/planRepository';
 import { extractJoinCodeFromSearch } from './domain/household';
 import { AppHeader } from './components/AppHeader';
 import { BottomNav, NavigationTab } from './components/BottomNav';
@@ -12,12 +13,14 @@ import { MenuView } from './components/MenuView';
 export interface AppProps {
   storage?: HouseholdStorage;
   dishRepository?: DishRepository;
+  planRepository?: PlanRepository;
   initialUrl?: string;
 }
 
 export const App: React.FC<AppProps> = ({
   storage = defaultHouseholdStorage,
   dishRepository = defaultDishRepository,
+  planRepository = defaultPlanRepository,
   initialUrl
 }) => {
   const [householdCode, setHouseholdCode] = useState<string | null>(null);
@@ -118,7 +121,11 @@ export const App: React.FC<AppProps> = ({
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col overflow-y-auto">
           {activeTab === 'plan' ? (
-            <PlanView />
+            <PlanView
+              householdCode={householdCode || ''}
+              dishRepository={dishRepository}
+              planRepository={planRepository}
+            />
           ) : (
             <MenuView householdCode={householdCode || ''} dishRepository={dishRepository} />
           )}

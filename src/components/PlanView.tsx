@@ -1,54 +1,179 @@
-import React, { useState } from 'react';
-import { Plus, Utensils } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  MealType,
+  PlanItem,
+  getWeekDays,
+  formatDateToISO,
+  parseISODate,
+  getShiftedWeekDate,
+} from '../domain/plan';
+import { Dish } from '../domain/dish';
+import { DishRepository, defaultDishRepository } from '../services/dishRepository';
+import { PlanRepository, defaultPlanRepository } from '../services/planRepository';
+import { DishPickerDrawer } from './DishPickerDrawer';
+import { Plus, Trash2, Utensils, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 
-export type MealType = 'breakfast' | 'lunch' | 'dinner';
-
-interface DayItem {
-  label: string;
-  dayNumber: number;
-  dateStr: string;
-  isToday: boolean;
+export interface PlanViewProps {
+  householdCode?: string;
+  dishRepository?: DishRepository;
+  planRepository?: PlanRepository;
+  initialDate?: string;
 }
 
-export const PlanView: React.FC = () => {
-  const [activeMeal, setActiveMeal] = useState<MealType>('dinner'); // Dinner-first default!
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
+export const PlanView: React.FC<PlanViewProps> = ({
+  householdCode = '',
+  dishRepository = defaultDishRepository,
+  planRepository = defaultPlanRepository,
+  initialDate,
+}) => {
+  const today = useMemo(() => new Date(), []);
+  const initialIso = initialDate || formatDateToISO(today);
 
-  // Generate 7 days for current week (Monday to Sunday)
-  const days: DayItem[] = [
-    { label: 'T2', dayNumber: 28, dateStr: '2026-09-28', isToday: false },
-    { label: 'T3', dayNumber: 29, dateStr: '2026-09-29', isToday: true },
-    { label: 'T4', dayNumber: 30, dateStr: '2026-09-30', isToday: false },
-    { label: 'T5', dayNumber: 1, dateStr: '2026-10-01', isToday: false },
-    { label: 'T6', dayNumber: 2, dateStr: '2026-10-02', isToday: false },
-    { label: 'T7', dayNumber: 3, dateStr: '2026-10-03', isToday: false },
-    { label: 'CN', dayNumber: 4, dateStr: '2026-10-04', isToday: false },
-  ];
+  const [activeDate, setActiveDate] = useState<string>(initialIso);
+  const [activeMeal, setActiveMeal] = useState<MealType>('dinner'); // Dinner-first rule!
+  const [weekBaseDate, setWeekBaseDate] = useState<string>(initialIso);
+
+  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [planItems, setPlanItems] = useState<PlanItem[]>([]);
+  const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Generate 7 days for the active week
+  const weekDays = useMemo(() => {
+    return getWeekDays(weekBaseDate, today);
+  }, [weekBaseDate, today]);
+
+  const loadData = useCallback(async () => {
+    if (!householdCode) {
+      setDishes([]);
+      setPlanItems([]);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const [fetchedDishes, fetchedPlans] = await Promise.all([
+        dishRepository.getDishes(householdCode),
+        planRepository.getPlanItems(householdCode),
+      ]);
+      setDishes(fetchedDishes);
+      setPlanItems(fetchedPlans);
+    } catch {
+      // Ignored
+    } finally {
+      setIsLoading(false);
+    }
+  }, [householdCode, dishRepository, planRepository]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Dishes for the current active date and active meal
+  const currentMealItems = useMemo(() => {
+    return planItems.filter((item) => item.date === activeDate && item.mealType === activeMeal);
+  }, [planItems, activeDate, activeMeal]);
+
+  const currentMealDishIds = useMemo(() => {
+    return currentMealItems.map((item) => item.dishId);
+  }, [currentMealItems]);
 
   const getMealTitle = (meal: MealType) => {
     switch (meal) {
-      case 'breakfast': return 'Bữa Sáng';
-      case 'lunch': return 'Bữa Trưa';
-      case 'dinner': return 'Bữa Tối';
+      case 'breakfast':
+        return 'Bữa Sáng';
+      case 'lunch':
+        return 'Bữa Trưa';
+      case 'dinner':
+        return 'Bữa Tối';
     }
+  };
+
+  const handleDaySelect = (dateStr: string) => {
+    setActiveDate(dateStr);
+    setActiveMeal('dinner'); // Strict Dinner-First UX rule
+  };
+
+  const handlePrevWeek = () => {
+    const newBase = getShiftedWeekDate(weekBaseDate, -1);
+    setWeekBaseDate(newBase);
+    setActiveDate(newBase);
+    setActiveMeal('dinner');
+  };
+
+  const handleNextWeek = () => {
+    const newBase = getShiftedWeekDate(weekBaseDate, 1);
+    setWeekBaseDate(newBase);
+    setActiveDate(newBase);
+    setActiveMeal('dinner');
+  };
+
+  const handleConfirmAddDishes = async (selectedDishIds: string[]) => {
+    if (!householdCode) return;
+    await planRepository.addDishesToMeal(householdCode, activeDate, activeMeal, selectedDishIds);
+    await loadData();
+  };
+
+  const handleRemoveDish = async (dishId: string) => {
+    if (!householdCode) return;
+    await planRepository.removeDishFromMeal(householdCode, activeDate, activeMeal, dishId);
+    await loadData();
+  };
+
+  const activeDayInfo = weekDays.find((d) => d.dateStr === activeDate) || {
+    label: '',
+    dayNumber: parseISODate(activeDate).getDate(),
+    dateStr: activeDate,
+    isToday: false,
+    fullLabel: activeDate,
   };
 
   return (
     <div className="flex-1 flex flex-col bg-[#FAFBFD]" data-testid="plan-view">
-      {/* Date Ribbon (Horizontal scrollable strip) */}
-      <div 
-        className="bg-white px-4 py-3 flex gap-2 overflow-x-auto shadow-xs border-b border-slate-100"
+      {/* Top Header with Week navigation */}
+      <div className="px-5 pt-3 pb-2 bg-white border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            Lịch Kế hoạch
+          </span>
+          <h2 className="text-base font-bold text-[#334E68] -mt-0.5">
+            {activeDayInfo.fullLabel || 'Tuần này'}
+          </h2>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={handlePrevWeek}
+            data-testid="prev-week-btn"
+            title="Tuần trước"
+            aria-label="Tuần trước"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleNextWeek}
+            data-testid="next-week-btn"
+            title="Tuần sau"
+            aria-label="Tuần sau"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Date Ribbon (Horizontal scrollable strip Monday to Sunday) */}
+      <div
+        className="bg-white px-4 py-2.5 flex gap-2 overflow-x-auto shadow-xs border-b border-slate-100"
         data-testid="date-ribbon"
       >
-        {days.map((d, idx) => {
-          const isSelected = idx === selectedDayIndex;
+        {weekDays.map((d, idx) => {
+          const isSelected = d.dateStr === activeDate;
           return (
             <button
               key={d.dateStr}
-              onClick={() => {
-                setSelectedDayIndex(idx);
-                setActiveMeal('dinner'); // Dinner-first rule
-              }}
+              onClick={() => handleDaySelect(d.dateStr)}
               data-testid={`day-btn-${idx}`}
               className={`flex-shrink-0 flex flex-col items-center justify-center w-12 py-2 rounded-2xl transition-all ${
                 isSelected
@@ -59,7 +184,11 @@ export const PlanView: React.FC = () => {
               <span className="text-[10px] font-medium opacity-80 uppercase">{d.label}</span>
               <span className="text-xs font-bold mt-0.5">{d.dayNumber}</span>
               {d.isToday && (
-                <span className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-[#FEF7DC]' : 'bg-[#5B7C99]'}`} />
+                <span
+                  className={`w-1.5 h-1.5 rounded-full mt-1 ${
+                    isSelected ? 'bg-[#FEF7DC]' : 'bg-[#5B7C99]'
+                  }`}
+                />
               )}
             </button>
           );
@@ -72,7 +201,7 @@ export const PlanView: React.FC = () => {
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              {days[selectedDayIndex]?.label} - Ngày {days[selectedDayIndex]?.dayNumber}
+              {activeDayInfo.fullLabel}
             </span>
             {activeMeal === 'dinner' && (
               <span className="text-[11px] font-semibold text-[#334E68] bg-[#FEF7DC] px-2.5 py-0.5 rounded-full border border-[#EFE4B5]">
@@ -127,10 +256,13 @@ export const PlanView: React.FC = () => {
           <div className="flex items-center justify-between mb-2.5">
             <h2 className="text-sm font-bold text-[#334E68] flex items-center gap-1.5">
               <span>{getMealTitle(activeMeal)}</span>
-              <span className="text-xs px-2 py-0.2 rounded-full bg-slate-200/80 text-slate-600">0 Món ăn</span>
+              <span className="text-xs px-2 py-0.2 rounded-full bg-slate-200/80 text-slate-600">
+                {currentMealItems.length} Món ăn
+              </span>
             </h2>
 
             <button
+              onClick={() => setIsPickerOpen(true)}
               data-testid="add-dish-to-plan-btn"
               className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#FEF7DC] hover:bg-[#FDF2C7] text-[#334E68] text-xs font-bold transition active:scale-95 border border-[#EFE4B5] shadow-xs"
             >
@@ -139,18 +271,91 @@ export const PlanView: React.FC = () => {
             </button>
           </div>
 
-          {/* Empty Meal State */}
-          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-white/60 my-2">
-            <div className="w-12 h-12 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] flex items-center justify-center mb-2">
-              <Utensils className="w-5 h-5 text-[#5B7C99]" />
+          {/* Dishes List, Loading or Empty State */}
+          {isLoading ? (
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="w-8 h-8 rounded-full border-2 border-[#5B7C99] border-t-transparent animate-spin" />
             </div>
-            <p className="text-xs font-bold text-slate-700">Chưa có Món ăn nào cho {getMealTitle(activeMeal)}</p>
-            <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">
-              Bấm nút thêm Món ăn từ Menu của nhà để lên Kế hoạch bữa ăn
-            </p>
-          </div>
+          ) : currentMealItems.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-white/60 my-2">
+              <div className="w-12 h-12 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] flex items-center justify-center mb-2">
+                <Utensils className="w-5 h-5 text-[#5B7C99]" />
+              </div>
+              <p className="text-xs font-bold text-slate-700">
+                Chưa có Món ăn nào cho {getMealTitle(activeMeal)}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">
+                Bấm nút thêm Món ăn từ Menu của nhà để lên Kế hoạch bữa ăn
+              </p>
+              <button
+                onClick={() => setIsPickerOpen(true)}
+                className="mt-3 px-4 py-1.5 rounded-full bg-[#5B7C99] text-white text-xs font-bold hover:bg-[#4a6b88] transition shadow-sm"
+              >
+                + Chọn từ Menu
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2.5 overflow-y-auto pr-0.5">
+              {currentMealItems.map((item) => {
+                const dish = dishes.find((d) => d.id === item.dishId) || {
+                  id: item.dishId,
+                  householdCode,
+                  name: 'Món ăn đã gỡ',
+                  createdAt: item.createdAt,
+                };
+
+                return (
+                  <div
+                    key={item.id}
+                    data-testid={`plan-dish-card-${dish.id}`}
+                    className="group bg-white hover:bg-slate-50 border border-slate-100 p-3.5 rounded-2xl shadow-sm hover:shadow transition flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#EBF1F6] text-[#5B7C99] flex items-center justify-center font-bold text-sm">
+                        🍲
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="text-xs font-bold text-[#334E68]">{dish.name}</h4>
+                          {dish.tag && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5]">
+                              {dish.tag}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[#5B7C99] font-medium mt-0.5 flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3" />
+                          <span>Dặn dò món ăn</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleRemoveDish(dish.id)}
+                      data-testid={`remove-dish-from-meal-${dish.id}`}
+                      className="w-7 h-7 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition"
+                      title="Gỡ Món ăn khỏi bữa"
+                      aria-label="Gỡ Món ăn khỏi bữa"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Dish Picker Bottom Sheet Drawer */}
+      <DishPickerDrawer
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        mealTitle={getMealTitle(activeMeal)}
+        dishes={dishes}
+        alreadyAddedDishIds={currentMealDishIds}
+        onConfirm={handleConfirmAddDishes}
+      />
     </div>
   );
 };
