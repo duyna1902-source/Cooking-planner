@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Người dùng có thể bấm "Tạo Nhà" để sinh một Mã nhà ngẫu nhiên (ví dụ `BEP-892`) và nhận link chia sẻ trực tiếp
-- [ ] Người dùng truy cập qua URL có tham số `?join=CODE` hoặc nhập mã thủ công để tham gia vào Nhà của gia đình
-- [ ] Người dùng nhập Biệt danh lần đầu và hệ thống lưu cục bộ trên thiết bị (localStorage)
-- [ ] Khung ứng dụng Mobile PWA hiển thị chuẩn xác với tone màu chủ đạo Dusty Blue (#5B7C99) và Pastel Cream (#FEF7DC) cùng thanh điều hướng Kế hoạch / Menu
-- [ ] Có bộ test tích hợp Vitest kiểm tra luồng tạo nhà, tham gia qua link và lưu biệt danh thành công
+- [x] Người dùng có thể bấm "Tạo Nhà" để sinh một Mã nhà ngẫu nhiên (ví dụ `BEP-892`) và nhận link chia sẻ trực tiếp
+- [x] Người dùng truy cập qua URL có tham số `?join=CODE` hoặc nhập mã thủ công để tham gia vào Nhà của gia đình
+- [x] Người dùng nhập Biệt danh lần đầu và hệ thống lưu cục bộ trên thiết bị (localStorage)
+- [x] Khung ứng dụng Mobile PWA hiển thị chuẩn xác với tone màu chủ đạo Dusty Blue (#5B7C99) và Pastel Cream (#FEF7DC) cùng thanh điều hướng Kế hoạch / Menu
+- [x] Có bộ test tích hợp Vitest kiểm tra luồng tạo nhà, tham gia qua link và lưu biệt danh thành công
