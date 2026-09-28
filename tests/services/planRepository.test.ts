@@ -155,5 +155,61 @@ describe('PlanRepository', () => {
       const commentsAfter = await newRepoInstance.getComments('BEP-892', planItemId);
       expect(commentsAfter).toHaveLength(0);
     });
+
+    it('cascades delete of dish from all past, present, and future plan items and comments', async () => {
+      // Add dish-1 to past (within 2 weeks), present, and future meals
+      const pastItems = await repo.addDishesToMeal('BEP-892', '2026-09-22', 'dinner', ['dish-1']);
+      const currentItems = await repo.addDishesToMeal('BEP-892', '2026-09-29', 'dinner', ['dish-1', 'dish-2']);
+      const futureItems = await repo.addDishesToMeal('BEP-892', '2026-10-06', 'dinner', ['dish-1']);
+
+      // Add comments to all instances
+      await repo.addComment('BEP-892', pastItems[0].id, 'Mẹ', 'Comment quá khứ');
+      await repo.addComment('BEP-892', currentItems[0].id, 'Mẹ', 'Comment hiện tại');
+      await repo.addComment('BEP-892', futureItems[0].id, 'Mẹ', 'Comment tương lai');
+
+      // Now cascade delete dish-1
+      await repo.deletePlanItemsByDishId('BEP-892', 'dish-1');
+
+      // Plan items for dish-1 should be removed everywhere
+      const allItems = await repo.getPlanItems('BEP-892');
+      expect(allItems).toHaveLength(1);
+      expect(allItems[0].dishId).toBe('dish-2');
+
+      // All comments for dish-1 should be deleted
+      const pastComments = await repo.getComments('BEP-892', pastItems[0].id);
+      const currentComments = await repo.getComments('BEP-892', currentItems[0].id);
+      const futureComments = await repo.getComments('BEP-892', futureItems[0].id);
+      expect(pastComments).toHaveLength(0);
+      expect(currentComments).toHaveLength(0);
+      expect(futureComments).toHaveLength(0);
+    });
+
+    it('prunes items and comments older than 14 days via pruneOldHistory', async () => {
+      // Base date is 2026-09-29, 2-week threshold Monday is 2026-09-14
+      // Add item older than 2 weeks (2026-09-10)
+      const oldItems = await repo.addDishesToMeal('BEP-892', '2026-09-10', 'dinner', ['dish-1']);
+      await repo.addComment('BEP-892', oldItems[0].id, 'Bố', 'Comment cũ hơn 14 ngày');
+
+      // Add item exactly on threshold (2026-09-14) and recent item (2026-09-29)
+      const thresholdItems = await repo.addDishesToMeal('BEP-892', '2026-09-14', 'dinner', ['dish-2']);
+      await repo.addComment('BEP-892', thresholdItems[0].id, 'Mẹ', 'Comment giữ lại');
+
+      const recentItems = await repo.addDishesToMeal('BEP-892', '2026-09-29', 'dinner', ['dish-3']);
+
+      // Execute pruning
+      const result = await repo.pruneOldHistory('BEP-892', '2026-09-29');
+      expect(result.prunedCount).toBe(1);
+
+      // Verify old item is gone, valid items remain
+      const allItems = await repo.getPlanItems('BEP-892');
+      expect(allItems.map((i) => i.dishId)).toEqual(['dish-2', 'dish-3']);
+
+      // Verify old comment is gone, threshold comment remains
+      const oldComments = await repo.getComments('BEP-892', oldItems[0].id);
+      expect(oldComments).toHaveLength(0);
+
+      const keptComments = await repo.getComments('BEP-892', thresholdItems[0].id);
+      expect(keptComments).toHaveLength(1);
+    });
   });
 });

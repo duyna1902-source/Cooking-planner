@@ -307,3 +307,29 @@ export function deleteCommentsForPlanItems(
   );
 }
 
+export function getRetentionThresholdDate(baseDateStr: string): string {
+  const baseMonday = getMondayOfWeek(parseISODate(baseDateStr));
+  return getShiftedWeekDate(formatDateToISO(baseMonday), -2);
+}
+
+export function canNavigatePrevWeek(currentDateStr: string, basePlanningDateStr: string): boolean {
+  const currentMonday = getMondayOfWeek(parseISODate(currentDateStr));
+  const baseMonday = getMondayOfWeek(parseISODate(basePlanningDateStr));
+  const targetMondayStr = getShiftedWeekDate(formatDateToISO(currentMonday), -1);
+  const targetMonday = parseISODate(targetMondayStr);
+  const diffDays = Math.round((targetMonday.getTime() - baseMonday.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays >= -14;
+}
+
+export function pruneExpiredPlanData(
+  items: PlanItem[],
+  comments: PlanComment[],
+  thresholdDate: string
+): { remainingItems: PlanItem[]; remainingComments: PlanComment[] } {
+  const remainingItems = items.filter((item) => item.date >= thresholdDate);
+  const validItemIds = new Set(remainingItems.map((item) => item.id));
+  const remainingComments = comments.filter((comment) => validItemIds.has(comment.planItemId));
+  return { remainingItems, remainingComments };
+}
+
+

@@ -18,6 +18,9 @@ import {
   deleteCommentsForPlanItem,
   deleteCommentsForPlanItems,
   formatCommentTimestamp,
+  canNavigatePrevWeek,
+  getRetentionThresholdDate,
+  pruneExpiredPlanData,
 } from '../../src/domain/plan';
 
 describe('Plan Domain Logic', () => {
@@ -309,6 +312,67 @@ describe('Plan Domain Logic', () => {
       const formatted = formatCommentTimestamp(isoStr);
 
       expect(formatted).toBe('18:30, 29/09');
+    });
+  });
+
+  describe('Two-Week Retention Policy and Navigation Boundary (ADR 0002)', () => {
+    const baseDate = '2026-09-29'; // Base planning date (Tuesday, Monday of week is 2026-09-28)
+
+    it('calculates the 2-week history retention threshold date aligned with earliest reachable Monday', () => {
+      // 2026-09-29 is Tuesday in week starting 2026-09-28. Earliest reachable week is 2026-09-14.
+      expect(getRetentionThresholdDate('2026-09-29')).toBe('2026-09-14');
+      // 2026-10-01 is Thursday in week starting 2026-09-28. Earliest reachable week is 2026-09-14.
+      expect(getRetentionThresholdDate('2026-10-01')).toBe('2026-09-14');
+      // 2026-10-05 is Monday in next week. Earliest reachable week is 2026-09-21.
+      expect(getRetentionThresholdDate('2026-10-05')).toBe('2026-09-21');
+    });
+
+    it('allows navigating to previous week when within 2 weeks prior to base planning date', () => {
+      // Viewing active week (2026-09-28): can go back 1 week (to 2026-09-21)
+      expect(canNavigatePrevWeek('2026-09-29', baseDate)).toBe(true);
+
+      // Viewing 1 week ago (2026-09-22, Monday is 2026-09-21): can go back to 2 weeks ago (2026-09-14)
+      expect(canNavigatePrevWeek('2026-09-22', baseDate)).toBe(true);
+
+      // Viewing future weeks: can definitely go back
+      expect(canNavigatePrevWeek('2026-10-06', baseDate)).toBe(true);
+    });
+
+    it('disallows navigating to previous week when at the 2-week history boundary', () => {
+      // Viewing 2 weeks ago (Monday is 2026-09-14, which is 14 days before 2026-09-28):
+      // Going back 1 more week would be 3 weeks ago (> 14 days), so it must be blocked!
+      expect(canNavigatePrevWeek('2026-09-15', baseDate)).toBe(false);
+      expect(canNavigatePrevWeek('2026-09-14', baseDate)).toBe(false);
+
+      // Anything older than 2 weeks ago is also blocked
+      expect(canNavigatePrevWeek('2026-09-07', baseDate)).toBe(false);
+    });
+
+    it('prunes plan items and their associated comments older than the threshold date', () => {
+      const thresholdDate = '2026-09-15';
+
+      const planItems: PlanItem[] = [
+        { id: 'item-old-1', householdCode: 'BEP-892', date: '2026-09-10', mealType: 'dinner', dishId: 'd1', createdAt: '2026-09-10T10:00:00Z' },
+        { id: 'item-old-2', householdCode: 'BEP-892', date: '2026-09-14', mealType: 'dinner', dishId: 'd2', createdAt: '2026-09-14T10:00:00Z' },
+        { id: 'item-valid-1', householdCode: 'BEP-892', date: '2026-09-15', mealType: 'dinner', dishId: 'd1', createdAt: '2026-09-15T10:00:00Z' },
+        { id: 'item-valid-2', householdCode: 'BEP-892', date: '2026-09-29', mealType: 'dinner', dishId: 'd3', createdAt: '2026-09-29T10:00:00Z' },
+      ];
+
+      const comments: PlanComment[] = [
+        { id: 'c-old-1', householdCode: 'BEP-892', planItemId: 'item-old-1', authorNickname: 'Mẹ', content: 'Ghi chú cũ 1', createdAt: '2026-09-10T10:05:00Z' },
+        { id: 'c-old-2', householdCode: 'BEP-892', planItemId: 'item-old-2', authorNickname: 'Bố', content: 'Ghi chú cũ 2', createdAt: '2026-09-14T10:05:00Z' },
+        { id: 'c-valid-1', householdCode: 'BEP-892', planItemId: 'item-valid-1', authorNickname: 'Mẹ', content: 'Ghi chú giữ lại', createdAt: '2026-09-15T10:05:00Z' },
+      ];
+
+      const { remainingItems, remainingComments } = pruneExpiredPlanData(planItems, comments, thresholdDate);
+
+      // Old items are pruned, items on or after threshold are kept
+      expect(remainingItems).toHaveLength(2);
+      expect(remainingItems.map((i) => i.id)).toEqual(['item-valid-1', 'item-valid-2']);
+
+      // Comments for pruned items are also pruned
+      expect(remainingComments).toHaveLength(1);
+      expect(remainingComments[0].id).toBe('c-valid-1');
     });
   });
 });

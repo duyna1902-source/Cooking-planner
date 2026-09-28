@@ -10,6 +10,8 @@ import {
   filterCommentsForPlanItem,
   deleteCommentsForPlanItem,
   deleteCommentsForPlanItems,
+  getRetentionThresholdDate,
+  pruneExpiredPlanData,
 } from '../domain/plan';
 
 export interface PlanRepository {
@@ -35,6 +37,7 @@ export interface PlanRepository {
     content: string
   ): Promise<PlanComment>;
   deleteCommentsByPlanItemId(householdCode: string, planItemId: string): Promise<void>;
+  pruneOldHistory(householdCode: string, basePlanningDate: string): Promise<{ prunedCount: number }>;
 }
 
 export class InMemoryPlanRepository implements PlanRepository {
@@ -115,6 +118,27 @@ export class InMemoryPlanRepository implements PlanRepository {
 
   async deleteCommentsByPlanItemId(householdCode: string, planItemId: string): Promise<void> {
     this.comments = deleteCommentsForPlanItem(this.comments, householdCode, planItemId);
+  }
+
+  async pruneOldHistory(householdCode: string, basePlanningDate: string): Promise<{ prunedCount: number }> {
+    const thresholdDate = getRetentionThresholdDate(basePlanningDate);
+    const householdItems = this.items.filter((i) => i.householdCode === householdCode);
+    const otherItems = this.items.filter((i) => i.householdCode !== householdCode);
+
+    const householdComments = this.comments.filter((c) => c.householdCode === householdCode);
+    const otherComments = this.comments.filter((c) => c.householdCode !== householdCode);
+
+    const { remainingItems, remainingComments } = pruneExpiredPlanData(
+      householdItems,
+      householdComments,
+      thresholdDate
+    );
+
+    const prunedCount = householdItems.length - remainingItems.length;
+    this.items = [...otherItems, ...remainingItems];
+    this.comments = [...otherComments, ...remainingComments];
+
+    return { prunedCount };
   }
 }
 
@@ -247,6 +271,25 @@ export class LocalStoragePlanRepository implements PlanRepository {
     const comments = this.readComments(householdCode);
     const updatedComments = deleteCommentsForPlanItem(comments, householdCode, planItemId);
     this.writeComments(householdCode, updatedComments);
+  }
+
+  async pruneOldHistory(householdCode: string, basePlanningDate: string): Promise<{ prunedCount: number }> {
+    const thresholdDate = getRetentionThresholdDate(basePlanningDate);
+    const items = this.readItems(householdCode);
+    const comments = this.readComments(householdCode);
+
+    const { remainingItems, remainingComments } = pruneExpiredPlanData(items, comments, thresholdDate);
+    const itemsChanged = items.length !== remainingItems.length;
+    const commentsChanged = comments.length !== remainingComments.length;
+
+    if (itemsChanged) {
+      this.writeItems(householdCode, remainingItems);
+    }
+    if (commentsChanged) {
+      this.writeComments(householdCode, remainingComments);
+    }
+
+    return { prunedCount: items.length - remainingItems.length };
   }
 }
 

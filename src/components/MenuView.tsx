@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Dish, DishInput, filterDishes } from '../domain/dish';
 import { DishRepository, defaultDishRepository } from '../services/dishRepository';
+import { PlanRepository, defaultPlanRepository } from '../services/planRepository';
 import { DishModal } from './DishModal';
 import { BookOpen, Plus, Search, Trash2, Edit3, X, Utensils } from 'lucide-react';
 
 interface MenuViewProps {
   householdCode?: string;
   dishRepository?: DishRepository;
+  planRepository?: PlanRepository;
 }
 
 export const MenuView: React.FC<MenuViewProps> = ({
   householdCode = '',
   dishRepository = defaultDishRepository,
+  planRepository = defaultPlanRepository,
 }) => {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,7 +67,10 @@ export const MenuView: React.FC<MenuViewProps> = ({
 
   const handleConfirmDelete = async () => {
     if (!householdCode || !dishToDelete) return;
-    await dishRepository.deleteDish(householdCode, dishToDelete.id);
+    await Promise.all([
+      dishRepository.deleteDish(householdCode, dishToDelete.id),
+      planRepository.deletePlanItemsByDishId(householdCode, dishToDelete.id),
+    ]);
     setDishToDelete(null);
     await loadDishes();
   };

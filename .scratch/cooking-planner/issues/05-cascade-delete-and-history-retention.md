@@ -6,10 +6,10 @@
 
 **Blocked by:** 04: Chi tiết Món ăn và Ô nhập Comment dặn dò trong Kế hoạch
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Khi một Món ăn bị xóa khỏi Menu, nó lập tức bị gỡ khỏi mọi Kế hoạch bữa ăn đã xếp ở các tuần
-- [ ] Mọi bình luận dặn dò gắn với Món ăn bị xóa đó trong Kế hoạch cũng bị xóa sạch theo
-- [ ] Nút điều hướng lùi tuần trên màn hình Kế hoạch bị vô hiệu hóa khi chạm giới hạn 2 tuần trước tính từ ngày đang lên plan
-- [ ] Hệ thống tự động lọc bỏ và dọn dẹp các bản ghi Kế hoạch cũ hơn 14 ngày
-- [ ] Có bộ test tích hợp bao phủ toàn diện tính năng Cascade Delete và chặn biên thời gian 2 tuần
+- [x] Khi một Món ăn bị xóa khỏi Menu, nó lập tức bị gỡ khỏi mọi Kế hoạch bữa ăn đã xếp ở các tuần
+- [x] Mọi bình luận dặn dò gắn với Món ăn bị xóa đó trong Kế hoạch cũng bị xóa sạch theo
+- [x] Nút điều hướng lùi tuần trên màn hình Kế hoạch bị vô hiệu hóa khi chạm giới hạn 2 tuần trước tính từ ngày đang lên plan
+- [x] Hệ thống tự động lọc bỏ và dọn dẹp các bản ghi Kế hoạch cũ hơn 14 ngày
+- [x] Có bộ test tích hợp bao phủ toàn diện tính năng Cascade Delete và chặn biên thời gian 2 tuần

@@ -66,6 +66,10 @@ export const App: React.FC<AppProps> = ({
     setIsInitialized(true);
   }, [storage, initialUrl]);
 
+  useEffect(() => {
+    dishRepository.setPlanRepository?.(planRepository);
+  }, [dishRepository, planRepository]);
+
   const handleOnboardingComplete = (code: string, nick: string) => {
     storage.setHouseholdCode(code);
     storage.setNickname(nick);
@@ -128,7 +132,11 @@ export const App: React.FC<AppProps> = ({
               planRepository={planRepository}
             />
           ) : (
-            <MenuView householdCode={householdCode || ''} dishRepository={dishRepository} />
+            <MenuView
+              householdCode={householdCode || ''}
+              dishRepository={dishRepository}
+              planRepository={planRepository}
+            />
           )}
         </main>
 

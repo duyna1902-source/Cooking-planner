@@ -1,17 +1,25 @@
 import { Dish, DishInput, createDishEntity, updateDishEntity } from '../domain/dish';
+import { PlanRepository, defaultPlanRepository } from './planRepository';
 
 export interface DishRepository {
   getDishes(householdCode: string): Promise<Dish[]>;
   addDish(householdCode: string, input: DishInput): Promise<Dish>;
   updateDish(householdCode: string, id: string, input: DishInput): Promise<Dish>;
   deleteDish(householdCode: string, id: string): Promise<void>;
+  setPlanRepository?(planRepository: PlanRepository): void;
 }
 
 export class InMemoryDishRepository implements DishRepository {
   private dishes: Dish[] = [];
+  private planRepository?: PlanRepository;
 
-  constructor(initialDishes: Dish[] = []) {
+  constructor(initialDishes: Dish[] = [], planRepository?: PlanRepository) {
     this.dishes = [...initialDishes];
+    this.planRepository = planRepository;
+  }
+
+  setPlanRepository(planRepository: PlanRepository): void {
+    this.planRepository = planRepository;
   }
 
   async getDishes(householdCode: string): Promise<Dish[]> {
@@ -37,10 +45,23 @@ export class InMemoryDishRepository implements DishRepository {
 
   async deleteDish(householdCode: string, id: string): Promise<void> {
     this.dishes = this.dishes.filter((d) => !(d.householdCode === householdCode && d.id === id));
+    if (this.planRepository) {
+      await this.planRepository.deletePlanItemsByDishId(householdCode, id);
+    }
   }
 }
 
 export class LocalStorageDishRepository implements DishRepository {
+  private planRepository?: PlanRepository;
+
+  constructor(planRepository?: PlanRepository) {
+    this.planRepository = planRepository;
+  }
+
+  setPlanRepository(planRepository: PlanRepository): void {
+    this.planRepository = planRepository;
+  }
+
   private getStorageKey(householdCode: string): string {
     return `cooking_plan_dishes_${householdCode}`;
   }
@@ -92,7 +113,10 @@ export class LocalStorageDishRepository implements DishRepository {
     const dishes = this.readDishes(householdCode);
     const filtered = dishes.filter((d) => d.id !== id);
     this.writeDishes(householdCode, filtered);
+    if (this.planRepository) {
+      await this.planRepository.deletePlanItemsByDishId(householdCode, id);
+    }
   }
 }
 
-export const defaultDishRepository = new LocalStorageDishRepository();
+export const defaultDishRepository = new LocalStorageDishRepository(defaultPlanRepository);

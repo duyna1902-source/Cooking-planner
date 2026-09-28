@@ -7,6 +7,7 @@ import {
   parseISODate,
   getShiftedWeekDate,
   groupPlanItemsByMeal,
+  canNavigatePrevWeek,
 } from '../domain/plan';
 import { Dish } from '../domain/dish';
 import { DishRepository, defaultDishRepository } from '../services/dishRepository';
@@ -62,6 +63,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
 
     try {
       setIsLoading(true);
+      await planRepository.pruneOldHistory(householdCode, initialIso);
       const [fetchedDishes, fetchedPlans] = await Promise.all([
         dishRepository.getDishes(householdCode),
         planRepository.getPlanItems(householdCode),
@@ -73,11 +75,16 @@ export const PlanView: React.FC<PlanViewProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [householdCode, dishRepository, planRepository]);
+  }, [householdCode, initialIso, dishRepository, planRepository]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Check 2-week history boundary
+  const canGoPrev = useMemo(() => {
+    return canNavigatePrevWeek(activeDate, initialIso);
+  }, [activeDate, initialIso]);
 
   // Group plan items by meal for the active date
   const groupedPlan = useMemo(() => {
@@ -107,6 +114,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
   };
 
   const handlePrevWeek = () => {
+    if (!canGoPrev) return;
     setActiveDate(getShiftedWeekDate(activeDate, -1));
     setActiveMeal('dinner');
   };
@@ -157,7 +165,12 @@ export const PlanView: React.FC<PlanViewProps> = ({
             data-testid="prev-week-btn"
             title="Tuần trước"
             aria-label="Tuần trước"
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition"
+            disabled={!canGoPrev}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition ${
+              canGoPrev
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                : 'bg-slate-50 text-slate-300 cursor-not-allowed opacity-50'
+            }`}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
