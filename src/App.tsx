@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HouseholdStorage, defaultHouseholdStorage } from './services/storage';
+import { DishRepository, defaultDishRepository } from './services/dishRepository';
 import { extractJoinCodeFromSearch } from './domain/household';
 import { AppHeader } from './components/AppHeader';
 import { BottomNav, NavigationTab } from './components/BottomNav';
@@ -10,11 +11,13 @@ import { MenuView } from './components/MenuView';
 
 export interface AppProps {
   storage?: HouseholdStorage;
+  dishRepository?: DishRepository;
   initialUrl?: string;
 }
 
 export const App: React.FC<AppProps> = ({
   storage = defaultHouseholdStorage,
+  dishRepository = defaultDishRepository,
   initialUrl
 }) => {
   const [householdCode, setHouseholdCode] = useState<string | null>(null);
@@ -114,7 +117,11 @@ export const App: React.FC<AppProps> = ({
 
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col overflow-y-auto">
-          {activeTab === 'plan' ? <PlanView /> : <MenuView />}
+          {activeTab === 'plan' ? (
+            <PlanView />
+          ) : (
+            <MenuView householdCode={householdCode || ''} dishRepository={dishRepository} />
+          )}
         </main>
 
         {/* Bottom Navigation */}
