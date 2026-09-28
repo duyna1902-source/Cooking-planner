@@ -108,12 +108,12 @@ describe('PlanRepository', () => {
       const item1Id = dishesH1[0].id;
       const item2Id = dishesH1[1].id;
 
-      await repo.addComment('BEP-111', item1Id, 'Mẹ', 'Comment cho món 1');
-      await repo.addComment('BEP-111', item2Id, 'Mẹ', 'Comment cho món 2');
+      await repo.addComment('BEP-111', item1Id, 'Mẹ', 'Comment cho Món ăn 1');
+      await repo.addComment('BEP-111', item2Id, 'Mẹ', 'Comment cho Món ăn 2');
 
       const commentsItem1 = await repo.getComments('BEP-111', item1Id);
       expect(commentsItem1).toHaveLength(1);
-      expect(commentsItem1[0].content).toBe('Comment cho món 1');
+      expect(commentsItem1[0].content).toBe('Comment cho Món ăn 1');
 
       const commentsOtherHousehold = await repo.getComments('BEP-222', item1Id);
       expect(commentsOtherHousehold).toHaveLength(0);

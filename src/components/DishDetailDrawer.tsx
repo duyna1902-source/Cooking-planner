@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { PlanComment, formatCommentTimestamp } from '../domain/plan';
 import { PlanRepository } from '../services/planRepository';
-import { Send, MessageSquare } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 export interface DishDetailDrawerProps {
   isOpen: boolean;
@@ -74,13 +74,6 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   return (
     <div
       data-testid="dish-detail-drawer"
@@ -131,15 +124,9 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
           ) : comments.length === 0 ? (
             <div
               data-testid="empty-comments-msg"
-              className="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5"
+              className="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center"
             >
-              <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                <MessageSquare className="w-4 h-4" />
-              </div>
-              <p className="font-medium text-slate-600">Chưa có dặn dò nào cho Món ăn này</p>
-              <p className="text-[11px] text-slate-400">
-                Nhập ghi chú bên dưới để cả nhà cùng biết cách nấu nhé!
-              </p>
+              <p className="font-medium text-slate-500">Chưa có dặn dò nào cho Món ăn này</p>
             </div>
           ) : (
             comments.map((comment) => (
@@ -174,7 +161,6 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
               data-testid="comment-input"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={handleKeyDown}
               rows={2}
               placeholder="Dặn dò cách nấu, chuẩn bị nguyên liệu..."
               className="flex-1 bg-transparent text-xs text-slate-800 placeholder-slate-400 focus:outline-none resize-none p-1"
@@ -193,9 +179,6 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
               <Send className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-[10px] text-slate-400 mt-1.5 px-1">
-            Gửi với tư cách: <span className="font-semibold text-slate-600">{nickname.trim() || 'Chưa đặt biệt danh'}</span>
-          </p>
         </form>
       </div>
     </div>
