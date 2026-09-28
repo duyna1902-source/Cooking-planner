@@ -9,10 +9,10 @@ CREATE TABLE IF NOT EXISTS households (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 2. BẢNG DISHES (Danh mục Món ăn trong Menu gia đình)
+-- 2. BẢNG DISHES (Món ăn trong Menu gia đình)
 CREATE TABLE IF NOT EXISTS dishes (
   id TEXT PRIMARY KEY,
-  household_code TEXT NOT NULL REFERENCES households(code) ON DELETE CASCADE,
+  household_code TEXT NOT NULL,
   name TEXT NOT NULL,
   tag TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
@@ -24,7 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_dishes_household_code ON dishes(household_code);
 -- Ràng buộc: Khi xóa Món ăn (dishes), tự động xóa sạch khỏi Kế hoạch (ON DELETE CASCADE)
 CREATE TABLE IF NOT EXISTS plan_items (
   id TEXT PRIMARY KEY,
-  household_code TEXT NOT NULL REFERENCES households(code) ON DELETE CASCADE,
+  household_code TEXT NOT NULL,
   date TEXT NOT NULL, -- Định dạng chuẩn ISO YYYY-MM-DD
   meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner')),
   dish_id TEXT NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
@@ -35,11 +35,11 @@ CREATE TABLE IF NOT EXISTS plan_items (
 CREATE INDEX IF NOT EXISTS idx_plan_items_lookup ON plan_items(household_code, date);
 CREATE INDEX IF NOT EXISTS idx_plan_items_dish_id ON plan_items(dish_id);
 
--- 4. BẢNG PLAN_COMMENTS (Dặn dò, ghi chú cách nấu / đi chợ cho từng món trong kế hoạch)
--- Ràng buộc: Khi món ăn bị gỡ khỏi bữa ăn, các bình luận dặn dò tự động xóa (ON DELETE CASCADE)
+-- 4. BẢNG PLAN_COMMENTS (Dặn dò, ghi chú cách nấu / đi chợ cho từng Món ăn trong Kế hoạch)
+-- Ràng buộc: Khi Món ăn bị gỡ khỏi bữa ăn, các bình luận dặn dò tự động xóa (ON DELETE CASCADE)
 CREATE TABLE IF NOT EXISTS plan_comments (
   id TEXT PRIMARY KEY,
-  household_code TEXT NOT NULL REFERENCES households(code) ON DELETE CASCADE,
+  household_code TEXT NOT NULL,
   plan_item_id TEXT NOT NULL REFERENCES plan_items(id) ON DELETE CASCADE,
   author_nickname TEXT NOT NULL,
   content TEXT NOT NULL,

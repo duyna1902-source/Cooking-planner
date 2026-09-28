@@ -22,6 +22,7 @@ export function mapDishRowToEntity(row: DishRow): Dish {
 }
 
 export class SupabaseDishRepository implements DishRepository {
+  readonly isOnline = true;
   private client: SupabaseClient;
   private planRepository?: PlanRepository;
 

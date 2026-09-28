@@ -3,8 +3,6 @@ import { HouseholdStorage, defaultHouseholdStorage } from './services/storage';
 import { DishRepository } from './services/dishRepository';
 import { PlanRepository } from './services/planRepository';
 import { resolveRepositories } from './services/repositoryFactory';
-import { SupabaseDishRepository } from './services/supabaseDishRepository';
-import { SupabasePlanRepository } from './services/supabasePlanRepository';
 import { extractJoinCodeFromSearch } from './domain/household';
 import { AppHeader } from './components/AppHeader';
 import { BottomNav, NavigationTab } from './components/BottomNav';
@@ -34,14 +32,10 @@ export const App: React.FC<AppProps> = ({
 
   const activeIsOnline = useMemo(() => {
     if (isOnline !== undefined) return isOnline;
-    if (activeDishRepo instanceof SupabaseDishRepository || activePlanRepo instanceof SupabasePlanRepository) {
-      return true;
-    }
-    if (!dishRepository && !planRepository) {
-      return resolved.isOnline;
-    }
-    return false;
-  }, [isOnline, activeDishRepo, activePlanRepo, dishRepository, planRepository, resolved.isOnline]);
+    if (activeDishRepo.isOnline !== undefined) return activeDishRepo.isOnline;
+    if (activePlanRepo.isOnline !== undefined) return activePlanRepo.isOnline;
+    return resolved.isOnline;
+  }, [isOnline, activeDishRepo.isOnline, activePlanRepo.isOnline, resolved.isOnline]);
   const [householdCode, setHouseholdCode] = useState<string | null>(null);
   const [nickname, setNickname] = useState<string | null>(null);
   const [joinCodeFromUrl, setJoinCodeFromUrl] = useState<string | null>(null);

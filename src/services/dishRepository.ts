@@ -2,6 +2,7 @@ import { Dish, DishInput, createDishEntity, updateDishEntity } from '../domain/d
 import { PlanRepository, defaultPlanRepository } from './planRepository';
 
 export interface DishRepository {
+  readonly isOnline?: boolean;
   getDishes(householdCode: string): Promise<Dish[]>;
   addDish(householdCode: string, input: DishInput): Promise<Dish>;
   updateDish(householdCode: string, id: string, input: DishInput): Promise<Dish>;
@@ -11,6 +12,7 @@ export interface DishRepository {
 }
 
 export class InMemoryDishRepository implements DishRepository {
+  readonly isOnline = false;
   private dishes: Dish[] = [];
   private planRepository?: PlanRepository;
 
@@ -57,6 +59,7 @@ export class InMemoryDishRepository implements DishRepository {
 }
 
 export class LocalStorageDishRepository implements DishRepository {
+  readonly isOnline = false;
   private planRepository?: PlanRepository;
 
   constructor(planRepository?: PlanRepository) {

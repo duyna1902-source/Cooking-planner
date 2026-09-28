@@ -15,6 +15,7 @@ import {
 } from '../domain/plan';
 
 export interface PlanRepository {
+  readonly isOnline?: boolean;
   getPlanItems(householdCode: string, startDate?: string, endDate?: string): Promise<PlanItem[]>;
   addDishesToMeal(
     householdCode: string,
@@ -42,6 +43,7 @@ export interface PlanRepository {
 }
 
 export class InMemoryPlanRepository implements PlanRepository {
+  readonly isOnline = false;
   private items: PlanItem[] = [];
   private comments: PlanComment[] = [];
 
@@ -148,6 +150,7 @@ export class InMemoryPlanRepository implements PlanRepository {
 }
 
 export class LocalStoragePlanRepository implements PlanRepository {
+  readonly isOnline = false;
   private getStorageKey(householdCode: string): string {
     return `cooking_plan_items_${householdCode}`;
   }

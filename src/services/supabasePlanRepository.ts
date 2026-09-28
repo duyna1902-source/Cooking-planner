@@ -51,6 +51,7 @@ export function mapCommentRowToEntity(row: PlanCommentRow): PlanComment {
 }
 
 export class SupabasePlanRepository implements PlanRepository {
+  readonly isOnline = true;
   private client: SupabaseClient;
 
   constructor(client: SupabaseClient) {
@@ -102,7 +103,7 @@ export class SupabasePlanRepository implements PlanRepository {
       .eq('meal_type', mealType);
 
     if (checkError) {
-      throw new Error(`Lỗi kiểm tra món trong bữa ăn: ${checkError.message}`);
+      throw new Error(`Lỗi kiểm tra Món ăn trong bữa ăn: ${checkError.message}`);
     }
 
     const existingDishIds = new Set((existingRows || []).map((r: any) => r.dish_id));
@@ -149,7 +150,7 @@ export class SupabasePlanRepository implements PlanRepository {
       .eq('dish_id', dishId);
 
     if (error) {
-      throw new Error(`Lỗi gỡ món khỏi bữa ăn: ${error.message}`);
+      throw new Error(`Lỗi gỡ Món ăn khỏi bữa ăn: ${error.message}`);
     }
   }
 
@@ -161,7 +162,7 @@ export class SupabasePlanRepository implements PlanRepository {
       .eq('dish_id', dishId);
 
     if (error) {
-      throw new Error(`Lỗi xóa món khỏi Kế hoạch: ${error.message}`);
+      throw new Error(`Lỗi xóa Món ăn khỏi Kế hoạch: ${error.message}`);
     }
   }
 
