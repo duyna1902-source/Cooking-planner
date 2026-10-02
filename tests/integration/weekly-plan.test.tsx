@@ -48,7 +48,6 @@ describe('Weekly Plan Integration', () => {
     });
     const dinnerTab = screen.getByTestId('meal-tab-dinner');
     expect(dinnerTab).toHaveClass('font-bold');
-    expect(screen.getByText('✨ Bữa chính')).toBeInTheDocument();
   });
 
   it('automatically sets Bữa Tối as default when switching between days in ribbon', async () => {

@@ -51,6 +51,9 @@ describe('Cascade Delete and Two-Week History Retention Integration (Ticket 05)'
         />
       );
 
+      // Select Tuesday 29/09 where dish is scheduled
+      await user.click(await screen.findByTestId('day-btn-1'));
+
       // Verify dish is visible in current week's plan
       await waitFor(() => {
         expect(screen.getByText('Thịt kho tàu')).toBeInTheDocument();
@@ -92,6 +95,7 @@ describe('Cascade Delete and Two-Week History Retention Integration (Ticket 05)'
       // 8. Switch back to Plan tab and confirm UI shows 0 Món ăn
       const planTab = screen.getByTestId('nav-plan-button');
       await user.click(planTab);
+      await user.click(await screen.findByTestId('day-btn-1'));
 
       await waitFor(() => {
         expect(screen.queryByText('Thịt kho tàu')).not.toBeInTheDocument();
