@@ -7,6 +7,41 @@ export interface HouseholdSession {
   nickname: string;
 }
 
+export interface Household {
+  code: string;
+  members: string[];
+  createdAt?: string;
+}
+
+export function createHouseholdEntity(code: string, members: string[] = []): Household {
+  const normalized = normalizeHouseholdCode(code);
+  const cleanMembers = members
+    .map((m) => m.trim())
+    .filter((m) => m.length > 0);
+
+  return {
+    code: normalized,
+    members: Array.from(new Set(cleanMembers)),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export function addMemberToHousehold(household: Household, newMemberName: string): Household {
+  const trimmed = newMemberName.trim();
+  if (!trimmed || !isValidNickname(trimmed)) {
+    throw new Error('Tên thành viên không hợp lệ');
+  }
+
+  if (household.members.includes(trimmed)) {
+    return household;
+  }
+
+  return {
+    ...household,
+    members: [...household.members, trimmed],
+  };
+}
+
 /**
  * Generate a friendly household code like 'BEP-892'
  */

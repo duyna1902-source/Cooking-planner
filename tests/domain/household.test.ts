@@ -5,10 +5,35 @@ import {
   isValidHouseholdCode,
   isValidNickname,
   createShareUrl,
-  extractJoinCodeFromSearch
+  extractJoinCodeFromSearch,
+  createHouseholdEntity,
+  addMemberToHousehold,
+  Household
 } from '../../src/domain/household';
 
 describe('Household domain logic', () => {
+  it('creates household entity with members array', () => {
+    const household = createHouseholdEntity('BEP-892', ['Mẹ', 'Bố']);
+    expect(household.code).toBe('BEP-892');
+    expect(household.members).toEqual(['Mẹ', 'Bố']);
+    expect(household.createdAt).toBeDefined();
+  });
+
+  it('adds a new member to household without duplicates and trimmed', () => {
+    const household = createHouseholdEntity('BEP-892', ['Mẹ']);
+    const updated = addMemberToHousehold(household, '  Bố  ');
+    expect(updated.members).toEqual(['Mẹ', 'Bố']);
+
+    // duplicate member is not added again
+    const same = addMemberToHousehold(updated, 'Mẹ');
+    expect(same.members).toEqual(['Mẹ', 'Bố']);
+  });
+
+  it('throws error when adding invalid member name', () => {
+    const household = createHouseholdEntity('BEP-892', ['Mẹ']);
+    expect(() => addMemberToHousehold(household, '')).toThrow('Tên thành viên không hợp lệ');
+    expect(() => addMemberToHousehold(household, '   ')).toThrow('Tên thành viên không hợp lệ');
+  });
   it('generates a valid household code formatted as BEP-XXX', () => {
     const code = generateHouseholdCode();
     expect(code).toMatch(/^BEP-\d{3}$/);

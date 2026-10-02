@@ -36,14 +36,22 @@ Một ứng dụng web di động (Mobile-first PWA) tinh gọn, dùng chung cho
 22. As a mobile phone user, I want the web app to be fully responsive and installable as a PWA, so that I can launch it from my home screen just like a native mobile app.
 23. As a family member, I want to search dishes by name or category tag in the dish selection drawer, so that I can quickly find and add dishes to a meal without endless scrolling.
 24. As a family member, I want to search dishes by name or category tag directly on the Menu screen, so that I can quickly locate specific dishes in our family catalog to view, edit, or manage them.
+25. As a family member, I want to see the Netflix-style "Ai đang sử dụng?" member selection screen upon opening the app, so that I can easily tap my avatar to enter the session as myself.
+26. As a family member, I want to add a new member profile with a custom name directly on the member selection screen, so that new family members can easily join our household space.
+27. As a family member, I want my active profile name displayed as a subtle rounded pill button in the top-right header, and be able to tap it at any time to return to the member selection screen and switch profiles.
+28. As a family member, I want to be prompted with "Ai sẽ nấu ngày này?" when selecting an unassigned future day, while having a "Để sau" option if we haven't decided yet.
+29. As a family member, I want the assigned cook's name to appear as a floating pill badge directly above the day on the ribbon, with a dedicated button in the day detail view to assign, change, or unassign the cook.
 
 ## Implementation Decisions
 
 ### Visual Identity and UI Layout
-- **Design Layout**: Selected **Variant A (Ribbon Date Bar + Bottom Sheet Drawer)**. The top features a smooth horizontal date ribbon for rapid day switching; the bottom sheet drawer slides up smoothly for dish picking on mobile devices.
+- **Design Layout**: Selected **Variant A (Ribbon Date Bar + Bottom Sheet Drawer + Floating Pill Cook Badge)**.
+- **Header Bar**: Top-left contains a clean household code pill (`🏠 Mã: CODE`) without persistent 'Online' text (an alert banner is conditionally shown when offline). Top-right contains the share link button and the active member profile pill button (subtle elevation, rounded-full, clicking opens the member selection screen).
+- **Netflix-Style Member Selection ("Ai đang sử dụng?")**: Displays avatar grid of all household members with distinct pastel colors, plus a "+ Thêm người" button for creating new members.
+- **Cook of the Day Badge**: A floating pill badge (`[ Tôm ]`) positioned above the date pill in the ribbon. A dedicated button in the day detail view allows assigning, changing, or unassigning the cook at any time.
 - **Color Palette**: Harmonious pastel scheme combining **Dusty/Slate Blue** (`#5B7C99`, deep slate `#334E68`, soft tint `#EBF1F6`) and **Soft Pastel Cream** (`#FEF7DC`, soft border `#EFE4B5`, active hover `#FDF2C7`).
 - **Button Styling**: Softly rounded pill aesthetics (`rounded-full` and `rounded-2xl`) with gentle shadows.
-- **Dish Search**: An instant real-time search input field positioned both at the top of the dish selection drawer (filtering dishes to add to a meal) and on the main Menu management screen (filtering the household catalog by dish name and tag).
+- **Dish Search**: Real-time search filter implemented both in the Dish Selection Drawer and on the Menu Screen.
 
 ### Architectural Shape and Technology Choices
 - **Frontend & PWA**: Mobile-first Responsive Web Application built with React and Tailwind CSS, configured with a Web App Manifest and Service Worker for PWA installation on iOS and Android.

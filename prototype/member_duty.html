@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cooking Plan - Bản Thiết Kế Hoàn Chỉnh (Chốt Phương Án A)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col items-center justify-start p-2 sm:p-6 pb-20">
+
+  <!-- Header Info -->
+  <header class="w-full max-w-md mb-3 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white shadow-xs border border-slate-200 text-xs text-slate-600 mb-1.5">
+      <span class="w-2.5 h-2.5 rounded-full bg-[#FEF7DC] border border-[#E8DCA8]"></span>
+      Phương Án A: <b>Tiêu đề "Ai đang sử dụng?"</b> & <b>Header Tối Giản</b>
+    </div>
+    <h1 class="text-xl font-bold text-[#334E68]">Bản Thiết Kế Hoàn Chỉnh Đã Chốt</h1>
+    <p class="text-xs text-slate-500">Phân Chia Người Nấu & Chọn Thành Viên Kiểu Netflix</p>
+  </header>
+
+  <!-- Mobile Phone Container -->
+  <div class="w-full max-w-[400px] bg-white rounded-[44px] shadow-2xl border-[7px] border-slate-800 overflow-hidden relative flex flex-col h-[800px]">
+    
+    <!-- Phone Top Status Bar -->
+    <div class="w-full bg-slate-900 pt-3 pb-2 px-6 flex items-center justify-between text-white text-[11px] select-none z-30">
+      <span class="font-medium">19:30</span>
+      <div class="w-20 h-4 bg-black rounded-full mx-auto -mt-1"></div>
+      <div class="flex items-center gap-1">
+        <span>5G</span>
+        <div class="w-4 h-2 border border-white rounded-sm p-[1px] flex items-center"><div class="w-2.5 h-full bg-white"></div></div>
+      </div>
+    </div>
+
+    <!-- Offline Alert Banner -->
+    <div id="offline-banner" class="hidden bg-amber-50 border-b border-amber-200 px-4 py-1.5 text-center text-[11px] text-amber-800 font-semibold flex items-center justify-center gap-1.5">
+      <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+      <span>Đang chạy ngoại tuyến (Mất kết nối mạng)</span>
+    </div>
+
+    <!-- Active View -->
+    <div id="screen-container" class="flex-1 flex flex-col overflow-y-auto relative bg-[#FAFBFD]">
+      <!-- Injected dynamically -->
+    </div>
+
+    <!-- App Bottom Nav Bar -->
+    <div id="bottom-nav" class="w-full bg-white/95 backdrop-blur border-t border-slate-100 px-6 py-2.5 flex items-center justify-around z-20">
+      <button class="flex flex-col items-center gap-0.5 text-[#5B7C99] font-bold text-xs">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>Kế hoạch</span>
+      </button>
+      <button onclick="alert('Menu quản lý món ăn của gia đình.')" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-[#5B7C99] transition text-xs">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <span>Menu</span>
+      </button>
+    </div>
+
+    <!-- Phone Home Indicator Bar -->
+    <div class="w-full bg-white pb-2 flex justify-center">
+      <div class="w-32 h-1 bg-slate-300 rounded-full"></div>
+    </div>
+
+    <!-- Modal / Drawer Host -->
+    <div id="modal-host"></div>
+  </div>
+
+  <script>
+    const STATE = {
+      currentScreen: 'plan',
+      householdCode: 'BEP-515',
+      activeMember: 'Tôm',
+      members: ['Tôm', 'Mẹ', 'Bố', 'Bé Na'],
+      activeDateIndex: 4,
+      activeMeal: 'dinner',
+      isOffline: false,
+      
+      dailyCooks: {
+        0: 'Mẹ',
+        1: 'Bố',
+        2: 'Mẹ',
+        3: 'Bố',
+        4: 'Tôm',
+        5: null,
+        6: null
+      },
+
+      weekDays: [
+        { label: 'T2', num: 28, full: 'Thứ Hai, 28/09' },
+        { label: 'T3', num: 29, full: 'Thứ Ba, 29/09' },
+        { label: 'T4', num: 30, full: 'Thứ Tư, 30/09' },
+        { label: 'T5', num: 1, full: 'Thứ Năm, 01/10' },
+        { label: 'T6', num: 2, full: 'Thứ Sáu, 02/10', isToday: true },
+        { label: 'T7', num: 3, full: 'Thứ Bảy, 03/10', isFuture: true },
+        { label: 'CN', num: 4, full: 'Chủ Nhật, 04/10', isFuture: true }
+      ],
+
+      dishes: [
+        { id: 'd1', name: 'Rau muống luộc', tag: 'Rau luộc', note: 'Dặn dò Món ăn' }
+      ],
+
+      showCookPrompt: false,
+      promptDateIndex: null,
+      showAssignDrawer: false,
+      assignDrawerDateIndex: null,
+      isAddingMember: false
+    };
+
+    function navigateToScreen(screen) {
+      STATE.currentScreen = screen;
+      STATE.isAddingMember = false;
+      render();
+    }
+
+    function selectMember(name) {
+      STATE.activeMember = name;
+      STATE.currentScreen = 'plan';
+      render();
+    }
+
+    function addNewMember(name) {
+      const trimmed = name.trim();
+      if (!trimmed || STATE.members.includes(trimmed)) return;
+      STATE.members.push(trimmed);
+      STATE.activeMember = trimmed;
+      STATE.isAddingMember = false;
+      STATE.currentScreen = 'plan';
+      render();
+    }
+
+    function handleSelectDate(idx) {
+      STATE.activeDateIndex = idx;
+      STATE.activeMeal = 'dinner';
+
+      const day = STATE.weekDays[idx];
+      const hasCook = Boolean(STATE.dailyCooks[idx]);
+
+      if (day.isFuture && !hasCook) {
+        STATE.promptDateIndex = idx;
+        STATE.showCookPrompt = true;
+      }
+      render();
+    }
+
+    function assignCookToDate(dateIdx, cookName) {
+      STATE.dailyCooks[dateIdx] = cookName;
+      STATE.showCookPrompt = false;
+      STATE.showAssignDrawer = false;
+      render();
+    }
+
+    function unassignCook(dateIdx) {
+      STATE.dailyCooks[dateIdx] = null;
+      STATE.showAssignDrawer = false;
+      render();
+    }
+
+    function openAssignDrawer(dateIdx) {
+      STATE.assignDrawerDateIndex = dateIdx;
+      STATE.showAssignDrawer = true;
+      render();
+    }
+
+    function closeModals() {
+      STATE.showCookPrompt = false;
+      STATE.showAssignDrawer = false;
+      render();
+    }
+
+    function renderMemberSelectionScreen() {
+      return `
+        <div class="flex-1 flex flex-col justify-center items-center px-6 py-10 bg-gradient-to-b from-[#FAFBFD] to-white relative">
+          
+          <button onclick="navigateToScreen('plan')" class="absolute top-5 left-5 text-xs text-slate-400 hover:text-slate-700 flex items-center gap-1 font-medium">
+            ← Quay lại Kế hoạch
+          </button>
+
+          <div class="px-3 py-1 rounded-full bg-[#FEF7DC] border border-[#EFE4B5] text-[11px] font-bold text-[#334E68] mb-4">
+            NHÀ: ${STATE.householdCode}
+          </div>
+
+          <!-- Updated Title: 'Ai đang sử dụng?' -->
+          <h2 class="text-2xl font-extrabold text-[#334E68] text-center mb-1">Ai đang sử dụng?</h2>
+          <p class="text-xs text-slate-400 text-center mb-8">Chọn hồ sơ thành viên của bạn để tiếp tục</p>
+
+          <div class="grid grid-cols-2 gap-4 w-full max-w-[280px]">
+            ${STATE.members.map((m, idx) => {
+              const isSelected = m === STATE.activeMember;
+              const avatarColors = [
+                { bg: 'bg-[#5B7C99]', text: 'text-white' },
+                { bg: 'bg-[#FEF7DC]', text: 'text-[#334E68]' },
+                { bg: 'bg-[#F28E79]', text: 'text-white' },
+                { bg: 'bg-[#7E9BB6]', text: 'text-white' }
+              ];
+              const color = avatarColors[idx % avatarColors.length];
+
+              return `
+                <button onclick="selectMember('${m}')" class="group flex flex-col items-center p-3.5 rounded-3xl transition-all active:scale-95 ${
+                  isSelected ? 'bg-white shadow-md border-2 border-[#5B7C99]' : 'bg-slate-50/80 hover:bg-white hover:shadow-xs border border-slate-100'
+                }">
+                  <div class="w-16 h-16 rounded-2xl ${color.bg} ${color.text} flex items-center justify-center text-xl font-extrabold shadow-xs transition group-hover:scale-105 mb-2">
+                    ${m.charAt(0)}
+                  </div>
+                  <span class="text-xs font-bold text-[#334E68] truncate max-w-[90px]">${m}</span>
+                  ${isSelected ? `<span class="text-[9px] text-[#5B7C99] font-bold mt-0.5">Đang chọn</span>` : ''}
+                </button>
+              `;
+            }).join('')}
+
+            <button onclick="STATE.isAddingMember = true; render();" class="flex flex-col items-center justify-center p-3.5 rounded-3xl border-2 border-dashed border-slate-200 hover:border-[#5B7C99] transition-all bg-white hover:bg-slate-50 active:scale-95 min-h-[110px]">
+              <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 text-xl font-bold mb-1">
+                +
+              </div>
+              <span class="text-[11px] font-semibold text-slate-500">Thêm người</span>
+            </button>
+          </div>
+
+          ${STATE.isAddingMember ? `
+            <div class="mt-6 w-full max-w-[280px] p-4 bg-white rounded-3xl shadow-lg border border-slate-200 animate-in fade-in duration-150">
+              <label class="text-[11px] font-bold text-[#334E68] block mb-1.5">Nhập tên thành viên mới:</label>
+              <input type="text" id="new-member-input" placeholder="Ví dụ: Em Bin, Chị Mai..." class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#5B7C99] mb-2.5" autofocus onkeydown="if(event.key==='Enter') addNewMember(this.value)">
+              <div class="flex gap-2">
+                <button onclick="STATE.isAddingMember = false; render();" class="flex-1 py-1.5 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium">Hủy</button>
+                <button onclick="addNewMember(document.getElementById('new-member-input').value)" class="flex-1 py-1.5 rounded-xl bg-[#5B7C99] text-white text-xs font-bold">Xác nhận</button>
+              </div>
+            </div>
+          ` : ''}
+
+        </div>
+      `;
+    }
+
+    function renderPlanScreen() {
+      const activeDay = STATE.weekDays[STATE.activeDateIndex];
+      const activeCook = STATE.dailyCooks[STATE.activeDateIndex];
+
+      return `
+        <!-- TOP HEADER BAR (Cleaned: removed 'Online' completely, clean household pill) -->
+        <div class="px-5 pt-4 pb-2 bg-white flex items-center justify-between">
+          
+          <!-- Top Left: Clean Household Pill (Decision 1C: No 'Online' text or persistent dot) -->
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAFBFD] border border-slate-200/80 text-xs text-slate-600">
+            <span class="text-xs">🏠 Mã: <b>${STATE.householdCode}</b></span>
+          </div>
+
+          <!-- Top Right: Share Button + User Profile Button -->
+          <div class="flex items-center gap-2">
+            <button onclick="alert('Đã sao chép link tham gia Nhà!')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition border border-transparent hover:border-slate-200">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+              Chia sẻ
+            </button>
+
+            <!-- User Profile Button: Rounded pill, subtle shadow, shows active member name, opens Netflix screen -->
+            <button onclick="navigateToScreen('members')" class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white hover:bg-slate-50 text-[#334E68] text-xs font-bold border border-slate-200 shadow-sm active:scale-95 transition" title="Bấm để đổi thành viên (Netflix profile)">
+              <span class="w-2 h-2 rounded-full bg-[#5B7C99]"></span>
+              <span>${STATE.activeMember}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section Title (Exact screenshot title) -->
+        <div class="px-5 pt-1 pb-1 bg-white">
+          <h2 class="text-xl font-extrabold text-[#334E68] tracking-tight">Kế hoạch tuần này</h2>
+        </div>
+
+        <!-- Subheader & Navigation (Exact match to screenshot) -->
+        <div class="px-5 pt-3 pb-2 bg-white flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-bold text-slate-400 tracking-wider uppercase block">KẾ HOẠCH</span>
+            <span class="text-base font-extrabold text-[#334E68]">${activeDay.full}</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button class="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200/80 transition" title="Tuần trước">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button class="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200/80 transition" title="Tuần sau">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- DATE RIBBON WITH FLOATING PILL BADGE (Chosen Variant A) -->
+        <div class="bg-white px-3 pt-3 pb-3 border-b border-slate-100/90 shadow-2xs">
+          <div class="flex items-end justify-between gap-1 pt-2">
+            ${STATE.weekDays.map((d, idx) => {
+              const isSelected = idx === STATE.activeDateIndex;
+              const cook = STATE.dailyCooks[idx];
+
+              return `
+                <button onclick="handleSelectDate(${idx})" class="group relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all ${
+                  isSelected 
+                    ? 'bg-[#5B7C99] text-white shadow-md scale-102 font-bold' 
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium'
+                }">
+                  
+                  <!-- Cook Badge over the pill (Floating on top) -->
+                  ${cook ? `
+                    <span class="absolute -top-2 px-1.5 py-[1px] rounded-full bg-[#FEF7DC] text-[#334E68] text-[9px] font-extrabold border border-[#EFE4B5] shadow-2xs truncate max-w-[46px]">
+                      ${cook}
+                    </span>
+                  ` : `
+                    ${isSelected ? `<span class="absolute -top-1 w-1.5 h-1.5 rounded-full bg-[#FEF7DC]"></span>` : ''}
+                  `}
+
+                  <span class="text-[10px] uppercase opacity-75">${d.label}</span>
+                  <span class="text-xs font-extrabold mt-0.5">${d.num}</span>
+                  ${isSelected ? `<span class="w-1.5 h-1.5 rounded-full bg-white mt-1"></span>` : ''}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- MAIN BODY CONTENT -->
+        <div class="p-4 flex-1 flex flex-col">
+          
+          <!-- Day Subtitle + Badge Row + Dedicated Assign Cook Button -->
+          <div class="flex items-center justify-between mb-2.5">
+            <div>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${activeDay.full}</span>
+            </div>
+
+            <!-- Right badges: Cook status + Main meal badge -->
+            <div class="flex items-center gap-1.5">
+              ${activeCook ? `
+                <button onclick="openAssignDrawer(${STATE.activeDateIndex})" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 text-[#334E68] text-[11px] font-semibold hover:bg-slate-100 transition shadow-2xs" title="Bấm để đổi người nấu">
+                  <span>👨‍🍳 ${activeCook}</span>
+                  <span class="text-[9px] text-[#5B7C99] underline">Đổi</span>
+                </button>
+              ` : `
+                <button onclick="openAssignDrawer(${STATE.activeDateIndex})" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FEF7DC] border border-[#EFE4B5] text-[#334E68] text-[11px] font-bold hover:bg-[#FDF2C7] transition shadow-2xs">
+                  <span class="text-xs">+</span>
+                  <span>Phân công nấu</span>
+                </button>
+              `}
+              <span class="text-[11px] font-bold text-[#855B32] bg-[#FEF7DC] px-2.5 py-0.5 rounded-full border border-[#EFE4B5]">✨ Bữa chính</span>
+            </div>
+          </div>
+
+          <!-- Segmented Control for Meals (Exact match to screenshot) -->
+          <div class="p-1 rounded-2xl bg-slate-100 flex gap-1 mb-4 border border-slate-200/50">
+            <button onclick="STATE.activeMeal = 'breakfast'; render();" class="flex-1 py-1.5 rounded-xl text-xs font-medium transition ${
+              STATE.activeMeal === 'breakfast' ? 'bg-white text-[#334E68] shadow-sm font-bold' : 'text-slate-500 hover:text-slate-800'
+            }">Sáng</button>
+            <button onclick="STATE.activeMeal = 'lunch'; render();" class="flex-1 py-1.5 rounded-xl text-xs font-medium transition ${
+              STATE.activeMeal === 'lunch' ? 'bg-white text-[#334E68] shadow-sm font-bold' : 'text-slate-500 hover:text-slate-800'
+            }">Trưa</button>
+            <button onclick="STATE.activeMeal = 'dinner'; render();" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition relative ${
+              STATE.activeMeal === 'dinner' ? 'bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] shadow-xs' : 'text-slate-500 hover:text-[#334E68]'
+            }">
+              Tối
+              ${STATE.activeMeal === 'dinner' ? `<span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#5B7C99]"></span>` : ''}
+            </button>
+          </div>
+
+          <!-- Meal Section Header (Exact match to screenshot) -->
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-1.5">
+              <h3 class="text-sm font-extrabold text-[#334E68]">Bữa Tối</h3>
+              <span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600 font-semibold">${STATE.dishes.length} Món ăn</span>
+            </div>
+            
+            <button onclick="alert('Mở Drawer chọn món từ Menu')" class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FEF7DC] hover:bg-[#FDF2C7] text-[#334E68] text-xs font-bold transition border border-[#EFE4B5] shadow-2xs active:scale-95">
+              <span class="text-xs">+</span>
+              Thêm món
+            </button>
+          </div>
+
+          <!-- Dish Card (Exact match to screenshot) -->
+          <div class="space-y-2.5">
+            ${STATE.dishes.map(d => `
+              <div class="bg-white border border-slate-100 p-3.5 rounded-2xl shadow-xs hover:shadow-sm transition flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-[#EBF1F6] flex items-center justify-center text-base">
+                    🍲
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-xs font-bold text-[#334E68]">${d.name}</h4>
+                      <span class="text-[10px] px-2 py-0.2 rounded-md bg-[#FEF7DC] text-[#855B32] border border-[#EFE4B5] font-medium">${d.tag}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1 flex items-center gap-1 cursor-pointer hover:text-[#5B7C99]">
+                      <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                      <span>${d.note}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <button onclick="alert('Gỡ món khỏi bữa')" class="w-8 h-8 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition" title="Gỡ món">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            `).join('')}
+          </div>
+
+        </div>
+      `;
+    }
+
+    function renderModals() {
+      const host = document.getElementById('modal-host');
+      if (!host) return;
+
+      if (STATE.showCookPrompt && STATE.promptDateIndex !== null) {
+        const day = STATE.weekDays[STATE.promptDateIndex];
+
+        host.innerHTML = `
+          <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+            <div class="bg-white rounded-3xl p-5 shadow-2xl w-full max-w-[320px] border border-slate-100 text-center animate-in zoom-in-95 duration-150">
+              
+              <div class="w-12 h-12 rounded-full bg-[#FEF7DC] border border-[#EFE4B5] text-[#334E68] flex items-center justify-center text-2xl mx-auto mb-2.5">
+                👨‍🍳
+              </div>
+
+              <h3 class="text-base font-extrabold text-[#334E68] mb-0.5">Ai sẽ nấu ngày này?</h3>
+              <p class="text-xs text-slate-400 mb-4">${day.full}</p>
+
+              <div class="grid grid-cols-2 gap-2 mb-4">
+                ${STATE.members.map(m => `
+                  <button onclick="assignCookToDate(${STATE.promptDateIndex}, '${m}')" class="p-2.5 rounded-2xl bg-slate-50 hover:bg-[#FEF7DC] hover:border-[#EFE4B5] border border-slate-200/80 text-xs font-bold text-[#334E68] transition flex items-center justify-center gap-1.5 active:scale-95">
+                    <span class="w-5 h-5 rounded-full bg-[#5B7C99] text-white text-[10px] flex items-center justify-center">${m.charAt(0)}</span>
+                    <span>${m}</span>
+                  </button>
+                `).join('')}
+              </div>
+
+              <button onclick="closeModals()" class="w-full py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition">
+                Để sau (chưa quyết định)
+              </button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (STATE.showAssignDrawer && STATE.assignDrawerDateIndex !== null) {
+        const day = STATE.weekDays[STATE.assignDrawerDateIndex];
+        const currentCook = STATE.dailyCooks[STATE.assignDrawerDateIndex];
+
+        host.innerHTML = `
+          <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex flex-col justify-end" onclick="closeModals()">
+            <div class="bg-white rounded-t-[32px] p-5 shadow-2xl flex flex-col border-t border-slate-100 animate-in slide-in-from-bottom duration-200" onclick="event.stopPropagation()">
+              <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-3"></div>
+
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                <div>
+                  <span class="text-[10px] font-bold text-[#5B7C99] uppercase tracking-wider block">Phân công người nấu</span>
+                  <h4 class="text-sm font-extrabold text-[#334E68]">${day.full}</h4>
+                </div>
+                <button onclick="closeModals()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold">✕</button>
+              </div>
+
+              <div class="space-y-2 mb-3">
+                ${STATE.members.map(m => {
+                  const isCurrent = m === currentCook;
+                  return `
+                    <button onclick="assignCookToDate(${STATE.assignDrawerDateIndex}, '${m}')" class="w-full p-3 rounded-2xl border transition flex items-center justify-between ${
+                      isCurrent ? 'bg-[#FEF7DC] border-[#EFE4B5] font-extrabold text-[#334E68]' : 'bg-slate-50 border-slate-200/60 text-slate-700 hover:bg-slate-100 font-bold'
+                    }">
+                      <div class="flex items-center gap-2.5">
+                        <span class="w-7 h-7 rounded-full bg-[#5B7C99] text-white text-xs flex items-center justify-center">${m.charAt(0)}</span>
+                        <span class="text-xs">${m}</span>
+                      </div>
+                      ${isCurrent ? `<span class="text-xs text-[#334E68] font-bold">✓ Đang nấu</span>` : `<span class="text-xs text-[#5B7C99]">+ Chọn</span>`}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+
+              ${currentCook ? `
+                <button onclick="unassignCook(${STATE.assignDrawerDateIndex})" class="w-full py-2.5 rounded-full text-red-500 hover:bg-red-50 border border-red-200 text-xs font-bold transition">
+                  Hủy phân công (để trống)
+                </button>
+              ` : ''}
+
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      host.innerHTML = '';
+    }
+
+    function render() {
+      const container = document.getElementById('screen-container');
+      const bottomNav = document.getElementById('bottom-nav');
+      if (!container) return;
+
+      if (STATE.currentScreen === 'members') {
+        bottomNav.style.display = 'none';
+        container.innerHTML = renderMemberSelectionScreen();
+      } else {
+        bottomNav.style.display = 'flex';
+        container.innerHTML = renderPlanScreen();
+      }
+
+      renderModals();
+    }
+
+    render();
+  </script>
+</body>
+</html>

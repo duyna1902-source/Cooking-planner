@@ -14,6 +14,7 @@ export interface DayInfo {
   dayNumber: number;
   dateStr: string; // 'YYYY-MM-DD'
   isToday: boolean;
+  isFuture: boolean;
   fullLabel: string;
 }
 
@@ -21,6 +22,12 @@ export interface MealSlot {
   householdCode: string;
   date: string;
   mealType: MealType;
+}
+
+export interface DayCookAssignment {
+  householdCode: string;
+  dateStr: string; // 'YYYY-MM-DD'
+  cookName: string;
 }
 
 export interface PlanItemInput {
@@ -81,6 +88,7 @@ export function getWeekDays(baseDate: Date | string, today: Date = new Date()): 
       dayNumber,
       dateStr,
       isToday: dateStr === todayIso,
+      isFuture: dateStr > todayIso,
       fullLabel: `${FULL_DAY_NAMES[idx]}, ${String(dayNumber).padStart(2, '0')}/${monthNumber}`,
     };
   });

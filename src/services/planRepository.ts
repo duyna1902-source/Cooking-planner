@@ -39,6 +39,9 @@ export interface PlanRepository {
   ): Promise<PlanComment>;
   deleteCommentsByPlanItemId(householdCode: string, planItemId: string): Promise<void>;
   pruneOldHistory(householdCode: string, basePlanningDate: string): Promise<{ prunedCount: number }>;
+  getDayCooks(householdCode: string, startDate?: string, endDate?: string): Promise<Record<string, string>>;
+  assignDayCook(householdCode: string, date: string, cookName: string): Promise<void>;
+  unassignDayCook(householdCode: string, date: string): Promise<void>;
   subscribe?(householdCode: string, callback: () => void): () => void;
 }
 
@@ -46,10 +49,18 @@ export class InMemoryPlanRepository implements PlanRepository {
   readonly isOnline = false;
   private items: PlanItem[] = [];
   private comments: PlanComment[] = [];
+  private dayCooks: Map<string, string> = new Map();
 
-  constructor(initialItems: PlanItem[] = [], initialComments: PlanComment[] = []) {
+  constructor(
+    initialItems: PlanItem[] = [],
+    initialComments: PlanComment[] = [],
+    initialDayCooks: Record<string, string> = {}
+  ) {
     this.items = [...initialItems];
     this.comments = [...initialComments];
+    for (const [date, cook] of Object.entries(initialDayCooks)) {
+      this.dayCooks.set(date, cook);
+    }
   }
 
   async getPlanItems(householdCode: string, startDate?: string, endDate?: string): Promise<PlanItem[]> {
@@ -141,7 +152,43 @@ export class InMemoryPlanRepository implements PlanRepository {
     this.items = [...otherItems, ...remainingItems];
     this.comments = [...otherComments, ...remainingComments];
 
+    const prefix = `${householdCode}::`;
+    for (const key of Array.from(this.dayCooks.keys())) {
+      if (key.startsWith(prefix)) {
+        const date = key.slice(prefix.length);
+        if (date < thresholdDate) {
+          this.dayCooks.delete(key);
+        }
+      }
+    }
+
     return { prunedCount };
+  }
+
+  async getDayCooks(
+    householdCode: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
+    const prefix = `${householdCode}::`;
+    for (const [key, cookName] of this.dayCooks.entries()) {
+      if (key.startsWith(prefix)) {
+        const date = key.slice(prefix.length);
+        if (startDate && date < startDate) continue;
+        if (endDate && date > endDate) continue;
+        result[date] = cookName;
+      }
+    }
+    return result;
+  }
+
+  async assignDayCook(householdCode: string, date: string, cookName: string): Promise<void> {
+    this.dayCooks.set(`${householdCode}::${date}`, cookName);
+  }
+
+  async unassignDayCook(householdCode: string, date: string): Promise<void> {
+    this.dayCooks.delete(`${householdCode}::${date}`);
   }
 
   subscribe?(_householdCode: string, _callback: () => void): () => void {
@@ -297,7 +344,67 @@ export class LocalStoragePlanRepository implements PlanRepository {
       this.writeComments(householdCode, remainingComments);
     }
 
+    const cooks = this.readDayCooks(householdCode);
+    let cooksChanged = false;
+    for (const date of Object.keys(cooks)) {
+      if (date < thresholdDate) {
+        delete cooks[date];
+        cooksChanged = true;
+      }
+    }
+    if (cooksChanged) {
+      this.writeDayCooks(householdCode, cooks);
+    }
+
     return { prunedCount: items.length - remainingItems.length };
+  }
+
+  private getDayCooksStorageKey(householdCode: string): string {
+    return `cooking_plan_day_cooks_${householdCode}`;
+  }
+
+  private readDayCooks(householdCode: string): Record<string, string> {
+    try {
+      const data = localStorage.getItem(this.getDayCooksStorageKey(householdCode));
+      return data ? JSON.parse(data) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private writeDayCooks(householdCode: string, cooks: Record<string, string>): void {
+    try {
+      localStorage.setItem(this.getDayCooksStorageKey(householdCode), JSON.stringify(cooks));
+    } catch {
+      // Ignored
+    }
+  }
+
+  async getDayCooks(
+    householdCode: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<Record<string, string>> {
+    const cooks = this.readDayCooks(householdCode);
+    const result: Record<string, string> = {};
+    for (const [date, cook] of Object.entries(cooks)) {
+      if (startDate && date < startDate) continue;
+      if (endDate && date > endDate) continue;
+      result[date] = cook;
+    }
+    return result;
+  }
+
+  async assignDayCook(householdCode: string, date: string, cookName: string): Promise<void> {
+    const cooks = this.readDayCooks(householdCode);
+    cooks[date] = cookName;
+    this.writeDayCooks(householdCode, cooks);
+  }
+
+  async unassignDayCook(householdCode: string, date: string): Promise<void> {
+    const cooks = this.readDayCooks(householdCode);
+    delete cooks[date];
+    this.writeDayCooks(householdCode, cooks);
   }
 
   subscribe?(_householdCode: string, _callback: () => void): () => void {

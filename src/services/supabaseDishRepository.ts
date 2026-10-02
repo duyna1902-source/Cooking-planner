@@ -107,26 +107,30 @@ export class SupabaseDishRepository implements DishRepository {
   }
 
   subscribe(householdCode: string, callback: () => void): () => void {
-    const channelName = `dishes_realtime_${householdCode}_${Date.now()}`;
+    const channelName = `dishes_realtime_${householdCode}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const channel = this.client?.channel?.(channelName);
     if (!channel || typeof channel.on !== 'function') {
       return () => {};
     }
 
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'dishes',
-          filter: `household_code=eq.${householdCode}`,
-        },
-        () => {
-          callback();
-        }
-      )
-      ?.subscribe?.();
+    try {
+      channel
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'dishes',
+            filter: `household_code=eq.${householdCode}`,
+          },
+          () => {
+            callback();
+          }
+        )
+        ?.subscribe?.();
+    } catch {
+      // Ignored if channel already subscribed
+    }
 
     return () => {
       this.client?.removeChannel?.(channel);

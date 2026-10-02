@@ -253,42 +253,118 @@ export class SupabasePlanRepository implements PlanRepository {
         .lt('date', thresholdDate);
     }
 
+    await this.client
+      .from('plan_day_cooks')
+      .delete()
+      .eq('household_code', householdCode)
+      .lt('date', thresholdDate);
+
     return { prunedCount };
   }
 
+  async getDayCooks(
+    householdCode: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<Record<string, string>> {
+    let query = this.client
+      .from('plan_day_cooks')
+      .select('date, cook_name')
+      .eq('household_code', householdCode);
+
+    if (startDate) {
+      query = query.gte('date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('date', endDate);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      throw new Error(`Lỗi tải danh sách người nấu: ${error.message}`);
+    }
+
+    const result: Record<string, string> = {};
+    for (const row of data || []) {
+      result[row.date] = row.cook_name;
+    }
+    return result;
+  }
+
+  async assignDayCook(householdCode: string, date: string, cookName: string): Promise<void> {
+    const { error } = await this.client.from('plan_day_cooks').upsert({
+      household_code: householdCode,
+      date,
+      cook_name: cookName,
+      created_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      throw new Error(`Lỗi phân công người nấu: ${error.message}`);
+    }
+  }
+
+  async unassignDayCook(householdCode: string, date: string): Promise<void> {
+    const { error } = await this.client
+      .from('plan_day_cooks')
+      .delete()
+      .eq('household_code', householdCode)
+      .eq('date', date);
+
+    if (error) {
+      throw new Error(`Lỗi hủy phân công người nấu: ${error.message}`);
+    }
+  }
+
   subscribe(householdCode: string, callback: () => void): () => void {
-    const channelName = `plan_realtime_${householdCode}_${Date.now()}`;
+    const channelName = `plan_realtime_${householdCode}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const channel = this.client?.channel?.(channelName);
     if (!channel || typeof channel.on !== 'function') {
       return () => {};
     }
 
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'plan_items',
-          filter: `household_code=eq.${householdCode}`,
-        },
-        () => {
-          callback();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'plan_comments',
-          filter: `household_code=eq.${householdCode}`,
-        },
-        () => {
-          callback();
-        }
-      )
-      ?.subscribe?.();
+    try {
+      channel
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'plan_items',
+            filter: `household_code=eq.${householdCode}`,
+          },
+          () => {
+            callback();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'plan_comments',
+            filter: `household_code=eq.${householdCode}`,
+          },
+          () => {
+            callback();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'plan_day_cooks',
+            filter: `household_code=eq.${householdCode}`,
+          },
+          () => {
+            callback();
+          }
+        )
+        ?.subscribe?.();
+    } catch {
+      // Ignored if channel already subscribed
+    }
 
     return () => {
       this.client?.removeChannel?.(channel);

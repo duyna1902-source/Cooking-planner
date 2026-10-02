@@ -54,6 +54,7 @@ describe('Dual Mode Repository Factory', () => {
     expect(result.isOnline).toBe(true);
     expect(result.dishRepository).toBeInstanceOf(SupabaseDishRepository);
     expect(result.planRepository).toBeInstanceOf(SupabasePlanRepository);
+    expect(result.householdRepository).toBeDefined();
 
     setSupabaseClientForTesting(null);
     // @ts-expect-error test env override
@@ -65,5 +66,6 @@ describe('Dual Mode Repository Factory', () => {
     expect(localResult.isOnline).toBe(false);
     expect(localResult.dishRepository).toBeInstanceOf(LocalStorageDishRepository);
     expect(localResult.planRepository).toBeInstanceOf(LocalStoragePlanRepository);
+    expect(localResult.householdRepository).toBeDefined();
   });
 });

@@ -211,5 +211,69 @@ describe('PlanRepository', () => {
       const keptComments = await repo.getComments('BEP-892', thresholdItems[0].id);
       expect(keptComments).toHaveLength(1);
     });
+
+    it('assigns, retrieves, and unassigns day cook', async () => {
+      await repo.assignDayCook('BEP-892', '2026-09-29', 'Mẹ');
+      await repo.assignDayCook('BEP-892', '2026-09-30', 'Bố');
+
+      let cooks = await repo.getDayCooks('BEP-892');
+      expect(cooks).toEqual({
+        '2026-09-29': 'Mẹ',
+        '2026-09-30': 'Bố',
+      });
+
+      // Filter by date range
+      const filtered = await repo.getDayCooks('BEP-892', '2026-09-29', '2026-09-29');
+      expect(filtered).toEqual({
+        '2026-09-29': 'Mẹ',
+      });
+
+      // Unassign
+      await repo.unassignDayCook('BEP-892', '2026-09-29');
+      cooks = await repo.getDayCooks('BEP-892');
+      expect(cooks).toEqual({
+        '2026-09-30': 'Bố',
+      });
+    });
+
+    it('isolates day cooks between households', async () => {
+      await repo.assignDayCook('BEP-111', '2026-09-29', 'Mẹ 1');
+      await repo.assignDayCook('BEP-222', '2026-09-29', 'Mẹ 2');
+
+      const cooks1 = await repo.getDayCooks('BEP-111');
+      const cooks2 = await repo.getDayCooks('BEP-222');
+
+      expect(cooks1['2026-09-29']).toBe('Mẹ 1');
+      expect(cooks2['2026-09-29']).toBe('Mẹ 2');
+    });
+
+    it('prunes old day cook assignments older than 14 days', async () => {
+      // 2026-09-10 is older than 14-day threshold Monday 2026-09-14
+      await repo.assignDayCook('BEP-892', '2026-09-10', 'Người cũ');
+      await repo.assignDayCook('BEP-892', '2026-09-14', 'Người giữ');
+
+      await repo.pruneOldHistory('BEP-892', '2026-09-29');
+
+      const cooks = await repo.getDayCooks('BEP-892');
+      expect(cooks['2026-09-10']).toBeUndefined();
+      expect(cooks['2026-09-14']).toBe('Người giữ');
+    });
+  });
+
+  describe('LocalStoragePlanRepository day cooks persistence', () => {
+    it('persists and loads day cooks across instances', async () => {
+      localStorage.clear();
+      const localRepo1 = new LocalStoragePlanRepository();
+      await localRepo1.assignDayCook('BEP-892', '2026-09-29', 'Mẹ');
+
+      const localRepo2 = new LocalStoragePlanRepository();
+      const cooks = await localRepo2.getDayCooks('BEP-892');
+      expect(cooks['2026-09-29']).toBe('Mẹ');
+
+      await localRepo2.unassignDayCook('BEP-892', '2026-09-29');
+      const localRepo3 = new LocalStoragePlanRepository();
+      const afterUnassign = await localRepo3.getDayCooks('BEP-892');
+      expect(afterUnassign['2026-09-29']).toBeUndefined();
+    });
   });
 });

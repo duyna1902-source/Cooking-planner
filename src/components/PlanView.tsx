@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   MealType,
   PlanItem,
+  DayInfo,
   getWeekDays,
   formatDateToISO,
   parseISODate,
@@ -12,6 +13,7 @@ import {
 import { Dish } from '../domain/dish';
 import { DishRepository, defaultDishRepository } from '../services/dishRepository';
 import { PlanRepository, defaultPlanRepository } from '../services/planRepository';
+import { HouseholdRepository, defaultHouseholdRepository } from '../services/householdRepository';
 import { DishPickerDrawer } from './DishPickerDrawer';
 import { DishDetailDrawer } from './DishDetailDrawer';
 import { Plus, Trash2, Utensils, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
@@ -21,6 +23,7 @@ export interface PlanViewProps {
   nickname?: string;
   dishRepository?: DishRepository;
   planRepository?: PlanRepository;
+  householdRepository?: HouseholdRepository;
   initialDate?: string;
 }
 
@@ -29,6 +32,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
   nickname = '',
   dishRepository = defaultDishRepository,
   planRepository = defaultPlanRepository,
+  householdRepository = defaultHouseholdRepository,
   initialDate,
 }) => {
   const today = useMemo(() => new Date(), []);
@@ -39,6 +43,12 @@ export const PlanView: React.FC<PlanViewProps> = ({
 
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
+  const [dayCooks, setDayCooks] = useState<Record<string, string>>({});
+  const [members, setMembers] = useState<string[]>([]);
+  const [showCookPrompt, setShowCookPrompt] = useState<boolean>(false);
+  const [promptDate, setPromptDate] = useState<DayInfo | null>(null);
+  const [isAssignDrawerOpen, setIsAssignDrawerOpen] = useState<boolean>(false);
+
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
   const [activeDishDetail, setActiveDishDetail] = useState<{
     planItemId: string;
@@ -57,6 +67,8 @@ export const PlanView: React.FC<PlanViewProps> = ({
     if (!householdCode) {
       setDishes([]);
       setPlanItems([]);
+      setDayCooks({});
+      setMembers([]);
       setIsLoading(false);
       return;
     }
@@ -64,18 +76,22 @@ export const PlanView: React.FC<PlanViewProps> = ({
     try {
       setIsLoading(true);
       await planRepository.pruneOldHistory(householdCode, initialIso);
-      const [fetchedDishes, fetchedPlans] = await Promise.all([
+      const [fetchedDishes, fetchedPlans, fetchedCooks, fetchedMembers] = await Promise.all([
         dishRepository.getDishes(householdCode),
         planRepository.getPlanItems(householdCode),
+        planRepository.getDayCooks(householdCode),
+        householdRepository ? householdRepository.getMembers(householdCode) : Promise.resolve([]),
       ]);
       setDishes(fetchedDishes);
       setPlanItems(fetchedPlans);
+      setDayCooks(fetchedCooks || {});
+      setMembers(fetchedMembers || []);
     } catch {
       // Ignored
     } finally {
       setIsLoading(false);
     }
-  }, [householdCode, initialIso, dishRepository, planRepository]);
+  }, [householdCode, initialIso, dishRepository, planRepository, householdRepository]);
 
   useEffect(() => {
     loadData();
@@ -89,11 +105,15 @@ export const PlanView: React.FC<PlanViewProps> = ({
     const unsubDish = dishRepository.subscribe?.(householdCode, () => {
       loadData();
     });
+    const unsubHouse = householdRepository?.subscribe?.(householdCode, () => {
+      loadData();
+    });
     return () => {
       unsubPlan?.();
       unsubDish?.();
+      unsubHouse?.();
     };
-  }, [householdCode, planRepository, dishRepository, loadData]);
+  }, [householdCode, planRepository, dishRepository, householdRepository, loadData]);
 
   // Check 2-week history boundary
   const canGoPrev = useMemo(() => {
@@ -111,6 +131,14 @@ export const PlanView: React.FC<PlanViewProps> = ({
     return currentMealItems.map((item) => item.dishId);
   }, [currentMealItems]);
 
+  const availableMembers = useMemo(() => {
+    if (members.length > 0) return members;
+    if (nickname) return [nickname];
+    return ['Thành viên'];
+  }, [members, nickname]);
+
+  const activeCook = dayCooks[activeDate];
+
   const getMealTitle = (meal: MealType) => {
     switch (meal) {
       case 'breakfast':
@@ -122,9 +150,33 @@ export const PlanView: React.FC<PlanViewProps> = ({
     }
   };
 
-  const handleDaySelect = (dateStr: string) => {
-    setActiveDate(dateStr);
+  const handleDaySelect = (day: DayInfo) => {
+    setActiveDate(day.dateStr);
     setActiveMeal('dinner'); // Strict Dinner-First UX rule
+
+    const cook = dayCooks[day.dateStr];
+    if (day.isFuture && !cook) {
+      setPromptDate(day);
+      setShowCookPrompt(true);
+    }
+  };
+
+  const handleAssignCook = async (dateStr: string, cookName: string) => {
+    if (!householdCode) return;
+    await planRepository.assignDayCook(householdCode, dateStr, cookName);
+    setShowCookPrompt(false);
+    setPromptDate(null);
+    setIsAssignDrawerOpen(false);
+    const updated = await planRepository.getDayCooks(householdCode);
+    setDayCooks(updated || {});
+  };
+
+  const handleUnassignCook = async (dateStr: string) => {
+    if (!householdCode) return;
+    await planRepository.unassignDayCook(householdCode, dateStr);
+    setIsAssignDrawerOpen(false);
+    const updated = await planRepository.getDayCooks(householdCode);
+    setDayCooks(updated || {});
   };
 
   const handlePrevWeek = () => {
@@ -201,27 +253,42 @@ export const PlanView: React.FC<PlanViewProps> = ({
 
       {/* Date Ribbon (Horizontal scrollable strip Monday to Sunday) */}
       <div
-        className="bg-white px-4 py-2.5 flex gap-2 overflow-x-auto shadow-xs border-b border-slate-100"
+        className="bg-white px-3 pt-3 pb-3 flex gap-2 overflow-x-auto shadow-xs border-b border-slate-100"
         data-testid="date-ribbon"
       >
         {weekDays.map((d, idx) => {
           const isSelected = d.dateStr === activeDate;
+          const cook = dayCooks[d.dateStr];
           return (
             <button
               key={d.dateStr}
-              onClick={() => handleDaySelect(d.dateStr)}
+              onClick={() => handleDaySelect(d)}
               data-testid={`day-btn-${idx}`}
-              className={`flex-shrink-0 flex flex-col items-center justify-center w-12 py-2 rounded-2xl transition-all ${isSelected
-                ? 'bg-gradient-to-b from-[#5B7C99] to-[#46637D] text-white shadow-md shadow-[#5B7C99]/30 scale-105'
-                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-                }`}
+              className={`group relative flex-shrink-0 flex flex-col items-center justify-center w-12 py-2 rounded-2xl transition-all cursor-pointer ${
+                isSelected
+                  ? 'bg-gradient-to-b from-[#5B7C99] to-[#46637D] text-white shadow-md shadow-[#5B7C99]/30 scale-105 font-bold'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 font-medium'
+              }`}
             >
+              {cook ? (
+                <span
+                  data-testid={`cook-badge-${d.dateStr}`}
+                  className="absolute -top-2 px-1.5 py-[1px] rounded-full bg-[#FEF7DC] text-[#334E68] text-[9px] font-extrabold border border-[#EFE4B5] shadow-2xs truncate max-w-[46px]"
+                >
+                  {cook}
+                </span>
+              ) : (
+                isSelected && (
+                  <span className="absolute -top-1 w-1.5 h-1.5 rounded-full bg-[#FEF7DC]" />
+                )
+              )}
               <span className="text-[10px] font-medium opacity-80 uppercase">{d.label}</span>
               <span className="text-xs font-bold mt-0.5">{d.dayNumber}</span>
               {d.isToday && (
                 <span
-                  className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-[#FEF7DC]' : 'bg-[#5B7C99]'
-                    }`}
+                  className={`w-1.5 h-1.5 rounded-full mt-1 ${
+                    isSelected ? 'bg-[#FEF7DC]' : 'bg-[#5B7C99]'
+                  }`}
                 />
               )}
             </button>
@@ -237,9 +304,35 @@ export const PlanView: React.FC<PlanViewProps> = ({
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               {activeDayInfo.fullLabel}
             </span>
-            {activeMeal === 'dinner' && (
-              
-            )}
+
+            {/* Right badges: Cook status + Main meal badge */}
+            <div className="flex items-center gap-1.5">
+              {activeCook ? (
+                <button
+                  onClick={() => setIsAssignDrawerOpen(true)}
+                  data-testid="change-cook-btn"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 text-[#334E68] text-[11px] font-semibold hover:bg-slate-100 transition shadow-2xs cursor-pointer"
+                  title="Bấm để đổi người nấu"
+                >
+                  <span>👨‍🍳 {activeCook}</span>
+                  <span className="text-[9px] text-[#5B7C99] underline">Đổi</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsAssignDrawerOpen(true)}
+                  data-testid="assign-cook-btn"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FEF7DC] border border-[#EFE4B5] text-[#334E68] text-[11px] font-bold hover:bg-[#FDF2C7] transition shadow-2xs cursor-pointer"
+                >
+                  <span className="text-xs">+</span>
+                  <span> Phân công nấu</span>
+                </button>
+              )}
+              {activeMeal === 'dinner' && (
+                <span className="text-[11px] font-bold text-[#855B32] bg-[#FEF7DC] px-2.5 py-0.5 rounded-full border border-[#EFE4B5]">
+                  ✨ Bữa chính
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Segmented Control for Meals */}
@@ -296,7 +389,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
               className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#FEF7DC] hover:bg-[#FDF2C7] text-[#334E68] text-xs font-bold transition active:scale-95 border border-[#EFE4B5] shadow-xs"
             >
               <Plus className="w-3.5 h-3.5 text-[#5B7C99]" />
-              Thêm món
+              Thêm Món ăn
             </button>
           </div>
 
@@ -320,7 +413,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
                 onClick={() => setIsPickerOpen(true)}
                 className="mt-3 px-4 py-1.5 rounded-full bg-[#5B7C99] text-white text-xs font-bold hover:bg-[#4a6b88] transition shadow-sm"
               >
-                + Thêm món
+                + Thêm Món ăn
               </button>
             </div>
           ) : (
@@ -412,6 +505,132 @@ export const PlanView: React.FC<PlanViewProps> = ({
           nickname={nickname}
           planRepository={planRepository}
         />
+      )}
+
+      {/* Future Day Cook Prompt Modal ("Ai sẽ nấu ngày này?") */}
+      {showCookPrompt && promptDate && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-testid="cook-prompt-modal"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+        >
+          <div className="bg-white rounded-3xl p-5 shadow-2xl w-full max-w-[320px] border border-slate-100 text-center animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-full bg-[#FEF7DC] border border-[#EFE4B5] text-[#334E68] flex items-center justify-center text-2xl mx-auto mb-2.5">
+              👨‍🍳
+            </div>
+            <h3
+              data-testid="cook-prompt-title"
+              className="text-base font-extrabold text-[#334E68] mb-0.5"
+            >
+              Ai sẽ nấu ngày này?
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">{promptDate.fullLabel}</p>
+
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {availableMembers.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => handleAssignCook(promptDate.dateStr, m)}
+                  data-testid={`prompt-assign-${m}`}
+                  className="p-2.5 rounded-2xl bg-slate-50 hover:bg-[#FEF7DC] hover:border-[#EFE4B5] border border-slate-200/80 text-xs font-bold text-[#334E68] transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                >
+                  <span className="w-5 h-5 rounded-full bg-[#5B7C99] text-white text-[10px] flex items-center justify-center">
+                    {m.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="truncate max-w-[80px]">{m}</span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                setShowCookPrompt(false);
+                setPromptDate(null);
+              }}
+              data-testid="cook-prompt-later-btn"
+              className="w-full py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition cursor-pointer"
+            >
+              Để sau (chưa quyết định)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Cook Bottom Sheet Drawer */}
+      {isAssignDrawerOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-testid="assign-cook-drawer"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex flex-col justify-end"
+          onClick={() => setIsAssignDrawerOpen(false)}
+        >
+          <div
+            className="bg-white rounded-t-[32px] p-5 shadow-2xl flex flex-col border-t border-slate-100 animate-in slide-in-from-bottom duration-200 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-3" />
+
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+              <div>
+                <span className="text-[10px] font-bold text-[#5B7C99] uppercase tracking-wider block">
+                  Phân công người nấu
+                </span>
+                <h4 className="text-sm font-extrabold text-[#334E68]">
+                  {activeDayInfo.fullLabel}
+                </h4>
+              </div>
+              <button
+                onClick={() => setIsAssignDrawerOpen(false)}
+                data-testid="close-assign-drawer-btn"
+                className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center text-xs font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2 mb-3">
+              {availableMembers.map((m) => {
+                const isCurrent = m === activeCook;
+                return (
+                  <button
+                    key={m}
+                    onClick={() => handleAssignCook(activeDate, m)}
+                    data-testid={`select-cook-${m}`}
+                    className={`w-full p-3 rounded-2xl border transition flex items-center justify-between cursor-pointer ${
+                      isCurrent
+                        ? 'bg-[#FEF7DC] border-[#EFE4B5] font-extrabold text-[#334E68]'
+                        : 'bg-slate-50 border-slate-200/60 text-slate-700 hover:bg-slate-100 font-bold'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-7 h-7 rounded-full bg-[#5B7C99] text-white text-xs flex items-center justify-center">
+                        {m.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="text-xs">{m}</span>
+                    </div>
+                    {isCurrent ? (
+                      <span className="text-xs text-[#334E68] font-bold">✓ Đang nấu</span>
+                    ) : (
+                      <span className="text-xs text-[#5B7C99]">+ Chọn</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {activeCook && (
+              <button
+                onClick={() => handleUnassignCook(activeDate)}
+                data-testid="unassign-cook-btn"
+                className="w-full py-2.5 rounded-full text-red-500 hover:bg-red-50 border border-red-200 text-xs font-bold transition cursor-pointer"
+              >
+                Hủy phân công (để trống)
+              </button>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

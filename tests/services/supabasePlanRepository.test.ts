@@ -245,7 +245,7 @@ describe('SupabasePlanRepository', () => {
       const unsubscribe = repo.subscribe('HOUSE123', callback);
 
       expect(mockClient.channel).toHaveBeenCalled();
-      expect(onMock).toHaveBeenCalledTimes(2); // plan_items and plan_comments
+      expect(onMock).toHaveBeenCalledTimes(3); // plan_items, plan_comments, and plan_day_cooks
       expect(subscribeMock).toHaveBeenCalled();
 
       // Trigger handler
@@ -255,6 +255,65 @@ describe('SupabasePlanRepository', () => {
 
       unsubscribe();
       expect(removeChannelMock).toHaveBeenCalled();
+    });
+  });
+
+  describe('Day cook methods', () => {
+    it('queries day cooks and returns a date-to-name mapping', async () => {
+      const mockRows = [
+        { date: '2026-09-29', cook_name: 'Mẹ' },
+        { date: '2026-09-30', cook_name: 'Bố' },
+      ];
+      const eqMock = vi.fn().mockResolvedValue({ data: mockRows, error: null });
+      const selectMock = vi.fn().mockReturnValue({ eq: eqMock });
+      const mockClient = {
+        from: vi.fn().mockReturnValue({ select: selectMock }),
+      } as any;
+
+      const repo = new SupabasePlanRepository(mockClient);
+      const cooks = await repo.getDayCooks('HOUSE123');
+
+      expect(mockClient.from).toHaveBeenCalledWith('plan_day_cooks');
+      expect(eqMock).toHaveBeenCalledWith('household_code', 'HOUSE123');
+      expect(cooks).toEqual({
+        '2026-09-29': 'Mẹ',
+        '2026-09-30': 'Bố',
+      });
+    });
+
+    it('assigns day cook with upsert', async () => {
+      const upsertMock = vi.fn().mockResolvedValue({ error: null });
+      const mockClient = {
+        from: vi.fn().mockReturnValue({ upsert: upsertMock }),
+      } as any;
+
+      const repo = new SupabasePlanRepository(mockClient);
+      await repo.assignDayCook('HOUSE123', '2026-09-29', 'Tôm');
+
+      expect(mockClient.from).toHaveBeenCalledWith('plan_day_cooks');
+      expect(upsertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          household_code: 'HOUSE123',
+          date: '2026-09-29',
+          cook_name: 'Tôm',
+        })
+      );
+    });
+
+    it('unassigns day cook by deleting row', async () => {
+      const eqDateMock = vi.fn().mockResolvedValue({ error: null });
+      const eqHouseholdMock = vi.fn().mockReturnValue({ eq: eqDateMock });
+      const deleteMock = vi.fn().mockReturnValue({ eq: eqHouseholdMock });
+      const mockClient = {
+        from: vi.fn().mockReturnValue({ delete: deleteMock }),
+      } as any;
+
+      const repo = new SupabasePlanRepository(mockClient);
+      await repo.unassignDayCook('HOUSE123', '2026-09-29');
+
+      expect(mockClient.from).toHaveBeenCalledWith('plan_day_cooks');
+      expect(eqHouseholdMock).toHaveBeenCalledWith('household_code', 'HOUSE123');
+      expect(eqDateMock).toHaveBeenCalledWith('date', '2026-09-29');
     });
   });
 });

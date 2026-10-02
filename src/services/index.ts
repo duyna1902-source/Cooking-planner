@@ -4,4 +4,6 @@ export * from './planRepository';
 export * from './supabaseClient';
 export * from './supabaseDishRepository';
 export * from './supabasePlanRepository';
+export * from './householdRepository';
+export * from './supabaseHouseholdRepository';
 export * from './repositoryFactory';

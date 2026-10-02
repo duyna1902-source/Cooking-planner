@@ -48,6 +48,7 @@ describe('Cascade Delete and Two-Week History Retention Integration (Ticket 05)'
           storage={storage}
           dishRepository={dishRepo}
           planRepository={planRepo}
+          initialDate={fixedBaseDate}
         />
       );
 
