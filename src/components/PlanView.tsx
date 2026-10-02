@@ -9,7 +9,7 @@ import {
   groupPlanItemsByMeal,
   canNavigatePrevWeek,
 } from '../domain/plan';
-import { Dish } from '../domain/dish';
+import { Dish, DishInput } from '../domain/dish';
 import { DishRepository, defaultDishRepository } from '../services/dishRepository';
 import { PlanRepository, defaultPlanRepository } from '../services/planRepository';
 import { DishPickerDrawer } from './DishPickerDrawer';
@@ -142,6 +142,13 @@ export const PlanView: React.FC<PlanViewProps> = ({
     if (!householdCode) return;
     await planRepository.addDishesToMeal(householdCode, activeDate, activeMeal, selectedDishIds);
     await loadData();
+  };
+
+  const handleAddNewDish = async (input: DishInput): Promise<string> => {
+    if (!householdCode) throw new Error('Missing household code');
+    const created = await dishRepository.addDish(householdCode, input);
+    await loadData();
+    return created.id;
   };
 
   const handleRemoveDish = async (dishId: string) => {
@@ -395,6 +402,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
         dishes={dishes}
         alreadyAddedDishIds={currentMealDishIds}
         onConfirm={handleConfirmAddDishes}
+        onAddNewDish={handleAddNewDish}
       />
 
       {/* Dish Detail & Comments Bottom Sheet Drawer */}

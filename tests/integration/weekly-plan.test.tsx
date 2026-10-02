@@ -291,4 +291,135 @@ describe('Weekly Plan Integration', () => {
     expect(confirmBtn).toHaveTextContent('0 Món ăn');
     expect(confirmBtn).toBeDisabled();
   });
+
+  describe('Quick Add Dish from Search in Plan Picker Drawer (Ticket 03)', () => {
+    it('shows sticky action banner when query has no exact match, hides when exact match', async () => {
+      const user = userEvent.setup();
+      render(
+        <PlanView
+          householdCode={householdCode}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          initialDate={fixedDate}
+        />
+      );
+
+      // Open drawer
+      await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+      expect(screen.getByTestId('dish-picker-drawer')).toBeInTheDocument();
+
+      const searchInput = screen.getByTestId('picker-search-input');
+
+      // Search for non-existent dish
+      await user.type(searchInput, 'Canh khổ qua dồn thịt');
+
+      // Sticky banner should appear
+      const banner = screen.getByTestId('picker-quick-add-banner');
+      expect(banner).toBeInTheDocument();
+      expect(screen.getByText(/Chưa có "Canh khổ qua dồn thịt" trong Menu\?/)).toBeInTheDocument();
+      expect(screen.getByTestId('picker-quick-add-btn')).toBeInTheDocument();
+
+      // Clear and type an exact match
+      await user.clear(searchInput);
+      await user.type(searchInput, '  thịt kho trứng  ');
+
+      // Sticky banner must be hidden
+      expect(screen.queryByTestId('picker-quick-add-banner')).not.toBeInTheDocument();
+    });
+
+    it('combines pre-checked dishes and newly created dish, schedules both, and closes drawer', async () => {
+      const user = userEvent.setup();
+      render(
+        <PlanView
+          householdCode={householdCode}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          initialDate={fixedDate}
+        />
+      );
+
+      // Open drawer
+      await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+
+      // Check an existing dish (e.g. 'Canh chua cá lóc')
+      const dishes = await dishRepo.getDishes(householdCode);
+      const canhChua = dishes.find((d) => d.name === 'Canh chua cá lóc')!;
+      await user.click(screen.getByTestId(`picker-dish-item-${canhChua.id}`));
+
+      // Now search for a new dish
+      const searchInput = screen.getByTestId('picker-search-input');
+      await user.type(searchInput, 'Gà rang muối');
+
+      // Tap + Thêm món button on sticky banner
+      const addDishBtn = screen.getByTestId('picker-quick-add-btn');
+      await user.click(addDishBtn);
+
+      // DishModal opens with prefilled name
+      const modalNameInput = screen.getByTestId('dish-name-input') as HTMLInputElement;
+      expect(modalNameInput.value).toBe('Gà rang muối');
+
+      // Fill in tag and submit modal
+      const modalTagInput = screen.getByTestId('dish-tag-input');
+      await user.type(modalTagInput, 'Món mặn');
+      await user.click(screen.getByTestId('save-dish-btn'));
+
+      // Both DishModal and DishPickerDrawer should close
+      await waitFor(() => {
+        expect(screen.queryByTestId('dish-picker-drawer')).not.toBeInTheDocument();
+      });
+
+      // Both the pre-selected dish and the new dish should appear in Bữa Tối
+      await waitFor(() => {
+        expect(screen.getByText('Canh chua cá lóc')).toBeInTheDocument();
+        expect(screen.getByText('Gà rang muối')).toBeInTheDocument();
+      });
+
+      // Newly created dish is saved in household Menu
+      const updatedMenu = await dishRepo.getDishes(householdCode);
+      const newDishInMenu = updatedMenu.find((d) => d.name === 'Gà rang muối');
+      expect(newDishInMenu).toBeDefined();
+      expect(newDishInMenu?.tag).toBe('Món mặn');
+    });
+
+    it('retains checked dishes and search query when user cancels modal', async () => {
+      const user = userEvent.setup();
+      render(
+        <PlanView
+          householdCode={householdCode}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          initialDate={fixedDate}
+        />
+      );
+
+      // Open drawer
+      await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+
+      // Check an existing dish
+      const dishes = await dishRepo.getDishes(householdCode);
+      const canhChua = dishes.find((d) => d.name === 'Canh chua cá lóc')!;
+      await user.click(screen.getByTestId(`picker-dish-item-${canhChua.id}`));
+
+      // Search for new dish
+      const searchInput = screen.getByTestId('picker-search-input');
+      await user.type(searchInput, 'Mực xào chua ngọt');
+
+      // Click + Thêm món
+      await user.click(screen.getByTestId('picker-quick-add-btn'));
+
+      // Cancel modal
+      await user.click(screen.getByRole('button', { name: 'Hủy' }));
+
+      // Drawer is still open
+      expect(screen.getByTestId('dish-picker-drawer')).toBeInTheDocument();
+
+      // Search query is preserved
+      expect((searchInput as HTMLInputElement).value).toBe('Mực xào chua ngọt');
+
+      // Clear search to inspect checked dishes
+      await user.clear(searchInput);
+      const checkbox = screen.getByTestId(`picker-checkbox-${canhChua.id}`);
+      expect(checkbox.className).toContain('bg-[#5B7C99]');
+    });
+  });
 });

@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 
 # Issue 03: Quick Add Dish in Plan Picker Drawer (Variant A: Sticky Action Banner)
 
@@ -18,3 +18,11 @@ Trong Drawer chọn Món ăn của trang Kế hoạch (`DishPickerDrawer`), khi 
    - Gọi `onConfirm` với danh sách ID gộp này để thêm vào Kế hoạch cho Bữa ăn đang chọn.
    - Đóng cả Modal và Drawer.
 6. `PlanView` truyền callback `onAddNewDish` xử lý lưu qua `dishRepository.addDish`, trả về dish ID.
+
+## Answer
+- Đã thêm `onAddNewDish?: (input: DishInput) => Promise<string>` vào `DishPickerDrawerProps`.
+- Đã cài đặt Sticky Action Banner Phương án A ghim phía trên nút xác nhận với màu `#FEF7DC`, viền nét đứt `#EFE4B5`, ẩn khi trùng 100%.
+- Bấm `+ Thêm món` mở `DishModal` với `initialName = trimmedQuery` xếp lớp `z-[60]` trên Drawer (`z-50`).
+- Hủy modal giữ nguyên trạng thái tìm kiếm và các món đã chọn.
+- Lưu modal thực hiện dual assignment: lưu vào Menu qua `onAddNewDish`, gộp ID món mới với các món đã chọn, thêm vào Kế hoạch qua `onConfirm`, và đóng cả modal lẫn drawer.
+- Bổ sung integration tests đầy đủ trong `tests/integration/weekly-plan.test.tsx`.

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Dish, filterDishes } from '../domain/dish';
+import { Dish, DishInput, filterDishes } from '../domain/dish';
 import { Search, X, Check } from 'lucide-react';
+import { DishModal } from './DishModal';
 
 export interface DishPickerDrawerProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ export interface DishPickerDrawerProps {
   dishes: Dish[];
   alreadyAddedDishIds: string[];
   onConfirm: (selectedDishIds: string[]) => void;
+  onAddNewDish?: (input: DishInput) => Promise<string>;
 }
 
 export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
@@ -18,13 +20,20 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
   dishes,
   alreadyAddedDishIds,
   onConfirm,
+  onAddNewDish,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDishIds, setSelectedDishIds] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
   const filteredDishes = filterDishes(dishes, searchQuery);
+  const trimmedQuery = searchQuery.trim();
+  const isExactMatch = dishes.some(
+    (dish) => dish.name.trim().toLowerCase() === trimmedQuery.toLowerCase()
+  );
+  const showAddSuggestion = trimmedQuery.length > 0 && !isExactMatch;
 
   const toggleDishSelection = (dishId: string) => {
     if (alreadyAddedDishIds.includes(dishId)) return;
@@ -172,6 +181,34 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
           )}
         </div>
 
+        {/* Sticky Action Banner (Variant A) */}
+        {showAddSuggestion && (
+          <div
+            data-testid="picker-quick-add-banner"
+            className="my-2 p-3 rounded-2xl bg-[#FEF7DC] border-2 border-dashed border-[#EFE4B5] flex items-center justify-between shadow-xs animate-in fade-in duration-150"
+          >
+            <div className="pr-2">
+              <div className="flex items-center gap-1">
+                <span className="text-xs">✨</span>
+                <p className="text-xs font-bold text-[#334E68]">
+                  Chưa có &quot;{trimmedQuery}&quot; trong Menu?
+                </p>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                Tạo mới sẽ tự lưu vào Menu & thêm vào {mealTitle}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              data-testid="picker-quick-add-btn"
+              className="px-3 py-1.5 rounded-full bg-[#5B7C99] hover:bg-[#46637D] text-white text-[11px] font-bold shadow-xs transition active:scale-95 whitespace-nowrap"
+            >
+              + Thêm món
+            </button>
+          </div>
+        )}
+
         {/* Footer Confirm Button */}
         <div className="pt-3 border-t border-slate-100 mt-2">
           <button
@@ -188,6 +225,24 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Layered DishModal */}
+      {onAddNewDish && (
+        <DishModal
+          isOpen={isModalOpen}
+          initialName={trimmedQuery}
+          onSave={async (input) => {
+            const newDishId = await onAddNewDish(input);
+            const combined = [...selectedDishIds, newDishId];
+            onConfirm(combined);
+            setSelectedDishIds([]);
+            setSearchQuery('');
+            setIsModalOpen(false);
+            onClose();
+          }}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
