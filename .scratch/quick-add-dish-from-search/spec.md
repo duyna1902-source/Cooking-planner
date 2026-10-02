@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: completed
 
 # Đặc tả kỹ thuật: Thêm Món ăn mới từ ô tìm kiếm vào Menu và Kế hoạch (Phương án A - Sticky Action Banner)
 
