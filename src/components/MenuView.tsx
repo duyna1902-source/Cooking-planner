@@ -20,6 +20,7 @@ export const MenuView: React.FC<MenuViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDish, setEditingDish] = useState<Dish | null>(null);
+  const [modalInitialName, setModalInitialName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   const loadDishes = useCallback(async () => {
@@ -55,11 +56,19 @@ export const MenuView: React.FC<MenuViewProps> = ({
 
   const handleOpenAdd = () => {
     setEditingDish(null);
+    setModalInitialName('');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenAddWithInitialName = (name: string) => {
+    setEditingDish(null);
+    setModalInitialName(name);
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (dish: Dish) => {
     setEditingDish(dish);
+    setModalInitialName('');
     setIsModalOpen(true);
   };
 
@@ -86,6 +95,11 @@ export const MenuView: React.FC<MenuViewProps> = ({
   };
 
   const filteredDishes = filterDishes(dishes, searchQuery);
+  const trimmedQuery = searchQuery.trim();
+  const isExactMatch = dishes.some(
+    (dish) => dish.name.trim().toLowerCase() === trimmedQuery.toLowerCase()
+  );
+  const showQuickAdd = trimmedQuery.length > 0 && !isExactMatch;
 
   return (
     <div className="flex-1 flex flex-col bg-[#FAFBFD] p-4" data-testid="menu-view">
@@ -164,6 +178,15 @@ export const MenuView: React.FC<MenuViewProps> = ({
           <p className="text-xs font-medium">
             Không tìm thấy Món ăn nào phù hợp với "<strong>{searchQuery}</strong>"
           </p>
+          {showQuickAdd && (
+            <button
+              onClick={() => handleOpenAddWithInitialName(trimmedQuery)}
+              data-testid="quick-add-dish-btn"
+              className="mt-3 px-4 py-2 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] font-bold text-xs hover:bg-[#FDF2C7] transition shadow-xs"
+            >
+              + Thêm Món ăn mới: "{trimmedQuery}" vào Menu
+            </button>
+          )}
           <button
             onClick={() => setSearchQuery('')}
             className="mt-2 text-xs text-[#5B7C99] font-bold hover:underline"
@@ -227,6 +250,18 @@ export const MenuView: React.FC<MenuViewProps> = ({
               </div>
             </div>
           ))}
+
+          {showQuickAdd && (
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => handleOpenAddWithInitialName(trimmedQuery)}
+                data-testid="quick-add-dish-banner"
+                className="w-full py-2.5 px-3 rounded-2xl bg-[#FEF7DC]/80 border border-dashed border-[#EFE4B5] text-[#334E68] font-bold text-xs hover:bg-[#FEF7DC] transition shadow-xs"
+              >
+                + Thêm Món ăn mới: "{trimmedQuery}" vào Menu
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -234,6 +269,7 @@ export const MenuView: React.FC<MenuViewProps> = ({
       <DishModal
         isOpen={isModalOpen}
         initialDish={editingDish}
+        initialName={modalInitialName}
         onSave={handleSaveDish}
         onClose={() => setIsModalOpen(false)}
       />

@@ -191,4 +191,99 @@ describe('Menu / Dish Management Integration', () => {
     expect(stored).toHaveLength(0);
     expect(screen.getByText('Menu gia đình đang trống')).toBeInTheDocument();
   });
+
+  describe('Quick Add Dish from Search (Ticket 02)', () => {
+    it('shows quick add button in zero-result state, pre-fills dish name, and keeps search query on save', async () => {
+      const user = userEvent.setup();
+      await dishRepo.addDish(householdCode, { name: 'Thịt kho trứng', tag: 'Món mặn' });
+
+      render(<MenuView householdCode={householdCode} dishRepository={dishRepo} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Thịt kho trứng')).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByTestId('dish-search-input');
+      await user.type(searchInput, 'Canh chua cá lóc');
+
+      // Empty result message
+      expect(screen.getByText(/Không tìm thấy Món ăn nào phù hợp với/)).toBeInTheDocument();
+
+      // Quick add button should appear
+      const quickAddBtn = screen.getByRole('button', {
+        name: /\+ Thêm Món ăn mới: "Canh chua cá lóc"/i,
+      });
+      expect(quickAddBtn).toBeInTheDocument();
+
+      // Click quick add button -> opens DishModal with initialName
+      await user.click(quickAddBtn);
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      const nameInput = screen.getByTestId('dish-name-input') as HTMLInputElement;
+      expect(nameInput.value).toBe('Canh chua cá lóc');
+
+      // Add a tag and save
+      const tagInput = screen.getByTestId('dish-tag-input');
+      await user.type(tagInput, 'Canh');
+      await user.click(screen.getByTestId('save-dish-btn'));
+
+      // Modal closes
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+
+      // Search query is preserved
+      expect((searchInput as HTMLInputElement).value).toBe('Canh chua cá lóc');
+
+      // The new dish appears in the filtered list
+      expect(screen.getByText('Canh chua cá lóc')).toBeInTheDocument();
+      expect(screen.getByText('Canh')).toBeInTheDocument();
+    });
+
+    it('shows quick add banner at bottom of filtered list when partial matches exist', async () => {
+      const user = userEvent.setup();
+      await dishRepo.addDish(householdCode, { name: 'Thịt kho tiêu', tag: 'Món mặn' });
+
+      render(<MenuView householdCode={householdCode} dishRepository={dishRepo} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Thịt kho tiêu')).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByTestId('dish-search-input');
+      await user.type(searchInput, 'Thịt kho');
+
+      // Partial match is visible
+      expect(screen.getByText('Thịt kho tiêu')).toBeInTheDocument();
+
+      // Quick add banner appears at bottom
+      const quickAddBanner = screen.getByRole('button', {
+        name: /\+ Thêm Món ăn mới: "Thịt kho"/i,
+      });
+      expect(quickAddBanner).toBeInTheDocument();
+
+      await user.click(quickAddBanner);
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      const nameInput = screen.getByTestId('dish-name-input') as HTMLInputElement;
+      expect(nameInput.value).toBe('Thịt kho');
+    });
+
+    it('hides quick add button and banner when search query matches an existing dish 100%', async () => {
+      const user = userEvent.setup();
+      await dishRepo.addDish(householdCode, { name: 'Thịt kho tiêu', tag: 'Món mặn' });
+
+      render(<MenuView householdCode={householdCode} dishRepository={dishRepo} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Thịt kho tiêu')).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByTestId('dish-search-input');
+      // Exact match (case insensitive + trimmed)
+      await user.type(searchInput, '  thịt kho tiêu  ');
+
+      expect(screen.getByText('Thịt kho tiêu')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /\+ Thêm Món ăn mới:/i })).not.toBeInTheDocument();
+    });
+  });
 });

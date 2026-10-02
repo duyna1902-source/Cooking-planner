@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 
 # Issue 02: Quick Add Dish in Menu Search (Variant A)
 
@@ -13,3 +13,10 @@ Trong tab Menu (`MenuView`), khi người dùng tìm kiếm Món ăn mà từ kh
 3. Nếu đã trùng 100% với một món có sẵn: Ẩn nút gợi ý thêm mới để tránh tạo trùng lặp Món ăn.
 4. Bấm vào nút gợi ý sẽ mở `DishModal` với `initialName = searchQuery.trim()`.
 5. Khi người dùng lưu thành công: Món ăn được lưu vào Menu, modal đóng lại, Menu tải lại dữ liệu và giữ nguyên giá trị `searchQuery` để Món ăn mới hiển thị ngay lập tức trong kết quả.
+
+## Answer
+- Đã thêm kiểm tra `isExactMatch` trong `MenuView` theo quy tắc `dish.name.trim().toLowerCase() === trimmedQuery.toLowerCase()`.
+- Thêm nút quick add vào phần zero-result state và banner ở cuối danh sách filtered dishes khi không có trùng khớp 100%.
+- Bấm vào mở `DishModal` với `initialName`.
+- Lưu Món ăn giữ nguyên `searchQuery`, làm mới Menu để Món ăn mới xuất hiện ngay lập tức trong danh sách lọc.
+- Bổ sung integration tests đầy đủ trong `tests/integration/menu-management.test.tsx`.
