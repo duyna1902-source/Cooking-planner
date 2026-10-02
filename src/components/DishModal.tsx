@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Dish, DishInput, validateDishInput } from '../domain/dish';
 import { X, UtensilsCrossed } from 'lucide-react';
 
-interface DishModalProps {
+export interface DishModalProps {
   isOpen: boolean;
   initialDish?: Dish | null;
+  initialName?: string;
   onSave: (input: DishInput) => Promise<void> | void;
   onClose: () => void;
 }
@@ -12,6 +13,7 @@ interface DishModalProps {
 export const DishModal: React.FC<DishModalProps> = ({
   isOpen,
   initialDish,
+  initialName,
   onSave,
   onClose,
 }) => {
@@ -25,11 +27,11 @@ export const DishModal: React.FC<DishModalProps> = ({
       setName(initialDish.name);
       setTag(initialDish.tag || '');
     } else {
-      setName('');
+      setName(initialName ? initialName.trim() : '');
       setTag('');
     }
     setError(null);
-  }, [initialDish, isOpen]);
+  }, [initialDish, initialName, isOpen]);
 
   if (!isOpen) return null;
 
@@ -62,7 +64,7 @@ export const DishModal: React.FC<DishModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="dish-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs"
       onClick={onClose}
     >
       <div

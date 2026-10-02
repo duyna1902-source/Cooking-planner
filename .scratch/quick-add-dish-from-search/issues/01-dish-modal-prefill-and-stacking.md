@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 
 # Issue 01: DishModal Prefill & Layer Stacking
 
@@ -12,3 +12,9 @@ Khi người dùng bấm vào gợi ý "+ Thêm Món ăn mới" từ ô tìm ki�
    - Nếu không có `initialName`, trường Tên Món ăn để trống như cũ.
 3. Z-index của `DishModal` được nâng lên `z-[60]` để nổi hoàn toàn trên Drawer (khi mở từ Drawer).
 4. Validation và các hành vi lưu/hủy hiện có của `DishModal` không bị ảnh hưởng.
+
+## Answer
+- Đã thêm `initialName?: string` vào `DishModalProps`.
+- Trong `useEffect`, nếu không có `initialDish`, khởi tạo `name` với `initialName ? initialName.trim() : ''`.
+- Đã nâng z-index của `DishModal` lên `z-[60]`.
+- Bổ sung unit test tại `tests/components/DishModal.test.tsx` xác nhận hoạt động.
