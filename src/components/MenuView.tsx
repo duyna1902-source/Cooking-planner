@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Dish, DishInput, filterDishes } from '../domain/dish';
+import { Dish, DishInput, filterDishes, hasExactDishMatch } from '../domain/dish';
 import { DishRepository, defaultDishRepository } from '../services/dishRepository';
 import { PlanRepository, defaultPlanRepository } from '../services/planRepository';
 import { DishModal } from './DishModal';
@@ -96,9 +96,7 @@ export const MenuView: React.FC<MenuViewProps> = ({
 
   const filteredDishes = filterDishes(dishes, searchQuery);
   const trimmedQuery = searchQuery.trim();
-  const isExactMatch = dishes.some(
-    (dish) => dish.name.trim().toLowerCase() === trimmedQuery.toLowerCase()
-  );
+  const isExactMatch = hasExactDishMatch(dishes, trimmedQuery);
   const showQuickAdd = trimmedQuery.length > 0 && !isExactMatch;
 
   return (

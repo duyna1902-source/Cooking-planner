@@ -84,3 +84,13 @@ export function filterDishes(dishes: Dish[], query: string): Dish[] {
     return nameRaw.includes(rawQuery) || tagRaw.includes(rawQuery);
   });
 }
+
+/**
+ * Checks if a search query is an exact 100% match with any dish in the list
+ * (case-insensitive and trimmed).
+ */
+export function hasExactDishMatch(dishes: Dish[], query: string): boolean {
+  const cleanQuery = query.trim().toLowerCase();
+  if (!cleanQuery) return false;
+  return dishes.some((dish) => dish.name.trim().toLowerCase() === cleanQuery);
+}

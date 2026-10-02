@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dish, DishInput, filterDishes } from '../domain/dish';
+import { Dish, DishInput, filterDishes, hasExactDishMatch } from '../domain/dish';
 import { Search, X, Check } from 'lucide-react';
 import { DishModal } from './DishModal';
 
@@ -9,7 +9,7 @@ export interface DishPickerDrawerProps {
   mealTitle: string;
   dishes: Dish[];
   alreadyAddedDishIds: string[];
-  onConfirm: (selectedDishIds: string[]) => void;
+  onConfirm: (selectedDishIds: string[]) => Promise<void> | void;
   onAddNewDish?: (input: DishInput) => Promise<string>;
 }
 
@@ -30,10 +30,8 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
 
   const filteredDishes = filterDishes(dishes, searchQuery);
   const trimmedQuery = searchQuery.trim();
-  const isExactMatch = dishes.some(
-    (dish) => dish.name.trim().toLowerCase() === trimmedQuery.toLowerCase()
-  );
-  const showAddSuggestion = trimmedQuery.length > 0 && !isExactMatch;
+  const isExactMatch = hasExactDishMatch(dishes, trimmedQuery);
+  const showQuickAdd = trimmedQuery.length > 0 && !isExactMatch;
 
   const toggleDishSelection = (dishId: string) => {
     if (alreadyAddedDishIds.includes(dishId)) return;
@@ -182,7 +180,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
         </div>
 
         {/* Sticky Action Banner (Variant A) */}
-        {showAddSuggestion && (
+        {showQuickAdd && (
           <div
             data-testid="picker-quick-add-banner"
             className="my-2 p-3 rounded-2xl bg-[#FEF7DC] border-2 border-dashed border-[#EFE4B5] flex items-center justify-between shadow-xs animate-in fade-in duration-150"
@@ -204,7 +202,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
               data-testid="picker-quick-add-btn"
               className="px-3 py-1.5 rounded-full bg-[#5B7C99] hover:bg-[#46637D] text-white text-[11px] font-bold shadow-xs transition active:scale-95 whitespace-nowrap"
             >
-              + Thêm món
+              + Thêm Món ăn
             </button>
           </div>
         )}
@@ -234,10 +232,9 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
           onSave={async (input) => {
             const newDishId = await onAddNewDish(input);
             const combined = [...selectedDishIds, newDishId];
-            onConfirm(combined);
+            await onConfirm(combined);
             setSelectedDishIds([]);
             setSearchQuery('');
-            setIsModalOpen(false);
             onClose();
           }}
           onClose={() => setIsModalOpen(false)}
