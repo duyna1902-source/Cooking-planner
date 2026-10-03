@@ -31,8 +31,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   };
 
   return (
-    <header className="px-5 pt-4 pb-3 bg-white border-b border-slate-100 flex items-center justify-between sticky top-0 z-20">
-      <div>
+    <header className="px-5 py-2.5 bg-white border-b border-slate-100 flex items-center justify-between gap-2 flex-shrink-0 z-20">
+      <h1 className="sr-only">
+        {activeTab === 'plan' ? 'Kế hoạch tuần này' : 'Menu gia đình'}
+      </h1>
+      <div className="min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span 
             data-testid="household-code-badge"
@@ -60,12 +63,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             {isOnline ? '🟢 Online' : '🟡 Chế độ máy'}
           </span>
         </div>
-        <h1 className="text-lg font-bold text-[#334E68] mt-1">
-          {activeTab === 'plan' ? 'Kế hoạch tuần này' : 'Menu gia đình'}
-        </h1>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 flex-shrink-0">
         <button
           onClick={handleQuickCopy}
           data-testid="quick-share-button"

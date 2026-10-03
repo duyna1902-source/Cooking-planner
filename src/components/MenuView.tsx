@@ -100,9 +100,9 @@ export const MenuView: React.FC<MenuViewProps> = ({
   const showQuickAdd = trimmedQuery.length > 0 && !isExactMatch;
 
   return (
-    <div className="flex-1 flex flex-col bg-[#FAFBFD] p-4" data-testid="menu-view">
+    <div className="flex-1 min-h-0 flex flex-col bg-[#FAFBFD] p-4" data-testid="menu-view">
       {/* Real-time Search Input Bar */}
-      <div className="relative mb-3.5">
+      <div className="relative mb-3.5 flex-shrink-0">
         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
           <Search className="w-4 h-4" />
         </div>
@@ -126,7 +126,7 @@ export const MenuView: React.FC<MenuViewProps> = ({
       </div>
 
       {/* Header bar of Menu section */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div>
           <h2 className="text-sm font-bold text-[#334E68] flex items-center gap-1.5">
             <span>Danh sách Món ăn</span>
@@ -194,7 +194,7 @@ export const MenuView: React.FC<MenuViewProps> = ({
         </div>
       ) : (
         /* Dishes List */
-        <div className="space-y-2.5 overflow-y-auto flex-1 pr-0.5" data-testid="dishes-list">
+        <div className="space-y-2.5 overflow-y-auto overscroll-contain flex-1 min-h-0 pr-0.5" data-testid="dishes-list">
           {filteredDishes.map((dish) => (
             <div
               key={dish.id}

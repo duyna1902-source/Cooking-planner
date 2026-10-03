@@ -116,11 +116,11 @@ export const App: React.FC<AppProps> = ({
   const needsOnboarding = !householdCode || !nickname || isSwitchingHousehold;
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-start sm:p-4 select-none">
+    <div className="h-[100dvh] overflow-hidden bg-slate-100 flex justify-center sm:items-center select-none">
       {/* Mobile container mockup */}
       <div 
         data-testid="app-shell"
-        className="w-full max-w-[420px] bg-[#FAFBFD] shadow-2xl sm:rounded-[36px] overflow-hidden flex flex-col min-h-screen sm:min-h-[760px] sm:max-h-[900px] border-0 sm:border-[6px] sm:border-slate-800 relative"
+        className="w-full max-w-[420px] h-full sm:h-[min(900px,calc(100dvh_-_2rem))] bg-[#FAFBFD] shadow-2xl sm:rounded-[36px] overflow-hidden flex flex-col border-0 sm:border-[6px] sm:border-slate-800 relative"
       >
         {/* Mobile Header */}
         {householdCode && nickname ? (
@@ -133,11 +133,11 @@ export const App: React.FC<AppProps> = ({
             onChangeHousehold={handleSwitchHousehold}
           />
         ) : (
-          <div className="h-4 bg-white" />
+          <div className="h-4 bg-white flex-shrink-0" />
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 flex flex-col overflow-y-auto">
+        <main className="flex-1 min-h-0 flex flex-col">
           {activeTab === 'plan' ? (
             <PlanView
               householdCode={householdCode || ''}

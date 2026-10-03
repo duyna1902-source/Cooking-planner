@@ -14,6 +14,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* App fits one viewport: the page never scrolls, only inner lists do. */
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;

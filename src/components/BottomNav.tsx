@@ -12,7 +12,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
   return (
     <nav 
       aria-label="Thanh điều hướng chính"
-      className="w-full bg-white/95 backdrop-blur border-t border-slate-100 px-6 py-2.5 flex items-center justify-around z-20 sticky bottom-0"
+      className="w-full flex-shrink-0 bg-white/95 backdrop-blur border-t border-slate-100 px-6 pt-2.5 flex items-center justify-around z-20"
+      style={{ paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))' }}
     >
       <button
         onClick={() => onTabChange('plan')}
