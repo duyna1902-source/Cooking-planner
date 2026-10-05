@@ -292,8 +292,8 @@ describe('Weekly Plan Integration', () => {
     expect(confirmBtn).toBeDisabled();
   });
 
-  describe('Quick Add Dish from Search in Plan Picker Drawer (Ticket 03)', () => {
-    it('shows sticky action banner when query has no exact match, hides when exact match', async () => {
+  describe('In-List Quick Add and Empty State in Plan Picker Drawer (Ticket 01)', () => {
+    it('appends quick-add prompt at the end of scrollable list when search has partial matching dishes', async () => {
       const user = userEvent.setup();
       render(
         <PlanView
@@ -306,25 +306,92 @@ describe('Weekly Plan Integration', () => {
 
       // Open drawer
       await user.click(screen.getByTestId('add-dish-to-plan-btn'));
-      expect(screen.getByTestId('dish-picker-drawer')).toBeInTheDocument();
-
       const searchInput = screen.getByTestId('picker-search-input');
 
-      // Search for non-existent dish
-      await user.type(searchInput, 'Canh khổ qua dồn thịt');
+      // Search for 'Thịt' (matches 'Thịt kho trứng', but not exact match)
+      await user.type(searchInput, 'Thịt');
 
-      // Sticky banner should appear
-      const banner = screen.getByTestId('picker-quick-add-banner');
-      expect(banner).toBeInTheDocument();
-      expect(screen.getByText(/Chưa có "Canh khổ qua dồn thịt" trong Menu\?/)).toBeInTheDocument();
+      // Matching dish appears
+      const dishes = await dishRepo.getDishes(householdCode);
+      const thitKhoTrung = dishes.find((d) => d.name === 'Thịt kho trứng')!;
+      const dishItem = screen.getByTestId(`picker-dish-item-${thitKhoTrung.id}`);
+      expect(dishItem).toBeInTheDocument();
+
+      // Quick add banner appears at end of scrollable list
+      const list = screen.getByTestId('picker-dish-list');
+      const quickAddBanner = screen.getByTestId('picker-quick-add-banner');
+      expect(list).toContainElement(dishItem);
+      expect(list).toContainElement(quickAddBanner);
+
+      // Order: quickAddBanner comes after dishItem
+      expect(dishItem.compareDocumentPosition(quickAddBanner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       expect(screen.getByTestId('picker-quick-add-btn')).toBeInTheDocument();
+    });
 
-      // Clear and type an exact match
-      await user.clear(searchInput);
+    it('displays centered empty state with quick-add button and clear search button when zero matches found', async () => {
+      const user = userEvent.setup();
+      render(
+        <PlanView
+          householdCode={householdCode}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          initialDate={fixedDate}
+        />
+      );
+
+      // Open drawer
+      await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+      const searchInput = screen.getByTestId('picker-search-input');
+
+      // Search for query with zero matches
+      await user.type(searchInput, 'Pizza thập cẩm');
+
+      // Centered empty state displays unfound message
+      expect(
+        screen.getByText(/Không tìm thấy Món ăn nào phù hợp với/i)
+      ).toBeInTheDocument();
+      expect(screen.getByText('Pizza thập cẩm')).toBeInTheDocument();
+
+      // Quick-add button is available in empty state
+      const quickAddBtn = screen.getByTestId('picker-quick-add-btn');
+      expect(quickAddBtn).toBeInTheDocument();
+      expect(screen.getByTestId('picker-quick-add-banner')).toBeInTheDocument();
+
+      // "Xóa tìm kiếm" button is present and clicking it resets search query
+      const clearSearchBtn = screen.getByTestId('clear-search-btn');
+      expect(clearSearchBtn).toHaveTextContent('Xóa tìm kiếm');
+      await user.click(clearSearchBtn);
+
+      expect((searchInput as HTMLInputElement).value).toBe('');
+      expect(screen.queryByTestId('clear-search-btn')).not.toBeInTheDocument();
+      // All existing dishes are shown again
+      expect(screen.getByText('Thịt kho trứng')).toBeInTheDocument();
+    });
+
+    it('hides quick-add prompt when query exactly matches existing dish name (case-insensitive and trimmed)', async () => {
+      const user = userEvent.setup();
+      render(
+        <PlanView
+          householdCode={householdCode}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          initialDate={fixedDate}
+        />
+      );
+
+      // Open drawer
+      await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+      const searchInput = screen.getByTestId('picker-search-input');
+
+      // Type an exact match with leading/trailing spaces and different casing
       await user.type(searchInput, '  thịt kho trứng  ');
 
-      // Sticky banner must be hidden
+      // Matching dish is shown
+      expect(screen.getByText('Thịt kho trứng')).toBeInTheDocument();
+
+      // Quick add prompt must be hidden
       expect(screen.queryByTestId('picker-quick-add-banner')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('picker-quick-add-btn')).not.toBeInTheDocument();
     });
 
     it('combines pre-checked dishes and newly created dish, schedules both, and closes drawer', async () => {
