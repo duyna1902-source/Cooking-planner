@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PlanView } from '../../src/components/PlanView';
 import { InMemoryDishRepository } from '../../src/services/dishRepository';
@@ -570,4 +570,95 @@ describe('Weekly Plan Integration', () => {
       expect(confirmBtn).toHaveClass('py-2.5');
     });
   });
+
+  describe('Dismiss Keyboard on Scroll and Tap Responsiveness (Ticket 03)', () => {
+    it('blurs search input on scroll or touch-move when focused, while preserving query and filtered results', async () => {
+      const user = userEvent.setup();
+      render(
+        <PlanView
+          householdCode={householdCode}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          initialDate={fixedDate}
+        />
+      );
+
+      // Open drawer
+      await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+      const searchInput = screen.getByTestId('picker-search-input');
+      const dishList = screen.getByTestId('picker-dish-list');
+
+      // Focus and type query
+      await user.type(searchInput, 'Canh');
+      expect(document.activeElement).toBe(searchInput);
+      expect((searchInput as HTMLInputElement).value).toBe('Canh');
+      expect(screen.getByText('Canh chua cá lóc')).toBeInTheDocument();
+
+      // Trigger scroll on dish list
+      fireEvent.scroll(dishList);
+
+      // Search input should be blurred
+      expect(document.activeElement).not.toBe(searchInput);
+      // Query and filtered results are retained
+      expect((searchInput as HTMLInputElement).value).toBe('Canh');
+      expect(screen.getByText('Canh chua cá lóc')).toBeInTheDocument();
+
+      // Re-focus search input
+      await user.click(searchInput);
+      expect(document.activeElement).toBe(searchInput);
+
+      // Trigger touch-move on dish list
+      fireEvent.touchMove(dishList);
+
+      // Search input should be blurred again
+      expect(document.activeElement).not.toBe(searchInput);
+      expect((searchInput as HTMLInputElement).value).toBe('Canh');
+      expect(screen.getByText('Canh chua cá lóc')).toBeInTheDocument();
+    });
+
+    it('immediately selects dish on first tap while search input is focused without being swallowed and confirms into meal', async () => {
+      const user = userEvent.setup();
+      render(
+        <PlanView
+          householdCode={householdCode}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          initialDate={fixedDate}
+        />
+      );
+
+      // Open drawer
+      await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+      const searchInput = screen.getByTestId('picker-search-input');
+
+      // Focus and filter
+      await user.type(searchInput, 'Thịt');
+      expect(document.activeElement).toBe(searchInput);
+
+      const dishes = await dishRepo.getDishes(householdCode);
+      const thitKho = dishes.find((d) => d.name === 'Thịt kho trứng')!;
+      const dishItem = screen.getByTestId(`picker-dish-item-${thitKho.id}`);
+      const checkbox = screen.getByTestId(`picker-checkbox-${thitKho.id}`);
+
+      // First tap directly on dish item while search is focused
+      await user.click(dishItem);
+
+      // Dish is immediately selected on the first tap
+      expect(checkbox.className).toContain('bg-[#5B7C99]');
+      const confirmBtn = screen.getByTestId('confirm-add-dishes-btn');
+      expect(confirmBtn).toHaveTextContent('1 Món ăn');
+
+      // Confirm button works and schedules selected dishes into the active meal
+      await user.click(confirmBtn);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('dish-picker-drawer')).not.toBeInTheDocument();
+      });
+
+      expect(screen.getByText('Thịt kho trứng')).toBeInTheDocument();
+      const stored = await planRepo.getPlanItems(householdCode, fixedDate, fixedDate);
+      expect(stored.map((i) => i.dishId)).toContain(thitKho.id);
+    });
+  });
 });
+

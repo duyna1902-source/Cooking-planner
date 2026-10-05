@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dish, DishInput, filterDishes, hasExactDishMatch } from '../domain/dish';
 import { Search, X, Check } from 'lucide-react';
 import { DishModal } from './DishModal';
@@ -26,6 +26,13 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
   const [selectedDishIds, setSelectedDishIds] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDismissKeyboard = () => {
+    if (document.activeElement === searchInputRef.current) {
+      searchInputRef.current?.blur();
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -101,6 +108,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
             <Search className="w-4 h-4" />
           </div>
           <input
+            ref={searchInputRef}
             type="text"
             data-testid="picker-search-input"
             value={searchQuery}
@@ -124,6 +132,8 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
         {/* Dish List */}
         <div
           data-testid="picker-dish-list"
+          onScroll={handleDismissKeyboard}
+          onTouchMove={handleDismissKeyboard}
           className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-1 space-y-2"
         >
           {dishes.length === 0 ? (
