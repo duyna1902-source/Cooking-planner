@@ -489,4 +489,85 @@ describe('Weekly Plan Integration', () => {
       expect(checkbox.className).toContain('bg-[#5B7C99]');
     });
   });
+
+  describe('Responsive Drawer Viewport and Compaction (Ticket 02)', () => {
+    it('shows subtitle when drawer opens with empty search and no focus, and collapses subtitle when search is focused or query typed', async () => {
+      const user = userEvent.setup();
+      render(
+        <PlanView
+          householdCode={householdCode}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          initialDate={fixedDate}
+        />
+      );
+
+      // Open drawer
+      await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+
+      // a) Subtitle is visible when drawer opens with empty search and no focus
+      const subtitle = screen.getByTestId('picker-drawer-subtitle');
+      expect(subtitle).toBeInTheDocument();
+      expect(subtitle).toHaveTextContent('Tick chọn Món ăn từ Menu của gia đình');
+
+      // Meal title and close button are present
+      expect(screen.getByRole('heading', { level: 3, name: /Chọn Món ăn cho Bữa Tối/i })).toBeInTheDocument();
+      expect(screen.getByTestId('close-dish-picker-btn')).toBeInTheDocument();
+
+      // b) Focus search input -> subtitle is collapsed, meal title and close button remain visible
+      const searchInput = screen.getByTestId('picker-search-input');
+      await user.click(searchInput);
+
+      expect(screen.queryByTestId('picker-drawer-subtitle')).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 3, name: /Chọn Món ăn cho Bữa Tối/i })).toBeInTheDocument();
+      expect(screen.getByTestId('close-dish-picker-btn')).toBeInTheDocument();
+
+      // Blur input with empty query -> subtitle is restored
+      await user.tab();
+      expect(screen.getByTestId('picker-drawer-subtitle')).toBeInTheDocument();
+
+      // Type query -> subtitle is hidden, meal title and close button remain visible
+      await user.type(searchInput, 'Canh');
+      await user.tab(); // even when blurred, non-empty query keeps subtitle collapsed
+      expect(screen.queryByTestId('picker-drawer-subtitle')).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 3, name: /Chọn Món ăn cho Bữa Tối/i })).toBeInTheDocument();
+      expect(screen.getByTestId('close-dish-picker-btn')).toBeInTheDocument();
+
+      // Clearing query and blurring restores subtitle
+      await user.clear(searchInput);
+      await user.tab();
+      expect(screen.getByTestId('picker-drawer-subtitle')).toBeInTheDocument();
+    });
+
+    it('applies responsive max height and compaction classes to drawer container, list, and confirm button', async () => {
+      const user = userEvent.setup();
+      render(
+        <PlanView
+          householdCode={householdCode}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          initialDate={fixedDate}
+        />
+      );
+
+      await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+
+      // c) The drawer container classes include max-h-[92dvh] and sm:max-h-[85%]
+      const drawerContainer = screen.getByTestId('picker-drawer-container');
+      expect(drawerContainer).toHaveClass('max-h-[92dvh]');
+      expect(drawerContainer).toHaveClass('sm:max-h-[85%]');
+
+      // d) The dish list container has flex-1, min-h-0, overflow-y-auto, overscroll-contain, and does NOT have max-h-[300px]
+      const dishList = screen.getByTestId('picker-dish-list');
+      expect(dishList).toHaveClass('flex-1');
+      expect(dishList).toHaveClass('min-h-0');
+      expect(dishList).toHaveClass('overflow-y-auto');
+      expect(dishList).toHaveClass('overscroll-contain');
+      expect(dishList).not.toHaveClass('max-h-[300px]');
+
+      // e) Confirm button has compact styling (py-2.5)
+      const confirmBtn = screen.getByTestId('confirm-add-dishes-btn');
+      expect(confirmBtn).toHaveClass('py-2.5');
+    });
+  });
 });

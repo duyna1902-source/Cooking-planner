@@ -25,6 +25,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDishIds, setSelectedDishIds] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   if (!isOpen) return null;
 
@@ -32,6 +33,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
   const trimmedQuery = searchQuery.trim();
   const isExactMatch = hasExactDishMatch(dishes, trimmedQuery);
   const showQuickAdd = trimmedQuery.length > 0 && !isExactMatch;
+  const isSearchActive = trimmedQuery.length > 0 || isSearchFocused;
 
   const toggleDishSelection = (dishId: string) => {
     if (alreadyAddedDishIds.includes(dishId)) return;
@@ -45,12 +47,14 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
     onConfirm(selectedDishIds);
     setSelectedDishIds([]);
     setSearchQuery('');
+    setIsSearchFocused(false);
     onClose();
   };
 
   const handleClose = () => {
     setSelectedDishIds([]);
     setSearchQuery('');
+    setIsSearchFocused(false);
     onClose();
   };
 
@@ -64,7 +68,8 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
       aria-label={`Chọn Món ăn cho ${mealTitle}`}
     >
       <div
-        className="w-full max-w-[420px] mx-auto bg-white rounded-t-[32px] p-5 pt-3 shadow-2xl max-h-[85%] flex flex-col border-t border-slate-100 animate-in slide-in-from-bottom duration-200"
+        data-testid="picker-drawer-container"
+        className="w-full max-w-[420px] mx-auto bg-white rounded-t-[32px] p-5 pt-3 shadow-2xl max-h-[92dvh] sm:max-h-[85%] flex flex-col border-t border-slate-100 animate-in slide-in-from-bottom duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drawer Grab Bar */}
@@ -74,7 +79,11 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="text-base font-bold text-[#334E68]">Chọn Món ăn cho {mealTitle}</h3>
-            <p className="text-[11px] text-slate-400">Tick chọn Món ăn từ Menu của gia đình</p>
+            {!isSearchActive && (
+              <p data-testid="picker-drawer-subtitle" className="text-[11px] text-slate-400">
+                Tick chọn Món ăn từ Menu của gia đình
+              </p>
+            )}
           </div>
           <button
             onClick={handleClose}
@@ -96,9 +105,10 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
             data-testid="picker-search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             placeholder="Tìm Món ăn hoặc phân loại/tag..."
             className="w-full pl-9 pr-8 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] focus:bg-white transition"
-            autoFocus
           />
           {searchQuery && (
             <button
@@ -114,7 +124,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
         {/* Dish List */}
         <div
           data-testid="picker-dish-list"
-          className="flex-1 overflow-y-auto py-1 space-y-2 max-h-[300px]"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-1 space-y-2"
         >
           {dishes.length === 0 ? (
             <div className="py-8 text-center text-slate-400 text-xs">
@@ -221,12 +231,12 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
         </div>
 
         {/* Footer Confirm Button */}
-        <div className="pt-3 border-t border-slate-100 mt-2">
+        <div className="pt-2.5 border-t border-slate-100 mt-1.5">
           <button
             onClick={handleConfirm}
             disabled={selectedDishIds.length === 0}
             data-testid="confirm-add-dishes-btn"
-            className={`w-full py-3 rounded-full font-bold text-xs shadow-md transition active:scale-98 ${
+            className={`w-full py-2.5 rounded-full font-bold text-xs shadow-md transition active:scale-98 ${
               selectedDishIds.length > 0
                 ? 'bg-[#5B7C99] hover:bg-[#4a6b88] text-white shadow-[#5B7C99]/30'
                 : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
