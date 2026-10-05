@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: completed
 
 # Đặc tả kỹ thuật: Tối ưu trải nghiệm tìm kiếm và chọn Món ăn trên thiết bị di động (Dish Picker Mobile Search UX)
 
