@@ -13,6 +13,36 @@ export interface DishPickerDrawerProps {
   onAddNewDish?: (input: DishInput) => Promise<string>;
 }
 
+interface QuickAddBannerProps {
+  query: string;
+  onClick: () => void;
+  variant?: 'empty' | 'list-end';
+}
+
+const QuickAddBanner: React.FC<QuickAddBannerProps> = ({
+  query,
+  onClick,
+  variant = 'list-end',
+}) => (
+  <div
+    data-testid="picker-quick-add-banner"
+    className={variant === 'list-end' ? 'pt-2 text-center' : 'mt-3'}
+  >
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid="picker-quick-add-btn"
+      className={
+        variant === 'list-end'
+          ? 'w-full py-2.5 px-3 rounded-2xl bg-[#FEF7DC]/80 border border-dashed border-[#EFE4B5] text-[#334E68] font-bold text-xs hover:bg-[#FEF7DC] transition shadow-xs'
+          : 'px-4 py-2 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] font-bold text-xs hover:bg-[#FDF2C7] transition shadow-xs'
+      }
+    >
+      + Thêm Món ăn mới: &quot;{query}&quot;
+    </button>
+  </div>
+);
+
 export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
   isOpen,
   onClose,
@@ -27,6 +57,13 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const resetStateAndClose = () => {
+    setSelectedDishIds([]);
+    setSearchQuery('');
+    setIsSearchFocused(false);
+    onClose();
+  };
 
   const handleDismissKeyboard = () => {
     if (document.activeElement === searchInputRef.current) {
@@ -52,23 +89,17 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
   const handleConfirm = () => {
     if (selectedDishIds.length === 0) return;
     onConfirm(selectedDishIds);
-    setSelectedDishIds([]);
-    setSearchQuery('');
-    setIsSearchFocused(false);
-    onClose();
+    resetStateAndClose();
   };
 
   const handleClose = () => {
-    setSelectedDishIds([]);
-    setSearchQuery('');
-    setIsSearchFocused(false);
-    onClose();
+    resetStateAndClose();
   };
 
   return (
     <div
       data-testid="dish-picker-drawer"
-      className="fixed inset-0 z-50 flex flex-col justify-end bg-slate-900/40 backdrop-blur-xs transition-opacity"
+      className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center sm:p-4 bg-slate-900/40 backdrop-blur-xs transition-opacity"
       onClick={handleClose}
       role="dialog"
       aria-modal="true"
@@ -76,7 +107,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
     >
       <div
         data-testid="picker-drawer-container"
-        className="w-full max-w-[420px] mx-auto bg-white rounded-t-[32px] p-5 pt-3 shadow-2xl max-h-[92dvh] sm:max-h-[85%] flex flex-col border-t border-slate-100 animate-in slide-in-from-bottom duration-200"
+        className="w-full max-w-[420px] mx-auto bg-white rounded-t-[32px] sm:rounded-[32px] p-5 pt-3 shadow-2xl max-h-[92dvh] sm:max-h-[85%] flex flex-col border-t sm:border border-slate-100 animate-in slide-in-from-bottom duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drawer Grab Bar */}
@@ -110,6 +141,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
           <input
             ref={searchInputRef}
             type="text"
+            autoFocus
             data-testid="picker-search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -136,7 +168,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
           onTouchMove={handleDismissKeyboard}
           className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-1 space-y-2"
         >
-          {dishes.length === 0 ? (
+          {dishes.length === 0 && trimmedQuery.length === 0 ? (
             <div className="py-8 text-center text-slate-400 text-xs">
               <p>Menu gia đình chưa có Món ăn nào.</p>
               <p className="text-[11px] mt-1 text-slate-400">
@@ -149,16 +181,11 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
                 Không tìm thấy Món ăn nào phù hợp với &quot;<strong>{searchQuery}</strong>&quot;
               </p>
               {showQuickAdd && (
-                <div data-testid="picker-quick-add-banner" className="mt-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(true)}
-                    data-testid="picker-quick-add-btn"
-                    className="px-4 py-2 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] font-bold text-xs hover:bg-[#FDF2C7] transition shadow-xs"
-                  >
-                    + Thêm Món ăn mới: &quot;{trimmedQuery}&quot;
-                  </button>
-                </div>
+                <QuickAddBanner
+                  query={trimmedQuery}
+                  onClick={() => setIsModalOpen(true)}
+                  variant="empty"
+                />
               )}
               <button
                 type="button"
@@ -222,19 +249,11 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
               })}
 
               {showQuickAdd && (
-                <div
-                  data-testid="picker-quick-add-banner"
-                  className="pt-2 text-center"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(true)}
-                    data-testid="picker-quick-add-btn"
-                    className="w-full py-2.5 px-3 rounded-2xl bg-[#FEF7DC]/80 border border-dashed border-[#EFE4B5] text-[#334E68] font-bold text-xs hover:bg-[#FEF7DC] transition shadow-xs"
-                  >
-                    + Thêm Món ăn mới: &quot;{trimmedQuery}&quot;
-                  </button>
-                </div>
+                <QuickAddBanner
+                  query={trimmedQuery}
+                  onClick={() => setIsModalOpen(true)}
+                  variant="list-end"
+                />
               )}
             </>
           )}
@@ -266,9 +285,7 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
             const newDishId = await onAddNewDish(input);
             const combined = [...selectedDishIds, newDishId];
             await onConfirm(combined);
-            setSelectedDishIds([]);
-            setSearchQuery('');
-            onClose();
+            resetStateAndClose();
           }}
           onClose={() => setIsModalOpen(false)}
         />

@@ -368,6 +368,57 @@ describe('Weekly Plan Integration', () => {
       expect(screen.getByText('Thịt kho trứng')).toBeInTheDocument();
     });
 
+    it('shows zero-match empty state and enables quick-add when search query is entered in an empty menu', async () => {
+      const emptyDishRepo = new InMemoryDishRepository();
+      const user = userEvent.setup();
+      render(
+        <PlanView
+          householdCode={householdCode}
+          dishRepository={emptyDishRepo}
+          planRepository={planRepo}
+          initialDate={fixedDate}
+        />
+      );
+
+      // Open drawer
+      await user.click(screen.getByTestId('add-dish-to-plan-btn'));
+
+      // Initially dishes list is empty, with empty query -> shows static empty menu state
+      expect(screen.getByText('Menu gia đình chưa có Món ăn nào.')).toBeInTheDocument();
+      expect(screen.getByText('Vui lòng vào tab Menu để thêm Món ăn trước.')).toBeInTheDocument();
+
+      // Enter search query
+      const searchInput = screen.getByTestId('picker-search-input');
+      await user.type(searchInput, 'Phở bò');
+
+      // Static empty menu state is hidden
+      expect(screen.queryByText('Menu gia đình chưa có Món ăn nào.')).not.toBeInTheDocument();
+
+      // Zero-match empty state appears with query, quick-add button, and clear search button
+      expect(screen.getByText(/Không tìm thấy Món ăn nào phù hợp với/i)).toBeInTheDocument();
+      expect(screen.getByText('Phở bò')).toBeInTheDocument();
+      expect(screen.getByTestId('picker-quick-add-btn')).toBeInTheDocument();
+      expect(screen.getByTestId('clear-search-btn')).toBeInTheDocument();
+
+      // Clicking quick-add opens modal with query pre-filled
+      await user.click(screen.getByTestId('picker-quick-add-btn'));
+      const modalNameInput = screen.getByTestId('dish-name-input') as HTMLInputElement;
+      expect(modalNameInput.value).toBe('Phở bò');
+
+      // Fill in tag and save
+      await user.type(screen.getByTestId('dish-tag-input'), 'Món nước');
+      await user.click(screen.getByTestId('save-dish-btn'));
+
+      // Drawer closes and newly created dish is scheduled into meal
+      await waitFor(() => {
+        expect(screen.queryByTestId('dish-picker-drawer')).not.toBeInTheDocument();
+      });
+      expect(screen.getByText('Phở bò')).toBeInTheDocument();
+      const updatedDishes = await emptyDishRepo.getDishes(householdCode);
+      expect(updatedDishes).toHaveLength(1);
+      expect(updatedDishes[0].name).toBe('Phở bò');
+    });
+
     it('hides quick-add prompt when query exactly matches existing dish name (case-insensitive and trimmed)', async () => {
       const user = userEvent.setup();
       render(
@@ -504,36 +555,36 @@ describe('Weekly Plan Integration', () => {
 
       // Open drawer
       await user.click(screen.getByTestId('add-dish-to-plan-btn'));
-
-      // a) Subtitle is visible when drawer opens with empty search and no focus
-      const subtitle = screen.getByTestId('picker-drawer-subtitle');
-      expect(subtitle).toBeInTheDocument();
-      expect(subtitle).toHaveTextContent('Tick chọn Món ăn từ Menu của gia đình');
+      const searchInput = screen.getByTestId('picker-search-input');
 
       // Meal title and close button are present
       expect(screen.getByRole('heading', { level: 3, name: /Chọn Món ăn cho Bữa Tối/i })).toBeInTheDocument();
       expect(screen.getByTestId('close-dish-picker-btn')).toBeInTheDocument();
 
-      // b) Focus search input -> subtitle is collapsed, meal title and close button remain visible
-      const searchInput = screen.getByTestId('picker-search-input');
-      await user.click(searchInput);
+      // a) With autoFocus, search input is focused initially and subtitle is collapsed
+      expect(document.activeElement).toBe(searchInput);
+      expect(screen.queryByTestId('picker-drawer-subtitle')).not.toBeInTheDocument();
 
+      // b) Blurring input with empty search restores subtitle
+      await user.tab();
+      const subtitle = screen.getByTestId('picker-drawer-subtitle');
+      expect(subtitle).toBeInTheDocument();
+      expect(subtitle).toHaveTextContent('Tick chọn Món ăn từ Menu của gia đình');
+
+      // c) Focusing search input collapses subtitle again, meal title and close button remain visible
+      await user.click(searchInput);
       expect(screen.queryByTestId('picker-drawer-subtitle')).not.toBeInTheDocument();
       expect(screen.getByRole('heading', { level: 3, name: /Chọn Món ăn cho Bữa Tối/i })).toBeInTheDocument();
       expect(screen.getByTestId('close-dish-picker-btn')).toBeInTheDocument();
 
-      // Blur input with empty query -> subtitle is restored
-      await user.tab();
-      expect(screen.getByTestId('picker-drawer-subtitle')).toBeInTheDocument();
-
-      // Type query -> subtitle is hidden, meal title and close button remain visible
+      // d) Typing query keeps subtitle collapsed even after blurring
       await user.type(searchInput, 'Canh');
       await user.tab(); // even when blurred, non-empty query keeps subtitle collapsed
       expect(screen.queryByTestId('picker-drawer-subtitle')).not.toBeInTheDocument();
       expect(screen.getByRole('heading', { level: 3, name: /Chọn Món ăn cho Bữa Tối/i })).toBeInTheDocument();
       expect(screen.getByTestId('close-dish-picker-btn')).toBeInTheDocument();
 
-      // Clearing query and blurring restores subtitle
+      // e) Clearing query and blurring restores subtitle
       await user.clear(searchInput);
       await user.tab();
       expect(screen.getByTestId('picker-drawer-subtitle')).toBeInTheDocument();

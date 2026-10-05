@@ -6,7 +6,7 @@ Status: ready-for-agent
 
 Khi thành viên gia đình sử dụng điện thoại di động để lên Kế hoạch ăn uống, họ mở ngăn chọn Món ăn (Dish Picker Drawer) và nhập từ khóa vào ô tìm kiếm (ví dụ tìm theo phân loại "Món mặn"). Khi bàn phím ảo của hệ điều hành xuất hiện:
 - Chiều cao khả dụng của màn hình bị giảm xuống hơn một nửa (chỉ còn khoảng 300px - 350px).
-- Ngăn chọn Món ăn bị khống chế chiều cao tối đa theo tỷ lệ phần trăm nhỏ, khiến toàn bộ diện tích dọc bị các thành phần cố định chiếm hết: vạch kéo, tiêu đề kèm mô tả phụ, ô tìm kiếm, thẻ gợi ý thêm món ghim ở đáy và nút xác nhận.
+- Ngăn chọn Món ăn bị khống chế chiều cao tối đa theo tỷ lệ phần trăm nhỏ, khiến toàn bộ diện tích dọc bị các thành phần cố định chiếm hết: vạch kéo, tiêu đề kèm mô tả phụ, ô tìm kiếm, thẻ gợi ý thêm Món ăn ghim ở đáy và nút xác nhận.
 - Kết quả là danh sách các Món ăn tìm thấy bị ép về kích thước gần bằng 0 hoặc bị đẩy ra ngoài vùng nhìn thấy, khiến người dùng hoàn toàn không nhìn thấy và không thể chọn được các Món ăn phù hợp trừ khi phải tìm cách đóng bàn phím.
 - Đồng thời, thẻ gợi ý "Chưa có trong Menu?" hiện tại luôn hiển thị dạng thẻ lớn cố định ngay cả khi có rất nhiều Món ăn phù hợp, gây lãng phí không gian màn hình quý giá.
 
@@ -15,7 +15,7 @@ Khi thành viên gia đình sử dụng điện thoại di động để lên K�
 Tối ưu hóa toàn diện giao diện và tương tác của ngăn chọn Món ăn trên thiết bị di động:
 1. **Mở rộng chiều cao và loại bỏ giới hạn cứng**: Cho phép ngăn chọn Món ăn tận dụng tối đa chiều cao khả dụng phía trên bàn phím ảo; loại bỏ giới hạn chiều cao tối đa cứng ở danh sách Món ăn để danh sách tự co giãn lấp đầy không gian.
 2. **Thu gọn phần đầu (Header) khi tìm kiếm**: Tự động ẩn dòng phụ đề hướng dẫn khi người dùng đang tìm kiếm hoặc focus ô tìm kiếm, gom tiêu đề và nút đóng thành một hàng duy nhất để nhường chỗ cho danh sách.
-3. **Chuyển thẻ thêm Món ăn mới vào bên trong danh sách cuộn**: Thẻ gợi ý thêm Món ăn mới không còn ghim cố định ở đáy mà nằm ở cuối danh sách cuộn (sau món cuối cùng). Danh sách Món ăn tìm thấy sẽ hiển thị ngay sát dưới ô tìm kiếm. Khi không có kết quả nào, hiển thị dạng trạng thái rỗng (Empty State) gọn gàng ở giữa danh sách với nút tạo món mới.
+3. **Chuyển thẻ thêm Món ăn mới vào bên trong danh sách cuộn**: Thẻ gợi ý thêm Món ăn mới không còn ghim cố định ở đáy mà nằm ở cuối danh sách cuộn (sau Món ăn cuối cùng). Danh sách Món ăn tìm thấy sẽ hiển thị ngay sát dưới ô tìm kiếm. Khi không có kết quả nào, hiển thị dạng trạng thái rỗng (Empty State) gọn gàng ở giữa danh sách với nút tạo Món ăn mới.
 4. **Tự động hạ bàn phím khi vuốt duyệt danh sách (Dismiss on scroll)**: Khi người dùng chạm và vuốt danh sách kết quả, bàn phím tự động hạ xuống giúp mở rộng lại toàn bộ màn hình mà không làm mất từ khóa tìm kiếm hay danh sách kết quả. Cho phép chạm chọn Món ăn trực tiếp ngay cả khi bàn phím đang mở.
 5. **Tinh gọn nút Xác nhận ở đáy**: Nút xác nhận được tinh giản khoảng đệm để chiếm ít diện tích dọc nhất có thể.
 
