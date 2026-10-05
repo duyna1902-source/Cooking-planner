@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** completed
+**Status:** resolved
 
 - [x] When search query yields partial matching dishes, render matching dishes directly beneath the search input without any sticky bottom banner occluding the list.
 - [x] Render the quick-add dish prompt at the very end of the scrollable list after the last matching dish.
@@ -12,3 +12,8 @@
 - [x] Keep the quick-add prompt hidden when the trimmed query exactly matches an existing dish name (case-insensitive).
 - [x] Tapping the quick-add button opens the dish creation modal with pre-filled name, retaining seamless persistence into Menu and the active meal upon saving.
 - [x] Preserve existing test IDs (`picker-quick-add-banner` and `picker-quick-add-btn`) for test compatibility.
+
+## Answer
+
+Moved the quick-add banner from a fixed bottom sticky overlay into the scrollable dish list at the end of matching items. When search yields no results, rendered a centered empty state displaying Vietnamese localization "Không tìm thấy Món ăn nào phù hợp với \"...\"" alongside a quick-add button and "Xóa tìm kiếm" button. Existing test IDs (`picker-quick-add-banner` and `picker-quick-add-btn`) and seamless creation flow are fully preserved.
+
