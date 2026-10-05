@@ -112,7 +112,10 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
         </div>
 
         {/* Dish List */}
-        <div className="flex-1 overflow-y-auto py-1 space-y-2 max-h-[300px]">
+        <div
+          data-testid="picker-dish-list"
+          className="flex-1 overflow-y-auto py-1 space-y-2 max-h-[300px]"
+        >
           {dishes.length === 0 ? (
             <div className="py-8 text-center text-slate-400 text-xs">
               <p>Menu gia đình chưa có Món ăn nào.</p>
@@ -121,91 +124,101 @@ export const DishPickerDrawer: React.FC<DishPickerDrawerProps> = ({
               </p>
             </div>
           ) : filteredDishes.length === 0 ? (
-            <div className="py-8 text-center text-slate-400 text-xs">
-              <p>
-                Không tìm thấy Món ăn nào phù hợp với &quot;<b>{searchQuery}</b>&quot;
+            <div className="py-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
+              <p className="text-xs font-medium">
+                Không tìm thấy Món ăn nào phù hợp với &quot;<strong>{searchQuery}</strong>&quot;
               </p>
+              {showQuickAdd && (
+                <div data-testid="picker-quick-add-banner" className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(true)}
+                    data-testid="picker-quick-add-btn"
+                    className="px-4 py-2 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] font-bold text-xs hover:bg-[#FDF2C7] transition shadow-xs"
+                  >
+                    + Thêm Món ăn mới: &quot;{trimmedQuery}&quot;
+                  </button>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                data-testid="clear-search-btn"
+                className="mt-2 text-xs text-[#5B7C99] font-bold hover:underline"
+              >
+                Xóa tìm kiếm
+              </button>
             </div>
           ) : (
-            filteredDishes.map((dish) => {
-              const isChecked = selectedDishIds.includes(dish.id);
-              const isAlreadyInMeal = alreadyAddedDishIds.includes(dish.id);
+            <>
+              {filteredDishes.map((dish) => {
+                const isChecked = selectedDishIds.includes(dish.id);
+                const isAlreadyInMeal = alreadyAddedDishIds.includes(dish.id);
 
-              return (
-                <div
-                  key={dish.id}
-                  data-testid={`picker-dish-item-${dish.id}`}
-                  onClick={() => toggleDishSelection(dish.id)}
-                  aria-disabled={isAlreadyInMeal}
-                  className={`p-3 rounded-2xl border transition flex items-center justify-between ${
-                    isAlreadyInMeal
-                      ? 'bg-slate-100/70 border-slate-200 opacity-60 cursor-not-allowed'
-                      : isChecked
-                      ? 'bg-[#FEF7DC] border-[#EFE4B5] shadow-xs cursor-pointer'
-                      : 'bg-slate-50 border-slate-100 hover:bg-slate-100/70 cursor-pointer'
-                  }`}
-                >
-                  <div className="pr-2">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-xs font-bold text-[#334E68]">{dish.name}</p>
-                      {dish.tag && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5]">
-                          {dish.tag}
-                        </span>
-                      )}
-                      {isAlreadyInMeal && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-200 text-slate-500 font-medium">
-                          Đã lên lịch
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
+                return (
                   <div
-                    data-testid={`picker-checkbox-${dish.id}`}
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition flex-shrink-0 ${
+                    key={dish.id}
+                    data-testid={`picker-dish-item-${dish.id}`}
+                    onClick={() => toggleDishSelection(dish.id)}
+                    aria-disabled={isAlreadyInMeal}
+                    className={`p-3 rounded-2xl border transition flex items-center justify-between ${
                       isAlreadyInMeal
-                        ? 'border-slate-300 bg-slate-200 text-slate-400'
+                        ? 'bg-slate-100/70 border-slate-200 opacity-60 cursor-not-allowed'
                         : isChecked
-                        ? 'bg-[#5B7C99] border-[#5B7C99] text-white'
-                        : 'border-slate-300 bg-white'
+                        ? 'bg-[#FEF7DC] border-[#EFE4B5] shadow-xs cursor-pointer'
+                        : 'bg-slate-50 border-slate-100 hover:bg-slate-100/70 cursor-pointer'
                     }`}
                   >
-                    {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                    <div className="pr-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-xs font-bold text-[#334E68]">{dish.name}</p>
+                        {dish.tag && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5]">
+                            {dish.tag}
+                          </span>
+                        )}
+                        {isAlreadyInMeal && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-200 text-slate-500 font-medium">
+                            Đã lên lịch
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div
+                      data-testid={`picker-checkbox-${dish.id}`}
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition flex-shrink-0 ${
+                        isAlreadyInMeal
+                          ? 'border-slate-300 bg-slate-200 text-slate-400'
+                          : isChecked
+                          ? 'bg-[#5B7C99] border-[#5B7C99] text-white'
+                          : 'border-slate-300 bg-white'
+                      }`}
+                    >
+                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
                   </div>
+                );
+              })}
+
+              {showQuickAdd && (
+                <div
+                  data-testid="picker-quick-add-banner"
+                  className="pt-2 text-center"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(true)}
+                    data-testid="picker-quick-add-btn"
+                    className="w-full py-2.5 px-3 rounded-2xl bg-[#FEF7DC]/80 border border-dashed border-[#EFE4B5] text-[#334E68] font-bold text-xs hover:bg-[#FEF7DC] transition shadow-xs"
+                  >
+                    + Thêm Món ăn mới: &quot;{trimmedQuery}&quot;
+                  </button>
                 </div>
-              );
-            })
+              )}
+            </>
           )}
         </div>
-
-        {/* Sticky Action Banner (Variant A) */}
-        {showQuickAdd && (
-          <div
-            data-testid="picker-quick-add-banner"
-            className="my-2 p-3 rounded-2xl bg-[#FEF7DC] border-2 border-dashed border-[#EFE4B5] flex items-center justify-between shadow-xs animate-in fade-in duration-150"
-          >
-            <div className="pr-2">
-              <div className="flex items-center gap-1">
-                <span className="text-xs">✨</span>
-                <p className="text-xs font-bold text-[#334E68]">
-                  Chưa có &quot;{trimmedQuery}&quot; trong Menu?
-                </p>
-              </div>
-              <p className="text-[10px] text-slate-500 mt-0.5">
-                Tạo mới sẽ tự lưu vào Menu & thêm vào {mealTitle}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              data-testid="picker-quick-add-btn"
-              className="px-3 py-1.5 rounded-full bg-[#5B7C99] hover:bg-[#46637D] text-white text-[11px] font-bold shadow-xs transition active:scale-95 whitespace-nowrap"
-            >
-              + Thêm Món ăn
-            </button>
-          </div>
-        )}
 
         {/* Footer Confirm Button */}
         <div className="pt-3 border-t border-slate-100 mt-2">
