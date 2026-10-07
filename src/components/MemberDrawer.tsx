@@ -10,6 +10,8 @@ export interface MemberDrawerProps {
   submitButtonText?: string;
   initialName?: string;
   initialAvatarIcon?: string;
+  initialAvatarColor?: string;
+  editingMemberId?: string;
 }
 
 export const MemberDrawer: React.FC<MemberDrawerProps> = ({
@@ -17,16 +19,26 @@ export const MemberDrawer: React.FC<MemberDrawerProps> = ({
   onClose,
   onSave,
   existingMembers = [],
-  title = 'Thêm Thành Viên Mới',
-  submitButtonText = 'Xác nhận tạo thành viên',
+  title,
+  submitButtonText,
   initialName = '',
   initialAvatarIcon,
+  initialAvatarColor,
+  editingMemberId,
 }) => {
+  const isEditing = Boolean(editingMemberId);
+  const resolvedTitle = title ?? (isEditing ? 'Chỉnh Sửa Thành Viên' : 'Thêm Thành Viên Mới');
+  const resolvedSubmitButtonText =
+    submitButtonText ?? (isEditing ? 'Lưu thay đổi' : 'Xác nhận tạo thành viên');
+
   const [name, setName] = useState<string>(initialName);
   const [selectedPreset, setSelectedPreset] = useState<AvatarPreset>(() => {
     return (
-      AVATAR_PRESETS.find((p) => p.icon === initialAvatarIcon) ||
-      AVATAR_PRESETS[0]
+      AVATAR_PRESETS.find(
+        (p) =>
+          p.icon === initialAvatarIcon ||
+          (initialAvatarColor && p.bg === initialAvatarColor)
+      ) || AVATAR_PRESETS[0]
     );
   });
   const [error, setError] = useState<string | null>(null);
@@ -36,15 +48,18 @@ export const MemberDrawer: React.FC<MemberDrawerProps> = ({
     if (isOpen) {
       setName(initialName);
       setSelectedPreset(
-        AVATAR_PRESETS.find((p) => p.icon === initialAvatarIcon) ||
-          AVATAR_PRESETS[0]
+        AVATAR_PRESETS.find(
+          (p) =>
+            p.icon === initialAvatarIcon ||
+            (initialAvatarColor && p.bg === initialAvatarColor)
+        ) || AVATAR_PRESETS[0]
       );
       setError(null);
       setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
     }
-  }, [isOpen, initialName, initialAvatarIcon]);
+  }, [isOpen, initialName, initialAvatarIcon, initialAvatarColor]);
 
   if (!isOpen) return null;
 
@@ -63,7 +78,9 @@ export const MemberDrawer: React.FC<MemberDrawerProps> = ({
     }
 
     const isDuplicate = existingMembers.some(
-      (m) => m.name.trim().toLowerCase() === trimmed.toLowerCase()
+      (m) =>
+        (editingMemberId ? m.id !== editingMemberId : true) &&
+        m.name.trim().toLowerCase() === trimmed.toLowerCase()
     );
     if (isDuplicate) {
       setError('Tên thành viên này đã có trong gia đình. Vui lòng chọn tên khác!');
@@ -99,7 +116,7 @@ export const MemberDrawer: React.FC<MemberDrawerProps> = ({
             id="member-drawer-title"
             className="text-base font-extrabold text-[#334E68]"
           >
-            {title}
+            {resolvedTitle}
           </h3>
           <button
             type="button"
@@ -196,7 +213,7 @@ export const MemberDrawer: React.FC<MemberDrawerProps> = ({
               data-testid="save-member-btn"
               className="flex-2 py-3 rounded-full bg-[#5B7C99] hover:bg-[#4a6b88] text-white font-bold text-xs shadow-md shadow-[#5B7C99]/30 transition active:scale-98"
             >
-              {submitButtonText}
+              {resolvedSubmitButtonText}
             </button>
           </div>
         </form>

@@ -249,6 +249,20 @@ export const App: React.FC<AppProps> = ({
                   return [...prev, newMember];
                 });
               }}
+              onMemberUpdated={(updated) => {
+                setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+                if (activeMember?.id === updated.id) {
+                  setActiveMember(updated);
+                  setNickname(updated.name);
+                }
+              }}
+              onMemberDeleted={(deletedId) => {
+                setMembers((prev) => prev.filter((m) => m.id !== deletedId));
+                if (activeMember?.id === deletedId) {
+                  setActiveMember(null);
+                  setNickname(null);
+                }
+              }}
             />
           ) : activeTab === 'plan' ? (
             <PlanView
