@@ -5,7 +5,7 @@ Kết nối tính năng chọn Thành viên vào luồng Khởi tạo gia đình
 
 **Blocked by:** 03: Member Management Mode (Edit & Delete with Safety Constraints)
 
-**Status:** claimed
+**Status:** resolved
 
 - [x] Cập nhật luồng "Tạo Nhà Mới" trong `OnboardingModal`: Người dùng xem mã nhà mới sinh và nhập tên Thành viên đầu tiên của họ.
 - [x] Khi hoàn tất tạo nhà, tự động lưu Thành viên sáng lập đầu tiên vào `MemberRepository` với biểu tượng mặc định (`🍳` Chảo ốp la).
@@ -14,3 +14,8 @@ Kết nối tính năng chọn Thành viên vào luồng Khởi tạo gia đình
 - [x] Triển khai phương thức `subscribe` trong `SupabaseMemberRepository` lắng nghe các sự kiện `INSERT`, `UPDATE`, `DELETE` trên bảng `members` theo `household_code`.
 - [x] Khi có sự kiện Realtime thay đổi danh sách Thành viên, giao diện màn hình chọn Thành viên tự động làm mới danh sách tức thì mà không cần reload trang web.
 - [x] Kiểm thử tích hợp bao phủ toàn diện: Tạo nhà mới với thành viên đầu tiên, tham gia nhà cũ qua mã/link và sự kiện đồng bộ Realtime đa thiết bị.
+
+## Answer
+
+Integrated member creation and selection into onboarding flows and enabled realtime multi-device sync. When creating a new household in `OnboardingModal`, the founding member is automatically created in `MemberRepository` with default preset (`🍳` Chảo ốp la) and selected as the active session member. Joining an existing household directly navigates to `MemberSelectModal` without forcing duplicate nickname prompts. In `MemberSelectModal`, added real-time subscription lifecycle updating member grid when records are added/modified/deleted on other devices via Supabase Realtime channels. Covered with comprehensive integration tests (197 passing tests).
+
