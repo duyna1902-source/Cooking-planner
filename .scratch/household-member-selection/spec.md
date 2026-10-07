@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: completed
 
 # Đặc tả kỹ thuật: Màn hình Chọn và Quản lý Thành viên gia đình phong cách Netflix (Household Member Selection & Management)
 
