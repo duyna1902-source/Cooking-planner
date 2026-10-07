@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home } from 'lucide-react';
 import { Member } from '../domain/member';
+import { MemberRepository } from '../services/memberRepository';
+import { MemberDrawer } from './MemberDrawer';
 
 export interface MemberSelectModalProps {
   householdCode: string;
   members: Member[];
   onSelectMember: (member: Member) => void;
   isLoading?: boolean;
+  memberRepository?: MemberRepository;
+  onMemberAdded?: (member: Member) => void;
 }
 
 export const MemberSelectModal: React.FC<MemberSelectModalProps> = ({
@@ -14,7 +18,50 @@ export const MemberSelectModal: React.FC<MemberSelectModalProps> = ({
   members,
   onSelectMember,
   isLoading = false,
+  memberRepository,
+  onMemberAdded,
 }) => {
+  const [localMembers, setLocalMembers] = useState<Member[]>(members);
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    setLocalMembers(members);
+  }, [members]);
+
+  const handleSaveMember = async (data: {
+    name: string;
+    avatarIcon: string;
+    avatarColor: string;
+  }) => {
+    let createdMember: Member;
+
+    if (memberRepository) {
+      createdMember = await memberRepository.addMember({
+        householdCode,
+        name: data.name,
+        avatarIcon: data.avatarIcon,
+        avatarColor: data.avatarColor,
+      });
+
+      // Reload members from repository to guarantee state accuracy
+      const updated = await memberRepository.getMembers(householdCode);
+      setLocalMembers(updated);
+    } else {
+      createdMember = {
+        id: `mem_${Date.now()}`,
+        householdCode,
+        name: data.name,
+        avatarIcon: data.avatarIcon,
+        avatarColor: data.avatarColor,
+        createdAt: new Date().toISOString(),
+      };
+      setLocalMembers((prev) => [...prev, createdMember]);
+    }
+
+    setIsDrawerOpen(false);
+    onMemberAdded?.(createdMember);
+  };
+
   return (
     <div
       role="dialog"
@@ -61,7 +108,7 @@ export const MemberSelectModal: React.FC<MemberSelectModalProps> = ({
             data-testid="member-grid"
             className="grid grid-cols-2 gap-3.5 max-h-[420px] overflow-y-auto p-1"
           >
-            {members.map((member) => (
+            {localMembers.map((member) => (
               <button
                 key={member.id}
                 type="button"
@@ -86,12 +133,29 @@ export const MemberSelectModal: React.FC<MemberSelectModalProps> = ({
         )}
       </div>
 
-      {/* Bottom Area: Helper Note */}
-      <div className="pt-4 border-t border-slate-100 flex flex-col gap-2 mt-auto">
+      {/* Sticky Bottom Area: Add Member Button & Note */}
+      <div className="pt-3 border-t border-slate-100 flex flex-col gap-2 mt-auto">
+        <button
+          type="button"
+          data-testid="open-add-member-drawer"
+          onClick={() => setIsDrawerOpen(true)}
+          className="w-full py-3.5 rounded-full bg-[#5B7C99] hover:bg-[#4a6b88] text-white font-bold text-sm shadow-md shadow-[#5B7C99]/30 transition active:scale-98 flex items-center justify-center gap-2"
+        >
+          <span>➕</span>
+          <span>Thêm thành viên mới</span>
+        </button>
         <span className="text-[11px] text-center text-slate-400">
           Mỗi lần mở web lên sẽ luôn xuất hiện bảng này để chọn người vào bếp
         </span>
       </div>
+
+      {/* Bottom Drawer for Adding New Member */}
+      <MemberDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onSave={handleSaveMember}
+        existingMembers={localMembers}
+      />
     </div>
   );
 };
