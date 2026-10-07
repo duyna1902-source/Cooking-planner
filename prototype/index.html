@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cooking Plan - 3 Bản Xem Trước (UI Prototype: Thêm Món Từ Tìm Kiếm)</title>
+  <title>Cooking Plan - UI Prototype: Màn Hình Chọn & Thêm Thành Viên</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +23,13 @@
     .tap-highlight-none {
       -webkit-tap-highlight-color: transparent;
     }
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-1deg); }
+      50% { transform: rotate(1deg); }
+    }
+    .animate-wiggle {
+      animation: wiggle 0.25s infinite ease-in-out;
+    }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 antialiased min-h-screen flex flex-col items-center justify-start p-2 sm:p-6 pb-28">
@@ -31,179 +38,870 @@
   <header class="w-full max-w-xl mb-4 text-center">
     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-300 mb-2">
       <span class="w-2 h-2 rounded-full bg-[#FEF7DC]"></span>
-      UI Prototype Exploration • 3 Bản Xem Trước
+      UI Prototype Exploration • 3 Phương Án Chọn & Thêm Thành Viên
     </div>
     <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight" id="variant-title">
-      Đang tải bản xem trước...
+      Đang tải phương án xem trước...
     </h1>
     <p class="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto" id="variant-description">
-      Sử dụng thanh điều khiển phía dưới hoặc phím mũi tên ← → để chuyển đổi giữa 3 phương án thiết kế.
+      Chuyển đổi phương án bằng thanh điều khiển bên dưới hoặc phím mũi tên ← →.
     </p>
   </header>
 
   <!-- Mobile Phone Mockup Frame -->
-  <div class="w-full max-w-[400px] bg-white text-slate-800 rounded-[44px] shadow-2xl border-[8px] border-slate-800 overflow-hidden relative flex flex-col h-[780px]">
+  <div class="w-full max-w-[400px] bg-[#FAFBFD] text-slate-800 rounded-[44px] shadow-2xl border-[8px] border-slate-800 overflow-hidden relative flex flex-col h-[780px]">
     
     <!-- Phone Top Status Bar -->
-    <div class="w-full bg-slate-900 pt-3 pb-2 px-6 flex items-center justify-between text-white text-[11px] select-none z-30">
-      <span class="font-semibold">19:30</span>
-      <div class="w-24 h-4 bg-black rounded-full mx-auto -mt-1 flex items-center justify-end pr-2">
-        <span class="w-2.5 h-2.5 rounded-full bg-slate-800/80"></span>
+    <div class="w-full bg-[#FAFBFD] pt-3 pb-1.5 px-6 flex items-center justify-between text-slate-800 text-[11px] select-none z-30 flex-shrink-0">
+      <span class="font-bold">19:30</span>
+      <div class="w-24 h-4 bg-slate-800 rounded-full mx-auto -mt-1 flex items-center justify-end pr-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-slate-700/80"></span>
       </div>
-      <div class="flex items-center gap-1.5">
-        <span class="text-[10px] font-bold text-emerald-400">5G</span>
-        <div class="w-4 h-2 border border-white rounded-xs p-[1px] flex items-center">
-          <div class="w-2.5 h-full bg-white"></div>
+      <div class="flex items-center gap-1.5 font-bold">
+        <span class="text-[10px] text-[#5B7C99]">5G</span>
+        <div class="w-4 h-2 border border-slate-700 rounded-xs p-[1px] flex items-center">
+          <div class="w-2.5 h-full bg-slate-700"></div>
         </div>
       </div>
     </div>
 
     <!-- Active View Container (Main App Body) -->
     <div id="app-root" class="flex-1 flex flex-col overflow-y-auto relative bg-[#FAFBFD]">
-      <!-- Content rendered dynamically -->
-    </div>
-
-    <!-- App Bottom Nav Bar -->
-    <div class="w-full bg-white/95 backdrop-blur border-t border-slate-100 px-6 py-2.5 flex items-center justify-around z-20">
-      <button onclick="switchTab('plan')" id="nav-btn-plan" class="flex flex-col items-center gap-0.5 text-[#5B7C99] font-bold text-xs transition">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        <span>Kế hoạch</span>
-      </button>
-      <button onclick="switchTab('menu')" id="nav-btn-menu" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-[#5B7C99] transition text-xs">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-        <span class="flex items-center gap-1">
-          <span>Menu</span>
-          <span id="menu-count-badge" class="px-1.5 py-0.2 bg-slate-200 text-[9px] rounded-full font-bold text-slate-600">10</span>
-        </span>
-      </button>
+      <!-- Content rendered dynamically via JavaScript -->
     </div>
 
     <!-- Phone Home Indicator Bar -->
-    <div class="w-full bg-white pb-2 flex justify-center">
+    <div class="w-full bg-white pb-2 flex justify-center flex-shrink-0">
       <div class="w-32 h-1 bg-slate-300 rounded-full"></div>
     </div>
 
-    <!-- Modal / Drawer Host Overlay -->
-    <div id="drawer-host"></div>
-    <div id="modal-host"></div>
+    <!-- Overlay Host for Add Member Drawer/Modal -->
+    <div id="overlay-host"></div>
   </div>
 
   <!-- State inspector info -->
   <div class="mt-3 text-center text-xs text-slate-400 max-w-md">
-    <span class="text-emerald-400 font-semibold">● Trạng thái trực tiếp:</span> 
-    <span id="state-summary">Menu có 10 Món ăn | Kế hoạch Bữa Tối hôm nay có 2 món.</span>
+    <span class="text-[#FEF7DC] font-semibold">● Trạng thái bộ nhớ:</span> 
+    <span id="state-summary">Gia đình BEP-892 có 3 Thành viên. Chưa chọn thành viên vào bếp.</span>
   </div>
 
   <!-- FLOATING PROTOTYPE SWITCHER (bottom center) -->
   <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-slate-800/95 backdrop-blur-md text-white px-4 py-2.5 rounded-full shadow-2xl border border-slate-700">
-    <button onclick="cycleVariant(-1)" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition active:scale-95" title="Bản xem trước trước (Phím ←)">
+    <button onclick="cycleVariant(-1)" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition active:scale-95" title="Phương án trước (Phím ←)">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
     </button>
-    <div class="flex flex-col items-center px-2 select-none min-w-[210px] text-center">
+    <div class="flex flex-col items-center px-2 select-none min-w-[220px] text-center">
       <div class="text-[10px] font-bold text-[#FEF7DC] uppercase tracking-wider" id="switcher-variant-key">Phương án A</div>
-      <div class="text-xs font-bold text-white truncate max-w-[230px]" id="switcher-variant-name">Sticky Action Banner</div>
+      <div class="text-xs font-bold text-white truncate max-w-[240px]" id="switcher-variant-name">Netflix Kitchen Cards</div>
     </div>
-    <button onclick="cycleVariant(1)" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition active:scale-95" title="Bản xem trước kế tiếp (Phím →)">
+    <button onclick="cycleVariant(1)" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition active:scale-95" title="Phương án sau (Phím →)">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
     </button>
   </div>
 
   <script>
+    // --- SAMPLE DATA & PALETTE (Matching Plan Tone & Colors) ---
+    const AVATAR_PRESETS = [
+      { icon: '🍳', bg: 'bg-[#FEF7DC]', border: 'border-[#EFE4B5]', label: 'Chảo ốp la' },
+      { icon: '🥗', bg: 'bg-[#DCFCE7]', border: 'border-[#BBF7D0]', label: 'Salad tươi' },
+      { icon: '🍜', bg: 'bg-[#E0F2FE]', border: 'border-[#BAE6FD]', label: 'Mì thơm' },
+      { icon: '🥑', bg: 'bg-[#ECFCCB]', border: 'border-[#D9F99D]', label: 'Bơ béo' },
+      { icon: '🍰', bg: 'bg-[#FCE7F3]', border: 'border-[#FBCFE8]', label: 'Bánh kem' },
+      { icon: '🍕', bg: 'bg-[#FFEDD5]', border: 'border-[#FED7AA]', label: 'Pizza nóng' },
+      { icon: '🥕', bg: 'bg-[#FEF3C7]', border: 'border-[#FDE68A]', label: 'Cà rốt ngọt' },
+      { icon: '🍲', bg: 'bg-[#F3E8FF]', border: 'border-[#E9D5FF]', label: 'Lẩu gia đình' },
+    ];
+
+    let state = {
+      householdCode: 'BEP-892',
+      selectedMemberId: null,
+      isManageMode: false,
+      isAddModalOpen: false,
+      activeScreen: 'select', // 'select' | 'plan'
+      editingMemberId: null,
+      members: [
+        { id: 'm1', name: 'Mẹ', icon: '🍳', bg: 'bg-[#FEF7DC]', border: 'border-[#EFE4B5]', role: 'Bếp trưởng chính' },
+        { id: 'm2', name: 'Bố', icon: '🍜', bg: 'bg-[#E0F2FE]', border: 'border-[#BAE6FD]', role: 'Chuyên gia nếm món' },
+        { id: 'm3', name: 'Bé An', icon: '🥑', bg: 'bg-[#DCFCE7]', border: 'border-[#BBF7D0]', role: 'Trợ thủ dọn bàn' },
+      ]
+    };
+
     // --- VARIANT DEFINITIONS ---
     const VARIANTS = {
       'A': {
         key: 'A',
-        name: 'Sticky Action Banner',
-        title: 'Phương Án A: Thẻ Hành Động Ghim Đáy Drawer',
-        desc: 'Nút thêm món mới được ghim thành một Banner nổi bật cố định phía trên nút xác nhận. Phân tách rõ ràng giữa kết quả tìm kiếm và thao tác tạo món.',
+        name: 'Netflix Kitchen Cards',
+        title: 'Phương Án A: Lưới Thẻ Đôi Phong Cách Netflix + Bottom Drawer',
+        desc: 'Lưới 2 cột thẻ avatar vuông lớn mềm mại chuẩn phong cách chọn profile. Nút "Thêm thành viên" dạng pill to ghim dưới đáy, mở Bottom Drawer tiện tay ngón cái.',
       },
       'B': {
         key: 'B',
-        name: 'Inline Dashed Item',
-        title: 'Phương Án B: Mục Gợi Ý Liền Mạch Trong Danh Sách',
-        desc: 'Mục thêm món mới xuất hiện tự nhiên như một Món ăn viền nét đứt ở cuối danh sách kết quả, không chiếm thêm diện tích dọc của màn hình.',
+        name: 'Cozy Family Carousel',
+        title: 'Phương Án B: Thẻ Tâm Điểm Lớn + Băng Chuyền Cuộn Ngang',
+        desc: 'Cấu trúc thẻ tiêu điểm trung tâm hiển thị thành viên nổi bật kèm lời chào ấm áp, bên dưới là thanh cuộn ngang các thành viên khác. Form thêm mới dạng Center Dialog nổi.',
       },
       'C': {
         key: 'C',
-        name: 'Smart Dropdown & Quick Tags',
-        title: 'Phương Án C: Thanh Tác Vụ Thông Minh & Chọn Tag 1 Chạm',
-        desc: 'Gắn liền ngay dưới ô tìm kiếm, hiển thị các tag phân loại phổ biến (Món mặn, Canh, Xào...) để thêm ngay lập tức chỉ trong 1 chạm mà không cần popup.',
+        name: 'Kitchen Stack List',
+        title: 'Phương Án C: Danh Sách Thẻ Hàng Ngang + Màn Hình Trượt Toàn Khung',
+        desc: 'Cấu trúc danh sách thẻ ngang bo góc hiển thị tên kèm huy hiệu vai trò bếp. Cực kỳ tối ưu cho thao tác chạm một tay. Form thêm mới dạng trang trượt toàn màn hình.',
       }
     };
 
-    const VARIANT_KEYS = ['A', 'B', 'C'];
+    let currentVariant = 'A';
 
-    // --- APPLICATION STATE ---
-    const STATE = {
-      activeTab: 'plan', // 'plan' | 'menu'
-      variant: 'A',
-      activeDateIndex: 1, // Thứ 3
-      activeMeal: 'dinner', // Luôn ưu tiên Bữa Tối mặc định
-      searchQuery: '',
-      isDrawerOpen: false,
-      isModalOpen: false,
-      modalInitialName: '',
-      modalTag: '',
-      selectedDishIds: [],
-      
-      menu: [
-        { id: 'd1', name: 'Thịt kho trứng', tag: 'Món mặn' },
-        { id: 'd2', name: 'Canh chua cá lóc', tag: 'Canh' },
-        { id: 'd3', name: 'Rau muống xào tỏi', tag: 'Xào' },
-        { id: 'd4', name: 'Sườn xào chua ngọt', tag: 'Món mặn' },
-        { id: 'd5', name: 'Canh cua mồng tơi', tag: 'Canh' },
-        { id: 'd6', name: 'Bò xào bông cải', tag: 'Xào' },
-        { id: 'd7', name: 'Trứng chiên hành', tag: 'Món mặn' },
-        { id: 'd8', name: 'Cá hồi sốt bơ tỏi', tag: 'Món mặn' },
-        { id: 'd9', name: 'Canh bí đỏ thịt bằm', tag: 'Canh' },
-        { id: 'd10', name: 'Phở bò Hà Nội', tag: 'Ăn sáng' }
-      ],
-
-      plans: {
-        1: { // Thứ 3
-          dinner: ['d1', 'd2'],
-          lunch: ['d7'],
-          breakfast: []
-        }
-      },
-
-      weekDays: [
-        { label: 'T2', num: '28', full: 'Thứ Hai, 28/09' },
-        { label: 'T3', num: '29', full: 'Thứ Ba, 29/09', isToday: true },
-        { label: 'T4', num: '30', full: 'Thứ Tư, 30/09' },
-        { label: 'T5', num: '01', full: 'Thứ Năm, 01/10' },
-        { label: 'T6', num: '02', full: 'Thứ Sáu, 02/10' },
-        { label: 'T7', num: '03', full: 'Thứ Bảy, 03/10' },
-        { label: 'CN', num: '04', full: 'Chủ Nhật, 04/10' }
-      ]
-    };
-
-    // Initialize variant from URL search params
-    const params = new URLSearchParams(window.location.search);
-    const initialVariant = params.get('variant')?.toUpperCase();
-    if (initialVariant && VARIANTS[initialVariant]) {
-      STATE.variant = initialVariant;
+    // Parse URL parameter ?variant=
+    function initVariantFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const v = params.get('variant')?.toUpperCase();
+      if (v && VARIANTS[v]) {
+        currentVariant = v;
+      }
     }
 
-    function updateUrlParam(v) {
-      const url = new URL(window.location);
-      url.searchParams.set('variant', v);
-      window.history.replaceState({}, '', url);
-    }
-
-    function cycleVariant(direction) {
-      const currentIndex = VARIANT_KEYS.indexOf(STATE.variant);
-      let nextIndex = (currentIndex + direction + VARIANT_KEYS.length) % VARIANT_KEYS.length;
-      STATE.variant = VARIANT_KEYS[nextIndex];
-      updateUrlParam(STATE.variant);
+    function setVariant(key) {
+      if (!VARIANTS[key]) return;
+      currentVariant = key;
+      const url = new URL(window.location.href);
+      url.searchParams.set('variant', key);
+      window.history.replaceState({}, '', url.toString());
       render();
     }
 
-    // Keyboard navigation for variants
+    function cycleVariant(direction) {
+      const keys = Object.keys(VARIANTS);
+      const currentIndex = keys.indexOf(currentVariant);
+      let nextIndex = (currentIndex + direction + keys.length) % keys.length;
+      setVariant(keys[nextIndex]);
+    }
+
+    // --- ACTIONS ---
+    function selectMember(memberId) {
+      state.selectedMemberId = memberId;
+      state.activeScreen = 'plan';
+      render();
+    }
+
+    function returnToSelect() {
+      state.selectedMemberId = null;
+      state.activeScreen = 'select';
+      render();
+    }
+
+    function toggleManageMode() {
+      state.isManageMode = !state.isManageMode;
+      render();
+    }
+
+    function openAddModal(editingId = null) {
+      state.editingMemberId = editingId;
+      state.isAddModalOpen = true;
+      render();
+    }
+
+    function closeAddModal() {
+      state.isAddModalOpen = false;
+      state.editingMemberId = null;
+      render();
+    }
+
+    function saveMember(name, presetIndex) {
+      const trimmed = name.trim();
+      if (!trimmed) {
+        alert('Vui lòng nhập tên thành viên!');
+        return;
+      }
+      
+      const preset = AVATAR_PRESETS[presetIndex] || AVATAR_PRESETS[0];
+
+      if (state.editingMemberId) {
+        // Edit existing
+        const m = state.members.find(x => x.id === state.editingMemberId);
+        if (m) {
+          m.name = trimmed;
+          m.icon = preset.icon;
+          m.bg = preset.bg;
+          m.border = preset.border;
+        }
+      } else {
+        // Check duplicate name
+        const exists = state.members.some(x => x.name.toLowerCase() === trimmed.toLowerCase());
+        if (exists) {
+          alert('Tên thành viên này đã có trong gia đình. Vui lòng chọn tên khác!');
+          return;
+        }
+
+        const newId = 'm_' + Date.now();
+        state.members.push({
+          id: newId,
+          name: trimmed,
+          icon: preset.icon,
+          bg: preset.bg,
+          border: preset.border,
+          role: 'Thành viên mới'
+        });
+      }
+
+      state.isAddModalOpen = false;
+      state.editingMemberId = null;
+      render();
+    }
+
+    function deleteMember(memberId) {
+      if (state.members.length <= 1) {
+        alert('Gia đình phải có ít nhất 1 thành viên, không thể xóa thành viên cuối cùng!');
+        return;
+      }
+      const target = state.members.find(m => m.id === memberId);
+      if (confirm(`Bạn có chắc chắn muốn xóa thành viên "${target?.name}" khỏi danh sách?`)) {
+        state.members = state.members.filter(m => m.id !== memberId);
+        render();
+      }
+    }
+
+    // --- RENDER HELPERS ---
+    function updateStateSummary() {
+      const selected = state.members.find(m => m.id === state.selectedMemberId);
+      const text = `Gia đình ${state.householdCode} có ${state.members.length} Thành viên | ${
+        selected ? `Đang vào bếp với tư cách: <strong>${selected.name} (${selected.icon})</strong>` : 'Đang ở màn hình chọn thành viên.'
+      }`;
+      document.getElementById('state-summary').innerHTML = text;
+      document.getElementById('switcher-variant-key').textContent = `Phương án ${currentVariant}`;
+      document.getElementById('switcher-variant-name').textContent = VARIANTS[currentVariant].name;
+      document.getElementById('variant-title').textContent = VARIANTS[currentVariant].title;
+      document.getElementById('variant-description').textContent = VARIANTS[currentVariant].desc;
+    }
+
+    // --- RENDER PLAN SCREEN (When a member enters) ---
+    function renderPlanScreen() {
+      const member = state.members.find(m => m.id === state.selectedMemberId) || state.members[0];
+      return `
+        <div class="flex-1 flex flex-col bg-[#FAFBFD]">
+          <!-- App Header -->
+          <div class="px-4 py-2.5 bg-white border-b border-slate-100 flex items-center justify-between gap-2 shadow-xs">
+            <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+              <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5]">
+                <svg class="w-3 h-3 text-[#5B7C99]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Mã: ${state.householdCode}
+              </span>
+              <span class="inline-flex items-center gap-1 text-xs font-semibold text-slate-700">
+                <span class="w-5 h-5 rounded-full ${member.bg} ${member.border} border flex items-center justify-center text-[10px]">${member.icon}</span>
+                ${member.name}
+              </span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                🟢 Online
+              </span>
+            </div>
+            <button onclick="returnToSelect()" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-semibold transition active:scale-95 flex items-center gap-1">
+              <span>Đổi người</span>
+              <svg class="w-3 h-3 text-[#5B7C99]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+          </div>
+
+          <!-- Plan View Mockup Content -->
+          <div class="p-4 flex-1 overflow-y-auto space-y-4">
+            <!-- Meal Tabs -->
+            <div class="flex items-center justify-between bg-slate-100 p-1 rounded-2xl">
+              <span class="flex-1 py-1 text-center text-xs text-slate-500 font-medium">Bữa Sáng</span>
+              <span class="flex-1 py-1 text-center text-xs text-slate-500 font-medium">Bữa Trưa</span>
+              <span class="flex-1 py-1.5 text-center text-xs font-bold bg-white text-[#334E68] rounded-xl shadow-xs">Bữa Tối ⭐</span>
+            </div>
+
+            <!-- Date Selector Row -->
+            <div class="flex items-center justify-between bg-white p-2.5 rounded-2xl border border-slate-100 shadow-xs">
+              <div class="flex items-center gap-1.5">
+                <div class="w-7 h-7 rounded-full bg-[#FEF7DC] border border-[#EFE4B5] flex items-center justify-center text-[#5B7C99] font-bold text-xs">
+                  T4
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-[#334E68]">Hôm nay, 07 Tháng 10</div>
+                  <div class="text-[10px] text-slate-400">Tuần hiện tại</div>
+                </div>
+              </div>
+              <span class="text-[11px] font-bold text-[#5B7C99] bg-[#F4F7F9] px-2 py-0.5 rounded-lg">2 món</span>
+            </div>
+
+            <!-- Dishes for Dinner -->
+            <div class="space-y-2.5">
+              <div class="text-xs font-bold text-[#334E68] flex items-center gap-1.5">
+                <span>🍽️ Thực đơn Bữa Tối</span>
+              </div>
+
+              <!-- Dish Card 1 -->
+              <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-xs flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-lg">
+                    🍗
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-[#334E68]">Gà rang lá chanh</div>
+                    <div class="text-[10px] text-slate-400">Món mặn • Ướp sẵn buổi chiều</div>
+                  </div>
+                </div>
+                <span class="text-[11px] text-slate-400 px-2 py-1 bg-slate-50 rounded-lg font-medium">Chi tiết</span>
+              </div>
+
+              <!-- Dish Card 2 -->
+              <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-xs flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-lg">
+                    🥗
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-[#334E68]">Canh cải xoong nấu thịt</div>
+                    <div class="text-[10px] text-slate-400">Món canh • Nấu vừa chín tới</div>
+                  </div>
+                </div>
+                <span class="text-[11px] text-slate-400 px-2 py-1 bg-slate-50 rounded-lg font-medium">Chi tiết</span>
+              </div>
+            </div>
+
+            <!-- Comment Card Showing Author Nickname -->
+            <div class="p-3 bg-[#FEF7DC]/80 border border-[#EFE4B5] rounded-2xl">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-1.5 text-[11px] font-bold text-[#334E68]">
+                  <span>💬 Dặn dò của ${member.name}:</span>
+                </div>
+                <span class="text-[10px] text-slate-400">Vừa xong</span>
+              </div>
+              <p class="text-xs text-slate-700 leading-relaxed">
+                "Hôm nay ${member.name} đã đi chợ mua đủ gà và rau tươi rồi nhé, tối cả nhà về sớm ăn cơm cùng nha!"
+              </p>
+            </div>
+          </div>
+
+          <!-- Bottom Nav Bar -->
+          <div class="bg-white border-t border-slate-100 px-8 py-2.5 flex items-center justify-between flex-shrink-0">
+            <div class="flex flex-col items-center gap-0.5 text-[#5B7C99] font-bold text-[11px]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span>Kế hoạch</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 text-slate-400 text-[11px] font-medium">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+              <span>Menu</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- VARIANT A: NETFLIX KITCHEN CARDS (2-Column Grid + Bottom Drawer) ---
+    function renderVariantA() {
+      return `
+        <div class="flex-1 flex flex-col p-5 justify-between">
+          <!-- Top Area: Household Badge & Header -->
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] text-xs font-bold">
+                <span>🏠 Mã nhà:</span>
+                <span class="tracking-wide">${state.householdCode}</span>
+              </div>
+
+              <button 
+                onclick="toggleManageMode()" 
+                class="text-xs font-semibold px-2.5 py-1 rounded-full ${
+                  state.isManageMode 
+                    ? 'bg-rose-50 text-rose-600 border border-rose-200' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                } transition"
+              >
+                ${state.isManageMode ? 'Xong' : 'Chỉnh sửa'}
+              </button>
+            </div>
+
+            <!-- Title & Subtitle -->
+            <div class="text-center mb-6">
+              <h2 class="text-2xl font-black text-[#334E68] tracking-tight">
+                Hôm nay ai vào bếp?
+              </h2>
+              <p class="text-xs text-slate-500 mt-1">
+                ${state.isManageMode ? 'Chọn biểu tượng bút chì để sửa hoặc xóa thành viên' : 'Chọn thành viên của bạn để vào xem Kế hoạch'}
+              </p>
+            </div>
+
+            <!-- 2-Column Grid Cards -->
+            <div class="grid grid-cols-2 gap-3.5 max-h-[380px] overflow-y-auto p-1">
+              ${state.members.map(m => `
+                <div class="relative group">
+                  <button
+                    onclick="${state.isManageMode ? `openAddModal('${m.id}')` : `selectMember('${m.id}')`}"
+                    class="w-full aspect-[4/4.4] rounded-3xl ${m.bg} border-2 ${m.border} p-3 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow-md transition active:scale-95 ${state.isManageMode ? 'animate-wiggle' : ''}"
+                  >
+                    <!-- Avatar Circle -->
+                    <div class="w-16 h-16 rounded-2xl bg-white/80 backdrop-blur-xs shadow-xs flex items-center justify-center text-3xl">
+                      ${m.icon}
+                    </div>
+
+                    <!-- Member Name -->
+                    <div class="text-center w-full px-1">
+                      <span class="block text-sm font-extrabold text-[#334E68] truncate">
+                        ${m.name}
+                      </span>
+                      <span class="text-[10px] text-slate-500 font-medium block truncate">
+                        ${m.role}
+                      </span>
+                    </div>
+                  </button>
+
+                  <!-- Delete button in manage mode -->
+                  ${state.isManageMode ? `
+                    <button 
+                      onclick="event.stopPropagation(); deleteMember('${m.id}')"
+                      class="absolute -top-1.5 -right-1.5 w-7 h-7 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-bold shadow-md active:scale-90"
+                      title="Xóa thành viên"
+                    >
+                      ✕
+                    </button>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Bottom Action Area -->
+          <div class="pt-4 border-t border-slate-100 flex flex-col gap-2">
+            <button
+              onclick="openAddModal()"
+              class="w-full py-3.5 px-4 rounded-full bg-[#5B7C99] hover:bg-[#4a6b88] text-white font-bold text-sm shadow-md shadow-[#5B7C99]/30 transition active:scale-98 flex items-center justify-center gap-2"
+            >
+              <svg class="w-4 h-4 text-[#FEF7DC]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+              <span>Thêm thành viên mới</span>
+            </button>
+            <span class="text-[11px] text-center text-slate-400">
+              Mỗi lần mở web lên sẽ luôn xuất hiện bảng này để chọn người vào bếp
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- VARIANT B: COZY FAMILY CAROUSEL (Hero Spotlight + Horizontal Strip + Center Dialog) ---
+    function renderVariantB() {
+      const activeHero = state.members[0];
+      return `
+        <div class="flex-1 flex flex-col p-5 justify-between">
+          <!-- Top Area -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5]">
+                Nhà: ${state.householdCode}
+              </span>
+              <button onclick="toggleManageMode()" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
+                ${state.isManageMode ? 'Hủy quản lý' : '⚙️ Quản lý'}
+              </button>
+            </div>
+
+            <div class="text-center my-3">
+              <h2 class="text-xl font-extrabold text-[#334E68]">Bếp Nhà Hôm Nay</h2>
+              <p class="text-xs text-slate-400">Chọn thành viên chuẩn bị lên món</p>
+            </div>
+
+            <!-- Hero Spotlight Card (Middle) -->
+            <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md flex flex-col items-center text-center relative overflow-hidden mb-4">
+              <div class="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-[#FEF7DC]/50 blur-xl pointer-events-none"></div>
+              
+              <div class="w-20 h-20 rounded-3xl ${activeHero.bg} border-2 ${activeHero.border} flex items-center justify-center text-4xl mb-3 shadow-inner">
+                ${activeHero.icon}
+              </div>
+
+              <div class="text-base font-extrabold text-[#334E68] mb-0.5">
+                ${activeHero.name}
+              </div>
+              <div class="text-xs text-slate-500 font-medium mb-3">
+                ${activeHero.role}
+              </div>
+
+              <button
+                onclick="selectMember('${activeHero.id}')"
+                class="w-full py-2.5 px-4 rounded-xl bg-[#5B7C99] text-white font-bold text-xs shadow-sm hover:bg-[#46637D] transition active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                <span>Vào bếp với tư cách ${activeHero.name}</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </button>
+            </div>
+
+            <!-- Horizontal Member Row -->
+            <div class="mb-2">
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Thành viên khác:</div>
+              <div class="flex items-center gap-2.5 overflow-x-auto pb-2">
+                ${state.members.slice(1).map(m => `
+                  <button
+                    onclick="${state.isManageMode ? `openAddModal('${m.id}')` : `selectMember('${m.id}')`}"
+                    class="flex-shrink-0 w-24 p-2.5 rounded-2xl bg-white border border-slate-200 hover:border-[#5B7C99] flex flex-col items-center gap-1.5 transition active:scale-95 shadow-2xs relative"
+                  >
+                    <div class="w-11 h-11 rounded-xl ${m.bg} ${m.border} border flex items-center justify-center text-xl">
+                      ${m.icon}
+                    </div>
+                    <span class="text-xs font-bold text-[#334E68] truncate max-w-full">${m.name}</span>
+                    ${state.isManageMode ? `
+                      <span onclick="event.stopPropagation(); deleteMember('${m.id}')" class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center">✕</span>
+                    ` : ''}
+                  </button>
+                `).join('')}
+
+                <!-- Quick add mini pill -->
+                <button
+                  onclick="openAddModal()"
+                  class="flex-shrink-0 w-24 p-2.5 rounded-2xl border-2 border-dashed border-[#5B7C99]/40 bg-[#F4F7F9] hover:bg-[#EBF1F6] flex flex-col items-center justify-center gap-1.5 transition active:scale-95"
+                >
+                  <div class="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-lg text-[#5B7C99]">
+                    ➕
+                  </div>
+                  <span class="text-[11px] font-bold text-[#5B7C99]">Thêm</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Button -->
+          <div class="pt-3 border-t border-slate-100">
+            <button
+              onclick="openAddModal()"
+              class="w-full py-3 rounded-2xl border-2 border-dashed border-[#5B7C99] text-[#5B7C99] hover:bg-[#5B7C99]/5 font-bold text-xs transition active:scale-98 flex items-center justify-center gap-2"
+            >
+              <span class="text-base">➕</span>
+              <span>Thêm thành viên mới vào gia đình</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- VARIANT C: KITCHEN STACK LIST (Vertical Easy-Touch List + Full-screen Sheet) ---
+    function renderVariantC() {
+      return `
+        <div class="flex-1 flex flex-col p-4 justify-between">
+          <!-- Top Area -->
+          <div>
+            <!-- Header bar -->
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+              <div>
+                <span class="text-[11px] font-bold text-[#5B7C99]">BẾP GIA ĐÌNH • ${state.householdCode}</span>
+                <h2 class="text-lg font-black text-[#334E68]">Ai đang vào bếp?</h2>
+              </div>
+              <button 
+                onclick="toggleManageMode()" 
+                class="text-xs font-semibold px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
+              >
+                ${state.isManageMode ? 'Hoàn tất' : 'Sửa'}
+              </button>
+            </div>
+
+            <!-- List Stack -->
+            <div class="space-y-2.5 max-h-[460px] overflow-y-auto pr-0.5">
+              ${state.members.map(m => `
+                <div class="flex items-center gap-2">
+                  <button
+                    onclick="${state.isManageMode ? `openAddModal('${m.id}')` : `selectMember('${m.id}')`}"
+                    class="flex-1 p-3 rounded-2xl bg-white border border-slate-200 hover:border-[#5B7C99] shadow-2xs flex items-center justify-between gap-3 transition active:scale-98 text-left"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div class="w-12 h-12 rounded-2xl ${m.bg} ${m.border} border flex items-center justify-center text-2xl flex-shrink-0">
+                        ${m.icon}
+                      </div>
+                      <div class="min-w-0">
+                        <div class="text-sm font-extrabold text-[#334E68]">${m.name}</div>
+                        <div class="text-[11px] text-slate-400 font-medium">${m.role}</div>
+                      </div>
+                    </div>
+
+                    <div class="w-8 h-8 rounded-full bg-[#F4F7F9] text-[#5B7C99] flex items-center justify-center flex-shrink-0">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                  </button>
+
+                  ${state.isManageMode ? `
+                    <button 
+                      onclick="deleteMember('${m.id}')"
+                      class="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center font-bold text-sm active:scale-90"
+                      title="Xóa"
+                    >
+                      🗑️
+                    </button>
+                  ` : ''}
+                </div>
+              `).join('')}
+
+              <!-- Add Member Card in List -->
+              <button
+                onclick="openAddModal()"
+                class="w-full p-3.5 rounded-2xl border-2 border-dashed border-[#5B7C99]/50 bg-[#FEF7DC]/30 hover:bg-[#FEF7DC]/60 flex items-center justify-center gap-2 text-[#334E68] font-bold text-xs transition active:scale-98"
+              >
+                <span class="w-6 h-6 rounded-full bg-[#5B7C99] text-white flex items-center justify-center text-xs">＋</span>
+                <span>Thêm thành viên mới</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Note -->
+          <div class="pt-2 text-center text-[10px] text-slate-400">
+            Chạm vào tên bạn để vào xem hoặc dặn dò món ăn hôm nay
+          </div>
+        </div>
+      `;
+    }
+
+    // --- RENDER MODAL / DRAWER (Add Member Form) ---
+    function renderAddMemberOverlay() {
+      if (!state.isAddModalOpen) return '';
+
+      const isEditing = Boolean(state.editingMemberId);
+      const editingMember = isEditing ? state.members.find(m => m.id === state.editingMemberId) : null;
+      const initialName = editingMember ? editingMember.name : '';
+      const currentIconIndex = editingMember 
+        ? AVATAR_PRESETS.findIndex(p => p.icon === editingMember.icon) 
+        : 0;
+
+      // VARIANT A: BOTTOM DRAWER (Slide Up)
+      if (currentVariant === 'A') {
+        return `
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs z-40 flex flex-col justify-end">
+            <div class="bg-white rounded-t-[32px] p-5 shadow-2xl border-t border-slate-100 flex flex-col max-h-[90%] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+              <!-- Drawer Handle Pill -->
+              <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-3"></div>
+
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-base font-extrabold text-[#334E68]">
+                  ${isEditing ? 'Chỉnh Sửa Thành Viên' : 'Thêm Thành Viên Mới'}
+                </h3>
+                <button onclick="closeAddModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:text-slate-700 flex items-center justify-center text-xs font-bold">
+                  ✕
+                </button>
+              </div>
+
+              <!-- Input Name -->
+              <div class="mb-4">
+                <label class="block text-xs font-bold text-[#334E68] mb-1.5">
+                  Tên hoặc biệt danh trong gia đình:
+                </label>
+                <input 
+                  id="input-member-name"
+                  type="text" 
+                  value="${initialName}"
+                  placeholder="Ví dụ: Mẹ, Bố, Bé An, Chị Hai..." 
+                  class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-[#334E68] placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] focus:bg-white transition"
+                  autofocus
+                />
+              </div>
+
+              <!-- Avatar Selection Grid -->
+              <div class="mb-5">
+                <label class="block text-xs font-bold text-[#334E68] mb-1.5">
+                  Chọn biểu tượng đại diện:
+                </label>
+                <div class="grid grid-cols-4 gap-2.5" id="preset-selector">
+                  ${AVATAR_PRESETS.map((p, idx) => `
+                    <button
+                      type="button"
+                      onclick="selectPreset(${idx})"
+                      data-index="${idx}"
+                      class="preset-item aspect-square rounded-2xl ${p.bg} border-2 ${p.border} flex flex-col items-center justify-center text-2xl transition active:scale-95 ${idx === (currentIconIndex === -1 ? 0 : currentIconIndex) ? 'ring-2 ring-[#5B7C99] scale-105' : 'opacity-80 hover:opacity-100'}"
+                    >
+                      <span>${p.icon}</span>
+                      <span class="text-[9px] font-semibold text-slate-600 mt-0.5 truncate w-full text-center px-0.5">${p.label}</span>
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  onclick="closeAddModal()"
+                  class="flex-1 py-3 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onclick="handleFormSubmit()"
+                  class="flex-2 py-3 rounded-full bg-[#5B7C99] hover:bg-[#4a6b88] text-white font-bold text-xs shadow-md shadow-[#5B7C99]/30 transition active:scale-98"
+                >
+                  ${isEditing ? 'Lưu thay đổi' : 'Xác nhận tạo thành viên'}
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // VARIANT B: CENTER DIALOG MODAL
+      if (currentVariant === 'B') {
+        return `
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs z-40 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-5 shadow-2xl border border-slate-100 w-full max-w-xs flex flex-col animate-in zoom-in-95 duration-150">
+              <div class="text-center mb-3">
+                <div class="w-14 h-14 rounded-2xl bg-[#FEF7DC] border-2 border-[#EFE4B5] mx-auto flex items-center justify-center text-3xl mb-2" id="preview-avatar-box">
+                  ${AVATAR_PRESETS[currentIconIndex === -1 ? 0 : currentIconIndex].icon}
+                </div>
+                <h3 class="text-base font-extrabold text-[#334E68]">
+                  ${isEditing ? 'Sửa thông tin' : 'Thành viên mới'}
+                </h3>
+              </div>
+
+              <div class="mb-3">
+                <input 
+                  id="input-member-name"
+                  type="text" 
+                  value="${initialName}"
+                  placeholder="Nhập tên của bạn..." 
+                  class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-[#334E68] focus:outline-none focus:border-[#5B7C99]"
+                />
+              </div>
+
+              <div class="mb-4">
+                <div class="text-[11px] font-bold text-slate-500 mb-1.5 text-center">Bấm chọn icon yêu thích:</div>
+                <div class="grid grid-cols-4 gap-2" id="preset-selector">
+                  ${AVATAR_PRESETS.map((p, idx) => `
+                    <button
+                      type="button"
+                      onclick="selectPreset(${idx})"
+                      data-index="${idx}"
+                      class="preset-item h-10 rounded-xl ${p.bg} border ${p.border} flex items-center justify-center text-lg ${idx === (currentIconIndex === -1 ? 0 : currentIconIndex) ? 'ring-2 ring-[#5B7C99]' : 'opacity-70'}"
+                    >
+                      ${p.icon}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button onclick="closeAddModal()" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs">Hủy</button>
+                <button onclick="handleFormSubmit()" class="flex-1 py-2.5 rounded-xl bg-[#5B7C99] text-white font-bold text-xs">Lưu</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // VARIANT C: SLIDE-IN FULL-SCREEN SHEET
+      if (currentVariant === 'C') {
+        return `
+          <div class="absolute inset-0 bg-[#FAFBFD] z-40 flex flex-col p-5 justify-between animate-in slide-in-from-right duration-200">
+            <div>
+              <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+                <button onclick="closeAddModal()" class="text-xs font-bold text-slate-500 flex items-center gap-1">
+                  ← Quay lại
+                </button>
+                <span class="text-xs font-extrabold text-[#334E68]">Bếp Nhà • ${state.householdCode}</span>
+              </div>
+
+              <h3 class="text-xl font-black text-[#334E68] mb-1">
+                ${isEditing ? 'Cập nhật thành viên' : 'Thêm thành viên mới'}
+              </h3>
+              <p class="text-xs text-slate-400 mb-4">
+                Người này sẽ xuất hiện trong danh sách chọn mỗi khi mở ứng dụng.
+              </p>
+
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-[#334E68] mb-1">Tên thành viên:</label>
+                  <input 
+                    id="input-member-name"
+                    type="text" 
+                    value="${initialName}"
+                    placeholder="Ví dụ: Bố, Mẹ, Bé Bắp..." 
+                    class="w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 text-sm font-bold text-[#334E68] focus:border-[#5B7C99]"
+                  />
+                  <!-- Quick preset names -->
+                  <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+                    <span class="text-[10px] text-slate-400">Gợi ý nhanh:</span>
+                    ${['Bố', 'Mẹ', 'Bé Bi', 'Chị Hai', 'Bà Nội'].map(s => `
+                      <button onclick="document.getElementById('input-member-name').value='${s}'" class="text-[10px] bg-slate-100 hover:bg-[#FEF7DC] px-2 py-0.5 rounded-md font-semibold text-slate-600">
+                        ${s}
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-[#334E68] mb-1.5">Biểu tượng nhà bếp:</label>
+                  <div class="grid grid-cols-4 gap-2" id="preset-selector">
+                    ${AVATAR_PRESETS.map((p, idx) => `
+                      <button
+                        type="button"
+                        onclick="selectPreset(${idx})"
+                        data-index="${idx}"
+                        class="preset-item p-2.5 rounded-2xl ${p.bg} border ${p.border} flex flex-col items-center justify-center gap-1 ${idx === (currentIconIndex === -1 ? 0 : currentIconIndex) ? 'ring-2 ring-[#5B7C99]' : 'opacity-80'}"
+                      >
+                        <span class="text-xl">${p.icon}</span>
+                        <span class="text-[9px] text-slate-600 font-medium">${p.label}</span>
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-200">
+              <button 
+                onclick="handleFormSubmit()"
+                class="w-full py-3.5 rounded-2xl bg-[#5B7C99] text-white font-bold text-sm shadow-md"
+              >
+                Hoàn tất & Lưu vào bếp
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    let selectedPresetIndex = 0;
+
+    function selectPreset(idx) {
+      selectedPresetIndex = idx;
+      const items = document.querySelectorAll('.preset-item');
+      items.forEach((el, i) => {
+        if (i === idx) {
+          el.classList.add('ring-2', 'ring-[#5B7C99]', 'scale-105');
+          el.classList.remove('opacity-70', 'opacity-80');
+        } else {
+          el.classList.remove('ring-2', 'ring-[#5B7C99]', 'scale-105');
+          el.classList.add('opacity-70');
+        }
+      });
+
+      // Update avatar box in Variant B if exists
+      const previewBox = document.getElementById('preview-avatar-box');
+      if (previewBox) {
+        previewBox.textContent = AVATAR_PRESETS[idx].icon;
+        previewBox.className = `w-14 h-14 rounded-2xl ${AVATAR_PRESETS[idx].bg} border-2 ${AVATAR_PRESETS[idx].border} mx-auto flex items-center justify-center text-3xl mb-2`;
+      }
+    }
+
+    function handleFormSubmit() {
+      const input = document.getElementById('input-member-name');
+      if (!input) return;
+      saveMember(input.value, selectedPresetIndex);
+    }
+
+    // --- MAIN RENDER PIPELINE ---
+    function render() {
+      const appRoot = document.getElementById('app-root');
+      const overlayHost = document.getElementById('overlay-host');
+
+      if (state.activeScreen === 'plan') {
+        appRoot.innerHTML = renderPlanScreen();
+        overlayHost.innerHTML = '';
+      } else {
+        if (currentVariant === 'A') {
+          appRoot.innerHTML = renderVariantA();
+        } else if (currentVariant === 'B') {
+          appRoot.innerHTML = renderVariantB();
+        } else {
+          appRoot.innerHTML = renderVariantC();
+        }
+        overlayHost.innerHTML = renderAddMemberOverlay();
+      }
+
+      updateStateSummary();
+    }
+
+    // --- KEYBOARD NAVIGATION ---
     window.addEventListener('keydown', (e) => {
-      const activeEl = document.activeElement;
-      const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
-      if (isInput) return;
+      // Don't cycle if typing in text inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
       if (e.key === 'ArrowLeft') {
         cycleVariant(-1);
@@ -212,741 +910,8 @@
       }
     });
 
-    // Exact match comparison rule
-    function isExactMatch(dishName, query) {
-      return dishName.trim().toLowerCase() === query.trim().toLowerCase();
-    }
-
-    function hasExactMatchInMenu(query) {
-      if (!query.trim()) return false;
-      return STATE.menu.some(m => isExactMatch(m.name, query));
-    }
-
-    // --- Actions ---
-    function switchTab(tab) {
-      STATE.activeTab = tab;
-      render();
-    }
-
-    function selectDate(idx) {
-      STATE.activeDateIndex = idx;
-      STATE.activeMeal = 'dinner';
-      render();
-    }
-
-    function switchMeal(meal) {
-      STATE.activeMeal = meal;
-      render();
-    }
-
-    function openDishSelector() {
-      STATE.selectedDishIds = [];
-      STATE.searchQuery = '';
-      STATE.isDrawerOpen = true;
-      render();
-    }
-
-    function closeDishSelector() {
-      STATE.isDrawerOpen = false;
-      STATE.searchQuery = '';
-      render();
-    }
-
-    function handleSearchInput(val) {
-      STATE.searchQuery = val;
-      renderDrawer();
-    }
-
-    function toggleDishSelection(id) {
-      const currentList = STATE.plans[STATE.activeDateIndex]?.[STATE.activeMeal] || [];
-      if (currentList.includes(id)) return; // already in meal
-
-      const idx = STATE.selectedDishIds.indexOf(id);
-      if (idx > -1) {
-        STATE.selectedDishIds.splice(idx, 1);
-      } else {
-        STATE.selectedDishIds.push(id);
-      }
-      renderDrawer();
-    }
-
-    function confirmAddDishes() {
-      if (!STATE.plans[STATE.activeDateIndex]) {
-        STATE.plans[STATE.activeDateIndex] = { dinner: [], lunch: [], breakfast: [] };
-      }
-      if (!STATE.plans[STATE.activeDateIndex][STATE.activeMeal]) {
-        STATE.plans[STATE.activeDateIndex][STATE.activeMeal] = [];
-      }
-
-      STATE.selectedDishIds.forEach(id => {
-        if (!STATE.plans[STATE.activeDateIndex][STATE.activeMeal].includes(id)) {
-          STATE.plans[STATE.activeDateIndex][STATE.activeMeal].push(id);
-        }
-      });
-
-      STATE.isDrawerOpen = false;
-      STATE.selectedDishIds = [];
-      STATE.searchQuery = '';
-      render();
-    }
-
-    function removeDishFromMeal(dishId, event) {
-      if (event) event.stopPropagation();
-      if (!STATE.plans[STATE.activeDateIndex]?.[STATE.activeMeal]) return;
-      STATE.plans[STATE.activeDateIndex][STATE.activeMeal] = STATE.plans[STATE.activeDateIndex][STATE.activeMeal].filter(id => id !== dishId);
-      render();
-    }
-
-    // Create dish modal flow
-    function openCreateDishModal(name, tag = '') {
-      STATE.modalInitialName = name.trim();
-      STATE.modalTag = tag;
-      STATE.isModalOpen = true;
-      renderModal();
-    }
-
-    function closeCreateDishModal() {
-      STATE.isModalOpen = false;
-      renderModal();
-    }
-
-    // Direct Quick Add (Variant C)
-    function quickAddAndAssign(name, tag = '') {
-      const trimmed = name.trim();
-      if (!trimmed) return;
-
-      const newId = 'd_' + Date.now();
-      STATE.menu.push({
-        id: newId,
-        name: trimmed,
-        tag: tag.trim() || undefined
-      });
-
-      if (!STATE.plans[STATE.activeDateIndex]) {
-        STATE.plans[STATE.activeDateIndex] = { dinner: [], lunch: [], breakfast: [] };
-      }
-      if (!STATE.plans[STATE.activeDateIndex][STATE.activeMeal]) {
-        STATE.plans[STATE.activeDateIndex][STATE.activeMeal] = [];
-      }
-
-      // Add checked dishes + new dish
-      STATE.selectedDishIds.forEach(id => {
-        if (!STATE.plans[STATE.activeDateIndex][STATE.activeMeal].includes(id)) {
-          STATE.plans[STATE.activeDateIndex][STATE.activeMeal].push(id);
-        }
-      });
-      STATE.plans[STATE.activeDateIndex][STATE.activeMeal].push(newId);
-
-      // Close all
-      STATE.isDrawerOpen = false;
-      STATE.selectedDishIds = [];
-      STATE.searchQuery = '';
-      render();
-    }
-
-    function handleSaveNewDish(event) {
-      event.preventDefault();
-      const nameInput = document.getElementById('modal-dish-name');
-      const tagInput = document.getElementById('modal-dish-tag');
-      const nameVal = nameInput ? nameInput.value.trim() : '';
-      const tagVal = tagInput ? tagInput.value.trim() : '';
-
-      if (!nameVal) {
-        alert('Vui lòng nhập tên Món ăn');
-        return;
-      }
-
-      const newId = 'd_' + Date.now();
-      STATE.menu.push({
-        id: newId,
-        name: nameVal,
-        tag: tagVal || undefined
-      });
-
-      // If drawer was open, assign to plan as settled in Q3-A & Q6-A
-      if (STATE.isDrawerOpen) {
-        if (!STATE.plans[STATE.activeDateIndex]) {
-          STATE.plans[STATE.activeDateIndex] = { dinner: [], lunch: [], breakfast: [] };
-        }
-        if (!STATE.plans[STATE.activeDateIndex][STATE.activeMeal]) {
-          STATE.plans[STATE.activeDateIndex][STATE.activeMeal] = [];
-        }
-
-        // Keep previously selected dishes and add new dish
-        STATE.selectedDishIds.forEach(id => {
-          if (!STATE.plans[STATE.activeDateIndex][STATE.activeMeal].includes(id)) {
-            STATE.plans[STATE.activeDateIndex][STATE.activeMeal].push(id);
-          }
-        });
-        STATE.plans[STATE.activeDateIndex][STATE.activeMeal].push(newId);
-
-        STATE.isDrawerOpen = false;
-        STATE.selectedDishIds = [];
-        STATE.searchQuery = '';
-      }
-
-      STATE.isModalOpen = false;
-      render();
-    }
-
-    // --- RENDER MAIN SCREENS ---
-    function renderPlanView() {
-      const activeDay = STATE.weekDays[STATE.activeDateIndex];
-      const mealDishIds = STATE.plans[STATE.activeDateIndex]?.[STATE.activeMeal] || [];
-      const mealDishes = mealDishIds.map(id => STATE.menu.find(m => m.id === id)).filter(Boolean);
-
-      const mealTitles = {
-        dinner: 'Bữa Tối',
-        lunch: 'Bữa Trưa',
-        breakfast: 'Bữa Sáng'
-      };
-
-      return `
-        <!-- Top Week Header -->
-        <div class="px-5 pt-3.5 pb-2.5 bg-white border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Kế hoạch</span>
-            <h2 class="text-base font-bold text-[#334E68] -mt-0.5">${activeDay.full}</h2>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5]">Mã: BEP-892</span>
-          </div>
-        </div>
-
-        <!-- Date Ribbon (T2 -> CN) -->
-        <div class="bg-white px-4 py-2.5 flex gap-2 overflow-x-auto shadow-xs border-b border-slate-100">
-          ${STATE.weekDays.map((d, idx) => {
-            const isSelected = idx === STATE.activeDateIndex;
-            return `
-              <button onclick="selectDate(${idx})" class="flex-shrink-0 flex flex-col items-center justify-center w-12 py-2 rounded-2xl transition-all ${
-                isSelected 
-                  ? 'bg-gradient-to-b from-[#5B7C99] to-[#46637D] text-white shadow-md shadow-[#5B7C99]/30 scale-105' 
-                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-              }">
-                <span class="text-[10px] font-medium opacity-80 uppercase">${d.label}</span>
-                <span class="text-xs font-bold mt-0.5">${d.num}</span>
-                ${d.isToday ? `<span class="w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-[#FEF7DC]' : 'bg-[#5B7C99]'}"></span>` : ''}
-              </button>
-            `;
-          }).join('')}
-        </div>
-
-        <!-- Meal Content -->
-        <div class="p-4 flex-1 flex flex-col">
-          <!-- Meal Switcher (Dinner First) -->
-          <div class="mb-3.5">
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Chọn bữa ăn</span>
-              ${STATE.activeMeal === 'dinner' ? `<span class="text-[10px] font-bold text-[#334E68] bg-[#FEF7DC] px-2 py-0.5 rounded-full border border-[#EFE4B5]">✨ Bữa chính</span>` : ''}
-            </div>
-            <div class="p-1 rounded-2xl bg-slate-200/60 flex gap-1">
-              <button onclick="switchMeal('breakfast')" class="flex-1 py-1.5 rounded-xl text-xs font-medium transition ${
-                STATE.activeMeal === 'breakfast' ? 'bg-white text-[#334E68] shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
-              }">Sáng</button>
-              <button onclick="switchMeal('lunch')" class="flex-1 py-1.5 rounded-xl text-xs font-medium transition ${
-                STATE.activeMeal === 'lunch' ? 'bg-white text-[#334E68] shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
-              }">Trưa</button>
-              <button onclick="switchMeal('dinner')" class="flex-1 py-1.5 rounded-xl text-xs font-medium transition relative ${
-                STATE.activeMeal === 'dinner' ? 'bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] shadow-sm font-bold' : 'text-slate-600 hover:text-[#334E68]'
-              }">
-                Tối
-                ${STATE.activeMeal === 'dinner' ? `<span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#5B7C99]"></span>` : ''}
-              </button>
-            </div>
-          </div>
-
-          <!-- Dishes in Current Meal -->
-          <div class="flex-1 flex flex-col">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="text-sm font-bold text-[#334E68] flex items-center gap-1.5">
-                <span>${mealTitles[STATE.activeMeal]}</span>
-                <span class="text-xs px-2 py-0.2 rounded-full bg-slate-200/80 text-slate-600">${mealDishes.length} món</span>
-              </h3>
-              
-              <button onclick="openDishSelector()" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#5B7C99] hover:bg-[#46637D] text-white text-xs font-bold transition active:scale-95 shadow-sm">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                <span>+ Thêm món</span>
-              </button>
-            </div>
-
-            <!-- Empty Meal State or Dish List -->
-            ${mealDishes.length === 0 ? `
-              <div class="flex-1 flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-white/60 my-2">
-                <div class="w-12 h-12 rounded-full bg-[#FEF7DC] border border-[#EFE4B5] flex items-center justify-center mb-2">
-                  🍲
-                </div>
-                <p class="text-xs font-bold text-slate-700">Chưa có món nào cho ${mealTitles[STATE.activeMeal]}</p>
-                <p class="text-[11px] text-slate-400 mt-1 max-w-[200px]">Bấm "+ Thêm món" để chọn từ Menu hoặc gõ tạo món mới trực tiếp</p>
-                <button onclick="openDishSelector()" class="mt-3 px-4 py-2 rounded-full bg-[#5B7C99] text-white text-xs font-bold hover:bg-[#46637D] transition shadow-sm">
-                  + Mở chọn món
-                </button>
-              </div>
-            ` : `
-              <div class="space-y-2 overflow-y-auto pr-0.5 flex-1">
-                ${mealDishes.map(d => `
-                  <div class="bg-white border border-slate-100 p-3 rounded-2xl shadow-xs flex items-center justify-between hover:border-slate-200 transition">
-                    <div class="flex items-center gap-2.5">
-                      <div class="w-9 h-9 rounded-xl bg-[#FEF7DC] border border-[#EFE4B5] flex items-center justify-center text-sm font-bold text-[#5B7C99]">
-                        🍲
-                      </div>
-                      <div>
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                          <h4 class="text-xs font-bold text-[#334E68]">${d.name}</h4>
-                          ${d.tag ? `<span class="text-[10px] px-1.5 py-0.2 rounded-md bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5]">${d.tag}</span>` : ''}
-                        </div>
-                        <span class="text-[10px] text-emerald-600 font-medium mt-0.5 block">Đã có trong Menu gia đình</span>
-                      </div>
-                    </div>
-                    <button onclick="removeDishFromMeal('${d.id}', event)" class="w-7 h-7 rounded-full text-slate-300 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition" title="Gỡ món">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    </button>
-                  </div>
-                `).join('')}
-              </div>
-            `}
-          </div>
-        </div>
-      `;
-    }
-
-    function renderMenuView() {
-      const q = STATE.searchQuery.trim().toLowerCase();
-      const filtered = STATE.menu.filter(m => 
-        m.name.toLowerCase().includes(q) || (m.tag && m.tag.toLowerCase().includes(q))
-      );
-      const isExact = hasExactMatchInMenu(STATE.searchQuery);
-
-      return `
-        <div class="p-4 flex-1 flex flex-col">
-          <!-- Search Bar -->
-          <div class="relative mb-3.5">
-            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            </div>
-            <input 
-              type="text" 
-              value="${STATE.searchQuery}"
-              oninput="STATE.searchQuery = this.value; render();"
-              placeholder="Tìm Món ăn trong Menu..." 
-              class="w-full pl-9 pr-8 py-2 rounded-2xl bg-white border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] transition shadow-xs"
-            >
-            ${STATE.searchQuery ? `
-              <button onclick="STATE.searchQuery = ''; render();" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">✕</button>
-            ` : ''}
-          </div>
-
-          <!-- Header -->
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <h2 class="text-sm font-bold text-[#334E68] flex items-center gap-1.5">
-                <span>Danh sách Menu</span>
-                <span class="text-[11px] px-2 py-0.2 rounded-full bg-slate-200 text-slate-600 font-semibold">${STATE.menu.length}</span>
-              </h2>
-              <p class="text-[11px] text-slate-400">Món ăn của gia đình bạn</p>
-            </div>
-            <button onclick="openCreateDishModal('')" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#5B7C99] text-white text-xs font-bold transition shadow-xs">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-              <span>Thêm mới</span>
-            </button>
-          </div>
-
-          <!-- Dishes list -->
-          <div class="space-y-2 overflow-y-auto flex-1 pr-0.5">
-            ${filtered.length === 0 ? `
-              <div class="py-8 text-center text-slate-400 text-xs border border-dashed border-slate-200 rounded-3xl p-6 bg-white/60">
-                <p>Không tìm thấy Món ăn nào khớp với "<b>${STATE.searchQuery}</b>"</p>
-                ${!isExact && STATE.searchQuery.trim() ? `
-                  <button onclick="openCreateDishModal('${STATE.searchQuery.trim()}')" class="mt-3 px-4 py-2 rounded-full bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] font-bold text-xs hover:bg-[#FDF2C7] transition">
-                    + Thêm Món ăn mới: "${STATE.searchQuery.trim()}"
-                  </button>
-                ` : ''}
-              </div>
-            ` : `
-              ${filtered.map(m => `
-                <div class="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between shadow-xs">
-                  <div>
-                    <h4 class="text-xs font-bold text-[#334E68]">${m.name}</h4>
-                    ${m.tag ? `<span class="text-[10px] px-1.5 py-0.2 rounded-md bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5] mt-1 inline-block">${m.tag}</span>` : ''}
-                  </div>
-                  <span class="text-[10px] text-slate-400">Menu</span>
-                </div>
-              `).join('')}
-              
-              <!-- Bottom suggestion if not exact match -->
-              ${(!isExact && STATE.searchQuery.trim()) ? `
-                <div class="pt-2 text-center">
-                  <button onclick="openCreateDishModal('${STATE.searchQuery.trim()}')" class="w-full py-2.5 px-3 rounded-2xl bg-[#FEF7DC]/80 border border-dashed border-[#EFE4B5] text-[#334E68] font-bold text-xs hover:bg-[#FEF7DC] transition">
-                    + Thêm Món ăn mới: "${STATE.searchQuery.trim()}" vào Menu
-                  </button>
-                </div>
-              ` : ''}
-            `}
-          </div>
-        </div>
-      `;
-    }
-
-    // --- RENDER DRAWER ACCORDING TO VARIANT A / B / C ---
-    function renderDrawer() {
-      const host = document.getElementById('drawer-host');
-      if (!host) return;
-
-      if (!STATE.isDrawerOpen) {
-        host.innerHTML = '';
-        return;
-      }
-
-      const q = STATE.searchQuery.trim().toLowerCase();
-      const currentMealDishIds = STATE.plans[STATE.activeDateIndex]?.[STATE.activeMeal] || [];
-      const filteredDishes = STATE.menu.filter(m => 
-        m.name.toLowerCase().includes(q) || (m.tag && m.tag.toLowerCase().includes(q))
-      );
-
-      const isExact = hasExactMatchInMenu(STATE.searchQuery);
-      const showAddSuggestion = STATE.searchQuery.trim().length > 0 && !isExact;
-      const trimmedQuery = STATE.searchQuery.trim();
-
-      let variantSpecificContent = '';
-
-      // === VARIANT A: Sticky Action Banner at the Bottom ===
-      if (STATE.variant === 'A') {
-        variantSpecificContent = `
-          <!-- Dish List -->
-          <div class="flex-1 overflow-y-auto py-1 space-y-2 max-h-[260px]">
-            ${filteredDishes.length === 0 ? `
-              <div class="py-6 text-center text-slate-400 text-xs">
-                <p>Không tìm thấy Món ăn nào khớp với "<b>${trimmedQuery}</b>"</p>
-              </div>
-            ` : filteredDishes.map(dish => renderDishItem(dish, currentMealDishIds)).join('')}
-          </div>
-
-          <!-- Sticky Bottom Action Card (Variant A) -->
-          ${showAddSuggestion ? `
-            <div class="my-2 p-3 rounded-2xl bg-[#FEF7DC] border-2 border-dashed border-[#EFE4B5] flex items-center justify-between shadow-xs animate-in fade-in duration-150">
-              <div class="pr-2">
-                <div class="flex items-center gap-1">
-                  <span class="text-xs">✨</span>
-                  <p class="text-xs font-bold text-[#334E68]">Chưa có "${trimmedQuery}" trong Menu?</p>
-                </div>
-                <p class="text-[10px] text-slate-500 mt-0.5">Tạo mới sẽ tự lưu vào Menu & thêm vào Bữa Tối</p>
-              </div>
-              <button onclick="openCreateDishModal('${trimmedQuery.replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-full bg-[#5B7C99] hover:bg-[#46637D] text-white text-[11px] font-bold shadow-xs transition active:scale-95 whitespace-nowrap">
-                + Thêm món
-              </button>
-            </div>
-          ` : ''}
-
-          <!-- Footer Confirm Button -->
-          <div class="pt-2 border-t border-slate-100">
-            <button onclick="confirmAddDishes()" class="w-full py-3 rounded-full font-bold text-xs shadow-md transition active:scale-98 ${
-              STATE.selectedDishIds.length > 0 
-                ? 'bg-[#5B7C99] hover:bg-[#46637D] text-white shadow-[#5B7C99]/30' 
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-            }">
-              Xác nhận thêm (${STATE.selectedDishIds.length} Món ăn)
-            </button>
-          </div>
-        `;
-      }
-
-      // === VARIANT B: Inline Dashed Item in the List ===
-      else if (STATE.variant === 'B') {
-        variantSpecificContent = `
-          <!-- Dish List with Inline Item -->
-          <div class="flex-1 overflow-y-auto py-1 space-y-2 max-h-[310px]">
-            ${filteredDishes.length === 0 ? `
-              <div class="py-4 text-center text-slate-400 text-xs">
-                <p class="mb-3">Không có Món ăn sẵn có phù hợp với "<b>${trimmedQuery}</b>"</p>
-              </div>
-            ` : filteredDishes.map(dish => renderDishItem(dish, currentMealDishIds)).join('')}
-
-            <!-- Inline Item at the end of the list (Variant B) -->
-            ${showAddSuggestion ? `
-              <div 
-                onclick="openCreateDishModal('${trimmedQuery.replace(/'/g, "\\'")}')"
-                class="p-3 rounded-2xl border-2 border-dashed border-[#5B7C99]/40 bg-[#F4F8FA] hover:bg-[#EBF2F7] transition cursor-pointer flex items-center justify-between group active:scale-99"
-              >
-                <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-full bg-[#5B7C99] text-white flex items-center justify-center font-bold text-sm">
-                    +
-                  </div>
-                  <div>
-                    <p class="text-xs font-bold text-[#334E68] group-hover:text-[#5B7C99]">
-                      + Thêm Món ăn mới: "${trimmedQuery}"
-                    </p>
-                    <span class="text-[10px] text-slate-500">Chưa có trong Menu • Bấm để thêm nhanh</span>
-                  </div>
-                </div>
-                <span class="text-xs text-[#5B7C99] font-bold">Thêm →</span>
-              </div>
-            ` : ''}
-          </div>
-
-          <!-- Footer Confirm Button -->
-          <div class="pt-3 border-t border-slate-100 mt-1">
-            <button onclick="confirmAddDishes()" class="w-full py-3 rounded-full font-bold text-xs shadow-md transition active:scale-98 ${
-              STATE.selectedDishIds.length > 0 
-                ? 'bg-[#5B7C99] hover:bg-[#46637D] text-white shadow-[#5B7C99]/30' 
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-            }">
-              Xác nhận thêm (${STATE.selectedDishIds.length} Món ăn)
-            </button>
-          </div>
-        `;
-      }
-
-      // === VARIANT C: Smart Dropdown Bar with Quick Tag Pills ===
-      else if (STATE.variant === 'C') {
-        const quickTags = ['Món mặn', 'Canh', 'Xào', 'Ăn sáng'];
-
-        variantSpecificContent = `
-          <!-- Smart Suggestion Bar Attached to Search (Variant C) -->
-          ${showAddSuggestion ? `
-            <div class="mb-2.5 p-3 rounded-2xl bg-gradient-to-r from-[#FEF7DC] to-[#FDF4CF] border border-[#EFE4B5] shadow-xs">
-              <div class="flex items-center justify-between mb-1.5">
-                <span class="text-xs font-bold text-[#334E68] flex items-center gap-1">
-                  <span>✨ Thêm nhanh:</span>
-                  <span class="text-[#5B7C99]">"${trimmedQuery}"</span>
-                </span>
-                <button onclick="openCreateDishModal('${trimmedQuery.replace(/'/g, "\\'")}')" class="text-[10px] font-bold text-slate-500 hover:text-slate-800 underline">
-                  Chi tiết...
-                </button>
-              </div>
-
-              <!-- Quick Tag 1-Click Buttons -->
-              <div class="flex items-center gap-1.5 overflow-x-auto py-1">
-                <span class="text-[10px] text-slate-500 font-medium">Gắn tag:</span>
-                ${quickTags.map(tag => `
-                  <button 
-                    onclick="quickAddAndAssign('${trimmedQuery.replace(/'/g, "\\'")}', '${tag}')"
-                    class="text-[10px] px-2.5 py-1 rounded-full bg-white hover:bg-slate-50 text-[#334E68] font-bold border border-[#EFE4B5] shadow-2xs transition active:scale-95 whitespace-nowrap"
-                  >
-                    + ${tag}
-                  </button>
-                `).join('')}
-                <button 
-                  onclick="quickAddAndAssign('${trimmedQuery.replace(/'/g, "\\'")}', '')"
-                  class="text-[10px] px-2.5 py-1 rounded-full bg-[#5B7C99] hover:bg-[#46637D] text-white font-bold transition active:scale-95 whitespace-nowrap"
-                >
-                  ⚡ Lưu không tag
-                </button>
-              </div>
-            </div>
-          ` : ''}
-
-          <!-- Dish List -->
-          <div class="flex-1 overflow-y-auto py-1 space-y-2 max-h-[270px]">
-            ${filteredDishes.length === 0 ? `
-              <div class="py-6 text-center text-slate-400 text-xs">
-                <p>Không có Món ăn sẵn có phù hợp với "<b>${trimmedQuery}</b>"</p>
-                <p class="text-[10px] mt-1 text-slate-400">Chọn 1 tag ở thanh trên để thêm ngay món này!</p>
-              </div>
-            ` : filteredDishes.map(dish => renderDishItem(dish, currentMealDishIds)).join('')}
-          </div>
-
-          <!-- Footer Confirm Button -->
-          <div class="pt-3 border-t border-slate-100 mt-1">
-            <button onclick="confirmAddDishes()" class="w-full py-3 rounded-full font-bold text-xs shadow-md transition active:scale-98 ${
-              STATE.selectedDishIds.length > 0 
-                ? 'bg-[#5B7C99] hover:bg-[#46637D] text-white shadow-[#5B7C99]/30' 
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-            }">
-              Xác nhận thêm (${STATE.selectedDishIds.length} Món ăn)
-            </button>
-          </div>
-        `;
-      }
-
-      host.innerHTML = `
-        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xs z-40 transition-opacity flex flex-col justify-end" onclick="closeDishSelector()">
-          <div class="bg-white rounded-t-[32px] p-5 pt-3 shadow-2xl max-h-[88%] flex flex-col border-t border-slate-100 animate-in slide-in-from-bottom duration-200" onclick="event.stopPropagation()">
-            
-            <!-- Grab bar -->
-            <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-3"></div>
-
-            <!-- Header -->
-            <div class="flex items-center justify-between mb-2">
-              <div>
-                <h3 class="text-base font-bold text-[#334E68]">Chọn Món ăn cho Bữa Tối</h3>
-                <p class="text-[11px] text-slate-400">Tick chọn món từ Menu hoặc gõ tạo món mới</p>
-              </div>
-              <button onclick="closeDishSelector()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-xs">✕</button>
-            </div>
-
-            <!-- Search input bar -->
-            <div class="relative mb-2">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              </div>
-              <input 
-                type="text" 
-                id="drawer-search-input"
-                value="${STATE.searchQuery}"
-                oninput="handleSearchInput(this.value)"
-                placeholder="Tìm Món ăn hoặc tag..." 
-                class="w-full pl-9 pr-8 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] focus:bg-white transition"
-                autofocus
-              >
-              ${STATE.searchQuery ? `
-                <button onclick="handleSearchInput(''); document.getElementById('drawer-search-input').focus();" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">✕</button>
-              ` : ''}
-            </div>
-
-            <!-- Variant Specific Subtree -->
-            ${variantSpecificContent}
-
-          </div>
-        </div>
-      `;
-    }
-
-    function renderDishItem(dish, alreadyAddedIds) {
-      const isChecked = STATE.selectedDishIds.includes(dish.id);
-      const isAlreadyInMeal = alreadyAddedIds.includes(dish.id);
-
-      return `
-        <div 
-          onclick="toggleDishSelection('${dish.id}')"
-          class="p-3 rounded-2xl border transition flex items-center justify-between ${
-            isAlreadyInMeal 
-              ? 'bg-slate-100/70 border-slate-200 opacity-60 cursor-not-allowed'
-              : isChecked 
-                ? 'bg-[#FEF7DC] border-[#EFE4B5] shadow-xs cursor-pointer' 
-                : 'bg-slate-50 border-slate-100 hover:bg-slate-100/70 cursor-pointer'
-          }"
-        >
-          <div class="pr-2">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <p class="text-xs font-bold text-[#334E68]">${dish.name}</p>
-              ${dish.tag ? `<span class="text-[10px] px-1.5 py-0.2 rounded-md bg-[#FEF7DC] text-[#334E68] border border-[#EFE4B5]">${dish.tag}</span>` : ''}
-              ${isAlreadyInMeal ? `<span class="text-[9px] px-1.5 py-0.2 rounded-md bg-slate-200 text-slate-500 font-semibold">Đã lên lịch</span>` : ''}
-            </div>
-          </div>
-          <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition flex-shrink-0 ${
-            isAlreadyInMeal 
-              ? 'border-slate-300 bg-slate-200 text-slate-400' 
-              : isChecked 
-                ? 'bg-[#5B7C99] border-[#5B7C99] text-white' 
-                : 'border-slate-300 bg-white'
-          }">
-            ${isChecked ? `<svg class="w-3 h-3 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : ''}
-          </div>
-        </div>
-      `;
-    }
-
-    // --- RENDER MODAL (DishModal Layered) ---
-    function renderModal() {
-      const host = document.getElementById('modal-host');
-      if (!host) return;
-
-      if (!STATE.isModalOpen) {
-        host.innerHTML = '';
-        return;
-      }
-
-      host.innerHTML = `
-        <div class="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150" onclick="closeCreateDishModal()">
-          <div class="w-full max-w-xs bg-white rounded-3xl p-5 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150" onclick="event.stopPropagation()">
-            
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-[#FEF7DC] border border-[#EFE4B5] flex items-center justify-center text-sm">
-                  🍲
-                </div>
-                <h3 class="text-sm font-bold text-[#334E68]">Thêm Món ăn mới</h3>
-              </div>
-              <button onclick="closeCreateDishModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold">✕</button>
-            </div>
-
-            <form onsubmit="handleSaveNewDish(event)" class="pt-3.5 space-y-3">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-700 mb-1">
-                  Tên Món ăn: <span class="text-rose-500">*</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="modal-dish-name"
-                  value="${STATE.modalInitialName}" 
-                  placeholder="Ví dụ: Bún chả nướng..." 
-                  class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] focus:bg-white transition"
-                  required
-                  autofocus
-                >
-              </div>
-
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-700 mb-1">
-                  Phân loại / Tag (tùy chọn):
-                </label>
-                <input 
-                  type="text" 
-                  id="modal-dish-tag"
-                  value="${STATE.modalTag}" 
-                  placeholder="Ví dụ: Món mặn, Canh, Xào..." 
-                  class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] focus:bg-white transition"
-                >
-                <span class="text-[10px] text-slate-400 mt-1 block">Dùng để tìm kiếm và lọc món nhanh.</span>
-              </div>
-
-              <div class="pt-2 flex items-center gap-2">
-                <button type="button" onclick="closeCreateDishModal()" class="flex-1 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
-                  Hủy
-                </button>
-                <button type="submit" class="flex-1 py-2 rounded-full bg-[#5B7C99] hover:bg-[#46637D] text-white text-xs font-bold shadow-md shadow-[#5B7C99]/30 transition active:scale-95">
-                  Lưu & Thêm
-                </button>
-              </div>
-            </form>
-
-          </div>
-        </div>
-      `;
-    }
-
-    // --- MAIN RENDER LOOP ---
-    function render() {
-      // Update top header description
-      const variantInfo = VARIANTS[STATE.variant] || VARIANTS['A'];
-      document.getElementById('variant-title').innerText = variantInfo.title;
-      document.getElementById('variant-description').innerText = variantInfo.desc;
-      document.getElementById('switcher-variant-key').innerText = `Phương án ${variantInfo.key}`;
-      document.getElementById('switcher-variant-name').innerText = variantInfo.name;
-
-      // Update Nav buttons styling
-      const planBtn = document.getElementById('nav-btn-plan');
-      const menuBtn = document.getElementById('nav-btn-menu');
-      if (planBtn && menuBtn) {
-        if (STATE.activeTab === 'plan') {
-          planBtn.className = "flex flex-col items-center gap-0.5 text-[#5B7C99] font-bold text-xs transition";
-          menuBtn.className = "flex flex-col items-center gap-0.5 text-slate-400 hover:text-[#5B7C99] transition text-xs";
-        } else {
-          menuBtn.className = "flex flex-col items-center gap-0.5 text-[#5B7C99] font-bold text-xs transition";
-          planBtn.className = "flex flex-col items-center gap-0.5 text-slate-400 hover:text-[#5B7C99] transition text-xs";
-        }
-      }
-
-      const menuCountBadge = document.getElementById('menu-count-badge');
-      if (menuCountBadge) {
-        menuCountBadge.innerText = STATE.menu.length;
-      }
-
-      // Render tab view
-      const root = document.getElementById('app-root');
-      if (root) {
-        root.innerHTML = STATE.activeTab === 'plan' ? renderPlanView() : renderMenuView();
-      }
-
-      // Render drawer and modal
-      renderDrawer();
-      renderModal();
-
-      // Update state summary
-      const dinnerDishes = (STATE.plans[1]?.dinner || []).length;
-      document.getElementById('state-summary').innerText = `Menu có ${STATE.menu.length} Món ăn | Kế hoạch Bữa Tối hôm nay có ${dinnerDishes} món.`;
-    }
-
-    // Initial render
+    // --- INITIAL BOOTSTRAP ---
+    initVariantFromUrl();
     render();
   </script>
 </body>

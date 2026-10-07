@@ -1,0 +1,3 @@
+# Quản lý Thành viên chung và Màn hình chọn Thành viên kiểu Netflix
+
+Hệ thống chuyển từ cơ chế lưu Biệt danh cục bộ trên từng thiết bị (ADR 0001) sang danh mục Thành viên dùng chung theo từng Gia đình (`household_code`) được lưu trữ tập trung trên Cơ sở dữ liệu (Database). Mỗi khi người dùng mở lại trang web, ứng dụng luôn hiển thị màn hình chọn Thành viên ("Ai đang vào bếp?") trước khi vào Kế hoạch nhằm tối ưu cho ngữ cảnh các gia đình dùng chung thiết bị hoặc chuyền tay nhau sử dụng. Danh sách Thành viên hỗ trợ thêm mới, chỉnh sửa và xóa trực tiếp với đồng bộ thời gian thực, đảm bảo không có rào cản mật khẩu hay mã PIN (zero-friction).
