@@ -5,7 +5,7 @@ Kết nối tính năng chọn Thành viên vào luồng Khởi tạo gia đình
 
 **Blocked by:** 03: Member Management Mode (Edit & Delete with Safety Constraints)
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] Cập nhật luồng "Tạo Nhà Mới" trong `OnboardingModal`: Người dùng xem mã nhà mới sinh và nhập tên Thành viên đầu tiên của họ.
 - [ ] Khi hoàn tất tạo nhà, tự động lưu Thành viên sáng lập đầu tiên vào `MemberRepository` với biểu tượng mặc định (`🍳` Chảo ốp la).
