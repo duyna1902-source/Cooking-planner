@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../../src/App';
 import { InMemoryHouseholdStorage } from '../../src/services/storage';
@@ -494,6 +494,171 @@ describe('Member Selection Modal & Session Gate Integration (Ticket 01)', () => 
       // Verify the past comment authored by deleted member "Bố Tuấn" is still present
       expect(screen.getByText('Bố đã mua đủ gia vị cho món này rồi nhé!')).toBeInTheDocument();
       expect(screen.getByText('Bố Tuấn')).toBeInTheDocument();
+    });
+  });
+
+  describe('Onboarding Integration and Realtime Multi-Device Sync (Ticket 04)', () => {
+    it('creates first member and enters Weekly Plan view immediately upon completing new household onboarding', async () => {
+      const user = userEvent.setup();
+      const freshStorage = new InMemoryHouseholdStorage();
+      const freshMemberRepo = new InMemoryMemberRepository();
+
+      const { unmount } = render(
+        <App
+          storage={freshStorage}
+          memberRepository={freshMemberRepo}
+        />
+      );
+
+      // Onboarding modal is open
+      expect(screen.getByText('Bếp Gia Đình')).toBeInTheDocument();
+      await user.click(screen.getByTestId('create-household-button'));
+
+      // Enter founding member name
+      const codeDisplay = screen.getByTestId('generated-code-display');
+      const generatedCode = codeDisplay.textContent?.trim() || '';
+      expect(generatedCode).toMatch(/^BEP-\d{3}$/);
+
+      const nameInput = screen.getByTestId('nickname-input');
+      await user.type(nameInput, 'Bà Cố');
+      await user.click(screen.getByTestId('confirm-create-button'));
+
+      // Complete and enter
+      await user.click(screen.getByTestId('enter-app-button'));
+
+      // App is unlocked in Weekly Plan view as "Bà Cố"
+      await waitFor(() => {
+        expect(screen.getByTestId('plan-view')).toBeInTheDocument();
+      });
+      expect(screen.getByTestId('household-code-badge')).toHaveTextContent(`Mã: ${generatedCode}`);
+      expect(screen.getByTestId('nickname-badge')).toHaveTextContent('• Bà Cố');
+      expect(screen.getByTestId('active-member-avatar')).toHaveTextContent('🍳');
+
+      // Member is persisted in repository with default preset 🍳
+      const members = await freshMemberRepo.getMembers(generatedCode);
+      expect(members).toHaveLength(1);
+      expect(members[0].name).toBe('Bà Cố');
+      expect(members[0].avatarIcon).toBe('🍳');
+      expect(members[0].avatarColor).toBe('bg-[#FEF7DC]');
+
+      // Opening in new session (simulating page reload) shows "Bà Cố" in MemberSelectModal
+      unmount();
+      render(
+        <App
+          storage={freshStorage}
+          memberRepository={freshMemberRepo}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      });
+      expect(screen.getByText('Bà Cố')).toBeInTheDocument();
+      expect(screen.getByText('🍳')).toBeInTheDocument();
+    });
+
+    it('joining via share link ?join=CODE transitions directly to MemberSelectModal with household members', async () => {
+      const user = userEvent.setup();
+      const freshStorage = new InMemoryHouseholdStorage();
+      const freshMemberRepo = new InMemoryMemberRepository([
+        {
+          id: 'mem_1',
+          householdCode: 'BEP-555',
+          name: 'Bố Hoàng',
+          avatarIcon: '🍜',
+          avatarColor: 'bg-[#E0F2FE]',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'mem_2',
+          householdCode: 'BEP-555',
+          name: 'Mẹ Hằng',
+          avatarIcon: '🥑',
+          avatarColor: 'bg-[#ECFCCB]',
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+
+      render(
+        <App
+          storage={freshStorage}
+          memberRepository={freshMemberRepo}
+          initialUrl="?join=BEP-555"
+        />
+      );
+
+      // Directly shows MemberSelectModal without forcing nickname input
+      await waitFor(() => {
+        expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      });
+      expect(screen.getByText('Hôm nay ai vào bếp?')).toBeInTheDocument();
+      expect(screen.getByText('Mã: BEP-555')).toBeInTheDocument();
+      expect(screen.getByText('Bố Hoàng')).toBeInTheDocument();
+      expect(screen.getByText('Mẹ Hằng')).toBeInTheDocument();
+
+      // Tap card to enter Weekly Plan
+      await user.click(screen.getByText('Mẹ Hằng'));
+      await waitFor(() => {
+        expect(screen.getByTestId('plan-view')).toBeInTheDocument();
+      });
+      expect(screen.getByTestId('nickname-badge')).toHaveTextContent('• Mẹ Hằng');
+      expect(screen.getByTestId('active-member-avatar')).toHaveTextContent('🥑');
+    });
+
+    it('updates member list on MemberSelectModal in realtime without page reload when another device modifies members', async () => {
+      let triggerSubscriber: (() => void) | null = null;
+      const initialMember = {
+        id: 'mem_1',
+        householdCode: 'BEP-892',
+        name: 'Mẹ Bắp',
+        avatarIcon: '🍳',
+        avatarColor: 'bg-[#FEF7DC]',
+        createdAt: new Date().toISOString(),
+      };
+
+      const freshMemberRepo = new InMemoryMemberRepository([initialMember]);
+      freshMemberRepo.subscribe = vi.fn().mockImplementation((_code, cb) => {
+        triggerSubscriber = cb;
+        return () => {
+          triggerSubscriber = null;
+        };
+      });
+
+      render(
+        <App
+          storage={storage}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          memberRepository={freshMemberRepo}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      });
+      expect(screen.getByText('Mẹ Bắp')).toBeInTheDocument();
+      expect(screen.queryByText('Em Tí')).not.toBeInTheDocument();
+
+      // Another device adds "Em Tí" (🍰)
+      await freshMemberRepo.addMember({
+        householdCode: 'BEP-892',
+        name: 'Em Tí',
+        avatarIcon: '🍰',
+        avatarColor: 'bg-[#FCE7F3]',
+      });
+
+      // Fire realtime websocket event
+      act(() => {
+        if (triggerSubscriber) {
+          triggerSubscriber();
+        }
+      });
+
+      // MemberSelectModal automatically displays "Em Tí"
+      await waitFor(() => {
+        expect(screen.getByText('Em Tí')).toBeInTheDocument();
+      });
+      expect(screen.getByText('🍰')).toBeInTheDocument();
     });
   });
 });

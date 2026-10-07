@@ -73,10 +73,8 @@ export const App: React.FC<AppProps> = ({
       setHouseholdCode(detectedJoin);
 
       if (storedNick) {
-        // Nickname already set locally: immediately ready
         setNickname(storedNick);
       } else {
-        // Prompt for nickname once
         setJoinCodeFromUrl(detectedJoin);
         setNickname(null);
       }
@@ -90,7 +88,7 @@ export const App: React.FC<AppProps> = ({
     }
 
     setIsInitialized(true);
-  }, [storage, initialUrl]);
+  }, [storage, initialUrl, activeMemberRepo]);
 
   useEffect(() => {
     activeDishRepo.setPlanRepository?.(activePlanRepo);
@@ -112,6 +110,9 @@ export const App: React.FC<AppProps> = ({
         if (isMounted) {
           setMembers(list);
           setIsLoadingMembers(false);
+          if (list.length > 0 && joinCodeFromUrl) {
+            setJoinCodeFromUrl(null);
+          }
         }
       })
       .catch(() => {
@@ -135,41 +136,66 @@ export const App: React.FC<AppProps> = ({
       isMounted = false;
       unsubscribe?.();
     };
-  }, [householdCode, activeMemberRepo]);
+  }, [householdCode, activeMemberRepo, joinCodeFromUrl]);
 
-  const handleOnboardingComplete = (code: string, nick: string) => {
+  const handleOnboardingComplete = (code: string, nick?: string) => {
     storage.setHouseholdCode(code);
-    storage.setNickname(nick);
     setHouseholdCode(code);
-    setNickname(nick);
     setJoinCodeFromUrl(null);
     setIsSwitchingHousehold(false);
 
-    // Seed active member in memory and persist in member repository
-    const fallbackMember: Member = {
-      id: `mem_${Date.now()}`,
-      householdCode: code,
-      name: nick,
-      avatarIcon: '🍳',
-      avatarColor: 'bg-[#FEF7DC]',
-      createdAt: new Date().toISOString(),
-    };
-    setActiveMember(fallbackMember);
+    if (nick && nick.trim()) {
+      const trimmedNick = nick.trim();
+      storage.setNickname(trimmedNick);
+      setNickname(trimmedNick);
 
-    activeMemberRepo
-      .addMember({
+      // Seed active member in memory and persist in member repository
+      const fallbackMember: Member = {
+        id: `mem_${Date.now()}`,
         householdCode: code,
-        name: nick,
+        name: trimmedNick,
         avatarIcon: '🍳',
         avatarColor: 'bg-[#FEF7DC]',
-      })
-      .then((created) => {
-        setActiveMember(created);
-        setMembers((prev) => [...prev.filter((m) => m.id !== created.id), created]);
-      })
-      .catch(() => {
-        // Ignored if member already exists
-      });
+        createdAt: new Date().toISOString(),
+      };
+      setActiveMember(fallbackMember);
+
+      activeMemberRepo
+        .addMember({
+          householdCode: code,
+          name: trimmedNick,
+          avatarIcon: '🍳',
+          avatarColor: 'bg-[#FEF7DC]',
+        })
+        .then((created) => {
+          setActiveMember(created);
+          setMembers((prev) => [...prev.filter((m) => m.id !== created.id), created]);
+        })
+        .catch(() => {
+          // If member already exists, load members and set activeMember
+          activeMemberRepo
+            .getMembers(code)
+            .then((existingList) => {
+              setMembers(existingList);
+              const match = existingList.find(
+                (m) => m.name.toLowerCase() === trimmedNick.toLowerCase()
+              );
+              if (match) {
+                setActiveMember(match);
+              }
+            })
+            .catch(() => {});
+        });
+    } else {
+      // Joined household without nickname
+      setActiveMember(null);
+      activeMemberRepo
+        .getMembers(code)
+        .then((list) => {
+          setMembers(list);
+        })
+        .catch(() => {});
+    }
 
     // Clean up join query param in browser URL without full reload
     if (typeof window !== 'undefined' && window.history && window.location) {

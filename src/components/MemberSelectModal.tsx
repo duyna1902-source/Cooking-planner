@@ -36,6 +36,24 @@ export const MemberSelectModal: React.FC<MemberSelectModalProps> = ({
     setLocalMembers(members);
   }, [members]);
 
+  useEffect(() => {
+    if (!memberRepository?.subscribe || !householdCode) return;
+
+    const reloadMembers = async () => {
+      try {
+        const updated = await memberRepository.getMembers(householdCode);
+        setLocalMembers(updated);
+      } catch {
+        // Ignored
+      }
+    };
+
+    const unsubscribe = memberRepository.subscribe(householdCode, reloadMembers);
+    return () => {
+      unsubscribe?.();
+    };
+  }, [householdCode, memberRepository]);
+
   const handleOpenAddDrawer = () => {
     setEditingMember(null);
     setIsDrawerOpen(true);

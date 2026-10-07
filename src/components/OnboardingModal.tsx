@@ -11,7 +11,7 @@ import { useClipboardCopy } from '../hooks/useClipboardCopy';
 
 interface OnboardingModalProps {
   initialCode?: string | null;
-  onComplete: (householdCode: string, nickname: string) => void;
+  onComplete: (householdCode: string, nickname?: string) => void;
 }
 
 type OnboardingStep = 'choose' | 'create' | 'join' | 'created_success';
@@ -44,7 +44,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const handleConfirmCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidNickname(nickname)) {
-      setError('Vui lòng nhập biệt danh của bạn (tối đa 30 ký tự)');
+      setError('Vui lòng nhập biệt danh / tên thành viên của bạn (tối đa 30 ký tự)');
       return;
     }
     setError(null);
@@ -62,12 +62,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       setError('Mã nhà không hợp lệ (ít nhất 3 ký tự)');
       return;
     }
-    if (!isValidNickname(nickname)) {
+    if (nickname && nickname.trim() && !isValidNickname(nickname)) {
       setError('Vui lòng nhập biệt danh của bạn (tối đa 30 ký tự)');
       return;
     }
     setError(null);
-    onComplete(cleanCode, nickname.trim());
+    onComplete(cleanCode, nickname.trim() || undefined);
   };
 
   const handleCopyLink = () => {
@@ -150,7 +150,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <form onSubmit={handleConfirmCreate} className="space-y-4">
               <div>
                 <label htmlFor="create-nickname-input" className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Biệt danh của bạn trong nhà:
+                  Tên thành viên đầu tiên của bạn:
                 </label>
                 <input
                   id="create-nickname-input"
@@ -163,7 +163,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] focus:bg-white transition"
                 />
                 <span className="text-[11px] text-slate-400 mt-1 block">
-                  Biệt danh giúp cả nhà nhận biết ai đã lên kế hoạch hoặc dặn dò.
+                  Tên thành viên sáng lập giúp cả nhà nhận biết ai đã lên kế hoạch hoặc dặn dò.
                 </span>
               </div>
 
@@ -291,7 +291,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
               <div>
                 <label htmlFor="join-nickname-input" className="block text-xs font-semibold text-slate-700 mb-1">
-                  Biệt danh của bạn:
+                  Biệt danh của bạn (không bắt buộc nếu đã có tên trong nhà):
                 </label>
                 <input
                   id="join-nickname-input"

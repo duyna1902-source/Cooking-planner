@@ -7,10 +7,10 @@ Kết nối tính năng chọn Thành viên vào luồng Khởi tạo gia đình
 
 **Status:** claimed
 
-- [ ] Cập nhật luồng "Tạo Nhà Mới" trong `OnboardingModal`: Người dùng xem mã nhà mới sinh và nhập tên Thành viên đầu tiên của họ.
-- [ ] Khi hoàn tất tạo nhà, tự động lưu Thành viên sáng lập đầu tiên vào `MemberRepository` với biểu tượng mặc định (`🍳` Chảo ốp la).
-- [ ] Sau khi tạo nhà, người tạo được tự động chọn làm Thành viên đang hoạt động và chuyển thẳng vào màn hình Kế hoạch. Lần sau mở lại web sẽ thấy Thành viên đó trên màn hình chọn.
-- [ ] Cập nhật luồng "Tham Gia Bằng Mã" và Link tham gia (`?join=...`): Sau khi nhập mã nhà hợp lệ hoặc click link chia sẻ, hệ thống lưu `household_code` và chuyển ngay sang màn hình chọn Thành viên của nhà đó (thay vì bắt nhập Biệt danh đơn lẻ như trước). Nếu chưa có tên mình trong danh sách, người mới có thể bấm "➕ Thêm thành viên mới".
-- [ ] Triển khai phương thức `subscribe` trong `SupabaseMemberRepository` lắng nghe các sự kiện `INSERT`, `UPDATE`, `DELETE` trên bảng `members` theo `household_code`.
-- [ ] Khi có sự kiện Realtime thay đổi danh sách Thành viên, giao diện màn hình chọn Thành viên tự động làm mới danh sách tức thì mà không cần reload trang web.
-- [ ] Kiểm thử tích hợp bao phủ toàn diện: Tạo nhà mới với thành viên đầu tiên, tham gia nhà cũ qua mã/link và sự kiện đồng bộ Realtime đa thiết bị.
+- [x] Cập nhật luồng "Tạo Nhà Mới" trong `OnboardingModal`: Người dùng xem mã nhà mới sinh và nhập tên Thành viên đầu tiên của họ.
+- [x] Khi hoàn tất tạo nhà, tự động lưu Thành viên sáng lập đầu tiên vào `MemberRepository` với biểu tượng mặc định (`🍳` Chảo ốp la).
+- [x] Sau khi tạo nhà, người tạo được tự động chọn làm Thành viên đang hoạt động và chuyển thẳng vào màn hình Kế hoạch. Lần sau mở lại web sẽ thấy Thành viên đó trên màn hình chọn.
+- [x] Cập nhật luồng "Tham Gia Bằng Mã" và Link tham gia (`?join=...`): Sau khi nhập mã nhà hợp lệ hoặc click link chia sẻ, hệ thống lưu `household_code` và chuyển ngay sang màn hình chọn Thành viên của nhà đó (thay vì bắt nhập Biệt danh đơn lẻ như trước). Nếu chưa có tên mình trong danh sách, người mới có thể bấm "➕ Thêm thành viên mới".
+- [x] Triển khai phương thức `subscribe` trong `SupabaseMemberRepository` lắng nghe các sự kiện `INSERT`, `UPDATE`, `DELETE` trên bảng `members` theo `household_code`.
+- [x] Khi có sự kiện Realtime thay đổi danh sách Thành viên, giao diện màn hình chọn Thành viên tự động làm mới danh sách tức thì mà không cần reload trang web.
+- [x] Kiểm thử tích hợp bao phủ toàn diện: Tạo nhà mới với thành viên đầu tiên, tham gia nhà cũ qua mã/link và sự kiện đồng bộ Realtime đa thiết bị.
