@@ -15,6 +15,7 @@ export interface MemberRepository {
 export class InMemoryMemberRepository implements MemberRepository {
   readonly isOnline = false;
   private members: Member[] = [];
+  private listeners: Map<string, Set<() => void>> = new Map();
 
   constructor(initialMembers: Member[] = []) {
     this.members = [...initialMembers];
@@ -22,6 +23,16 @@ export class InMemoryMemberRepository implements MemberRepository {
 
   async getMembers(householdCode: string): Promise<Member[]> {
     return this.members.filter((m) => m.householdCode === householdCode);
+  }
+
+  notifySubscribers(householdCode: string): void {
+    this.listeners.get(householdCode)?.forEach((cb) => {
+      try {
+        cb();
+      } catch {
+        // Ignored
+      }
+    });
   }
 
   async addMember(member: Omit<Member, 'id' | 'createdAt'>): Promise<Member> {
@@ -45,6 +56,7 @@ export class InMemoryMemberRepository implements MemberRepository {
       avatarColor: member.avatarColor,
     });
     this.members.push(newMember);
+    this.notifySubscribers(member.householdCode);
     return newMember;
   }
 
@@ -82,6 +94,7 @@ export class InMemoryMemberRepository implements MemberRepository {
       current.avatarColor = updates.avatarColor;
     }
 
+    this.notifySubscribers(current.householdCode);
     return current;
   }
 
@@ -89,10 +102,17 @@ export class InMemoryMemberRepository implements MemberRepository {
     this.members = this.members.filter(
       (m) => !(m.householdCode === householdCode && m.id === id)
     );
+    this.notifySubscribers(householdCode);
   }
 
-  subscribe?(_householdCode: string, _onUpdate: () => void): () => void {
-    return () => {};
+  subscribe(householdCode: string, onUpdate: () => void): () => void {
+    if (!this.listeners.has(householdCode)) {
+      this.listeners.set(householdCode, new Set());
+    }
+    this.listeners.get(householdCode)!.add(onUpdate);
+    return () => {
+      this.listeners.get(householdCode)?.delete(onUpdate);
+    };
   }
 }
 

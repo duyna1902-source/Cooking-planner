@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemberSelectModal } from '../../src/components/MemberSelectModal';
 import { Member } from '../../src/domain/member';
@@ -321,6 +321,58 @@ describe('MemberSelectModal', () => {
 
       // Member still exists
       expect(screen.getByText('Mẹ')).toBeInTheDocument();
+    });
+  });
+
+  describe('Realtime Subscription', () => {
+    it('subscribes to memberRepository on mount, updates member list on realtime trigger, and unsubscribes on unmount', async () => {
+      let triggerSubscriber: (() => void) | null = null;
+      const initialMembers = getSampleMembers();
+      const memberRepo = new InMemoryMemberRepository(initialMembers);
+
+      const unsubscribeMock = vi.fn();
+      memberRepo.subscribe = vi.fn().mockImplementation((_code, cb) => {
+        triggerSubscriber = cb;
+        return unsubscribeMock;
+      });
+
+      const { unmount } = render(
+        <MemberSelectModal
+          householdCode="BEP-892"
+          members={initialMembers}
+          onSelectMember={vi.fn()}
+          memberRepository={memberRepo}
+        />
+      );
+
+      // Verify subscription on mount
+      expect(memberRepo.subscribe).toHaveBeenCalledWith('BEP-892', expect.any(Function));
+
+      // Simulate external member addition in DB from another device
+      const newMember: Member = {
+        id: 'm4',
+        householdCode: 'BEP-892',
+        name: 'Chú Ba',
+        avatarIcon: '🍕',
+        avatarColor: 'bg-[#FFEDD5]',
+        createdAt: '2026-10-07T12:00:00.000Z',
+      };
+      await memberRepo.addMember(newMember);
+
+      // Trigger realtime subscriber
+      if (triggerSubscriber) {
+        await act(async () => {
+          await (triggerSubscriber as () => Promise<void>)();
+        });
+      }
+
+      // Check that "Chú Ba" is now displayed
+      expect(await screen.findByText('Chú Ba')).toBeInTheDocument();
+      expect(screen.getByText('🍕')).toBeInTheDocument();
+
+      // Verify unmount cleanup
+      unmount();
+      expect(unsubscribeMock).toHaveBeenCalledTimes(1);
     });
   });
 });

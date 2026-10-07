@@ -7,6 +7,7 @@ import { formatDateToISO } from '../../src/domain/plan';
 import { InMemoryHouseholdStorage } from '../../src/services/storage';
 import { InMemoryDishRepository } from '../../src/services/dishRepository';
 import { InMemoryPlanRepository } from '../../src/services/planRepository';
+import { InMemoryMemberRepository } from '../../src/services/memberRepository';
 import {
   setSupabaseClientForTesting,
 } from '../../src/services/supabaseClient';
@@ -248,6 +249,63 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
         expect(screen.getByText('Cho nhiều bạc hà nhé')).toBeInTheDocument();
         expect(screen.getByText('Bố')).toBeInTheDocument();
       });
+    });
+
+    it('MemberSelectModal reloads member list automatically when memberRepository triggers realtime event from another device', async () => {
+      let triggerSubscriber: (() => void) | null = null;
+      const initialMember = {
+        id: 'mem_1',
+        householdCode: 'NHA123',
+        name: 'Mẹ Bắp',
+        avatarIcon: '🍳',
+        avatarColor: 'bg-[#FEF7DC]',
+        createdAt: new Date().toISOString(),
+      };
+
+      const memberRepo = new InMemoryMemberRepository([initialMember]);
+      memberRepo.subscribe = vi.fn().mockImplementation((_code, cb) => {
+        triggerSubscriber = cb;
+        return () => {
+          triggerSubscriber = null;
+        };
+      });
+
+      const storage = new InMemoryHouseholdStorage('NHA123');
+      render(
+        <App
+          storage={storage}
+          memberRepository={memberRepo}
+          isOnline={true}
+        />
+      );
+
+      // Verify MemberSelectModal is displayed with "Mẹ Bắp"
+      await waitFor(() => {
+        expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      });
+      expect(screen.getByText('Mẹ Bắp')).toBeInTheDocument();
+      expect(screen.queryByText('Bố Tuấn')).not.toBeInTheDocument();
+
+      // Another phone adds "Bố Tuấn" to the household in database
+      await memberRepo.addMember({
+        householdCode: 'NHA123',
+        name: 'Bố Tuấn',
+        avatarIcon: '🍜',
+        avatarColor: 'bg-[#E0F2FE]',
+      });
+
+      // Simulate Realtime websocket postgres_changes trigger
+      act(() => {
+        if (triggerSubscriber) {
+          triggerSubscriber();
+        }
+      });
+
+      // MemberSelectModal automatically displays "Bố Tuấn" without page reload
+      await waitFor(() => {
+        expect(screen.getByText('Bố Tuấn')).toBeInTheDocument();
+      });
+      expect(screen.getByText('🍜')).toBeInTheDocument();
     });
   });
 });
