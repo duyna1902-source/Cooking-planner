@@ -5,7 +5,7 @@ Trên màn hình chọn Thành viên, một nút bấm lớn dạng pill mang n�
 
 **Blocked by:** 01: Core Member Selection Modal & Session Gate
 
-**Status:** claimed
+**Status:** resolved
 
 - [x] Hiển thị nút "➕ Thêm thành viên mới" dạng pill tròn đầy đủ chiều ngang (`w-full py-3.5 rounded-full bg-[#5B7C99] text-white font-bold`) ghim cố định ở đáy màn hình chọn Thành viên.
 - [x] Bấm vào nút sẽ kích hoạt Bottom Drawer trượt mượt mà từ dưới lên với nền mờ backdrop blur và vạch kéo bo tròn.
@@ -17,3 +17,8 @@ Trên màn hình chọn Thành viên, một nút bấm lớn dạng pill mang n�
 - [x] Thành viên mới thêm có thể bấm chọn ngay lập tức để vào màn hình Kế hoạch.
 - [x] Có nút "Hủy" hoặc nút dấu ✕ để đóng drawer bất cứ lúc nào mà không thay đổi dữ liệu.
 - [x] Bộ kiểm thử tự động (Unit & Integration tests) bao phủ trọn vẹn việc mở drawer, chọn biểu tượng, kiểm tra validation rỗng/trùng và lưu thành viên mới.
+
+## Answer
+
+Implemented the `MemberDrawer` component as a slide-up bottom sheet with backdrop overlay and drag handle. Added fixed bottom pill action "➕ Thêm thành viên mới" to `MemberSelectModal`. The drawer features a 30-character trimmed name input and an 8-preset visual kitchen avatar selector with active border indicator. Validated empty/whitespace and duplicate name conditions per household. Added members are persisted to the repository, immediately visible in the grid, and directly selectable. Covered with unit and integration tests (179 passing tests).
+
