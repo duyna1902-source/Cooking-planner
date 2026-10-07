@@ -9,7 +9,20 @@ CREATE TABLE IF NOT EXISTS households (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 2. BẢNG DISHES (Món ăn trong Menu gia đình)
+-- 2. BẢNG MEMBERS (Thành viên trong Gia đình)
+CREATE TABLE IF NOT EXISTS members (
+  id TEXT PRIMARY KEY,
+  household_code TEXT NOT NULL REFERENCES households(code) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  avatar_icon TEXT NOT NULL DEFAULT '🍳',
+  avatar_color TEXT NOT NULL DEFAULT 'bg-[#FEF7DC]',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT unique_member_name_per_household UNIQUE (household_code, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_members_household_code ON members(household_code);
+
+-- 3. BẢNG DISHES (Món ăn trong Menu gia đình)
 CREATE TABLE IF NOT EXISTS dishes (
   id TEXT PRIMARY KEY,
   household_code TEXT NOT NULL,
@@ -54,6 +67,7 @@ CREATE INDEX IF NOT EXISTS idx_plan_comments_item ON plan_comments(household_cod
 -- ==============================================================================
 
 ALTER TABLE households ENABLE ROW LEVEL SECURITY;
+ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dishes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plan_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plan_comments ENABLE ROW LEVEL SECURITY;
@@ -61,6 +75,9 @@ ALTER TABLE plan_comments ENABLE ROW LEVEL SECURITY;
 -- Cho phép client đọc/ghi dựa trên anon key
 DROP POLICY IF EXISTS "Public access to households" ON households;
 CREATE POLICY "Public access to households" ON households FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access to members" ON members;
+CREATE POLICY "Public access to members" ON members FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Public access to dishes" ON dishes;
 CREATE POLICY "Public access to dishes" ON dishes FOR ALL USING (true) WITH CHECK (true);
@@ -73,10 +90,11 @@ CREATE POLICY "Public access to plan_comments" ON plan_comments FOR ALL USING (t
 
 -- ==============================================================================
 -- SUPABASE REALTIME REPLICATION
--- Kích hoạt WebSocket broadcasts khi dữ liệu Menu / Kế hoạch / Dặn dò thay đổi
+-- Kích hoạt WebSocket broadcasts khi dữ liệu Menu / Kế hoạch / Dặn dò / Thành viên thay đổi
 -- ==============================================================================
 
 -- Bật replica full để nhận đầy đủ payload khi xóa / sửa
+ALTER TABLE members REPLICA IDENTITY FULL;
 ALTER TABLE dishes REPLICA IDENTITY FULL;
 ALTER TABLE plan_items REPLICA IDENTITY FULL;
 ALTER TABLE plan_comments REPLICA IDENTITY FULL;
@@ -84,6 +102,13 @@ ALTER TABLE plan_comments REPLICA IDENTITY FULL;
 -- Thêm các bảng vào publication realtime
 DO $$
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND tablename = 'members'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE members;
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM pg_publication_tables 
     WHERE pubname = 'supabase_realtime' AND tablename = 'dishes'

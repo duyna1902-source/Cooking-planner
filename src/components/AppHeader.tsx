@@ -1,11 +1,14 @@
 import React from 'react';
-import { Share2, Check, Home } from 'lucide-react';
+import { Share2, Check, Home, Users } from 'lucide-react';
 import { createShareUrl } from '../domain/household';
+import { Member } from '../domain/member';
 import { useClipboardCopy } from '../hooks/useClipboardCopy';
 
 export interface AppHeaderProps {
   householdCode: string;
   nickname: string;
+  activeMember?: Member | null;
+  onSwitchMember?: () => void;
   activeTab: 'plan' | 'menu';
   isOnline?: boolean;
   onOpenShare?: () => void;
@@ -15,6 +18,8 @@ export interface AppHeaderProps {
 export const AppHeader: React.FC<AppHeaderProps> = ({
   householdCode,
   nickname,
+  activeMember,
+  onSwitchMember,
   activeTab,
   isOnline = false,
   onOpenShare,
@@ -46,9 +51,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </span>
           <span 
             data-testid="nickname-badge"
-            className="text-xs text-slate-500 font-medium"
+            className="inline-flex items-center gap-1 text-xs text-slate-700 font-medium"
           >
-            • {nickname}
+            {activeMember?.avatarIcon && (
+              <span
+                data-testid="active-member-avatar"
+                className={`w-5 h-5 rounded-full ${activeMember.avatarColor || 'bg-[#FEF7DC]'} border border-[#EFE4B5] flex items-center justify-center text-[10px]`}
+              >
+                {activeMember.avatarIcon}
+              </span>
+            )}
+            <span>• {activeMember?.name || nickname}</span>
           </span>
           <span
             data-testid="sync-status-badge"
@@ -66,6 +79,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-1.5 flex-shrink-0">
+        {onSwitchMember && (
+          <button
+            onClick={onSwitchMember}
+            data-testid="switch-member-button"
+            title="Đổi thành viên"
+            className="h-8 px-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center gap-1 text-[11px] font-medium transition active:scale-95"
+          >
+            <Users className="w-3 h-3 text-[#5B7C99]" />
+            <span>Đổi người</span>
+          </button>
+        )}
         <button
           onClick={handleQuickCopy}
           data-testid="quick-share-button"

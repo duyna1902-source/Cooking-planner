@@ -2,12 +2,15 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   createDishRepository,
   createPlanRepository,
+  createMemberRepository,
   resolveRepositories,
 } from '../../src/services/repositoryFactory';
 import { SupabaseDishRepository } from '../../src/services/supabaseDishRepository';
 import { SupabasePlanRepository } from '../../src/services/supabasePlanRepository';
+import { SupabaseMemberRepository } from '../../src/services/supabaseMemberRepository';
 import { LocalStorageDishRepository } from '../../src/services/dishRepository';
 import { LocalStoragePlanRepository } from '../../src/services/planRepository';
+import { LocalStorageMemberRepository } from '../../src/services/memberRepository';
 import { setSupabaseClientForTesting } from '../../src/services/supabaseClient';
 
 describe('Dual Mode Repository Factory', () => {
@@ -30,9 +33,11 @@ describe('Dual Mode Repository Factory', () => {
 
     const dishRepo = createDishRepository();
     const planRepo = createPlanRepository();
+    const memberRepo = createMemberRepository();
 
     expect(dishRepo).toBeInstanceOf(LocalStorageDishRepository);
     expect(planRepo).toBeInstanceOf(LocalStoragePlanRepository);
+    expect(memberRepo).toBeInstanceOf(LocalStorageMemberRepository);
   });
 
   it('creates Supabase repositories when Supabase client is configured', () => {
@@ -41,9 +46,11 @@ describe('Dual Mode Repository Factory', () => {
 
     const dishRepo = createDishRepository();
     const planRepo = createPlanRepository();
+    const memberRepo = createMemberRepository();
 
     expect(dishRepo).toBeInstanceOf(SupabaseDishRepository);
     expect(planRepo).toBeInstanceOf(SupabasePlanRepository);
+    expect(memberRepo).toBeInstanceOf(SupabaseMemberRepository);
   });
 
   it('resolveRepositories returns repositories and online status flag', () => {
@@ -54,6 +61,7 @@ describe('Dual Mode Repository Factory', () => {
     expect(result.isOnline).toBe(true);
     expect(result.dishRepository).toBeInstanceOf(SupabaseDishRepository);
     expect(result.planRepository).toBeInstanceOf(SupabasePlanRepository);
+    expect(result.memberRepository).toBeInstanceOf(SupabaseMemberRepository);
 
     setSupabaseClientForTesting(null);
     // @ts-expect-error test env override
@@ -65,5 +73,6 @@ describe('Dual Mode Repository Factory', () => {
     expect(localResult.isOnline).toBe(false);
     expect(localResult.dishRepository).toBeInstanceOf(LocalStorageDishRepository);
     expect(localResult.planRepository).toBeInstanceOf(LocalStoragePlanRepository);
+    expect(localResult.memberRepository).toBeInstanceOf(LocalStorageMemberRepository);
   });
 });
