@@ -182,4 +182,100 @@ describe('Member Selection Modal & Session Gate Integration (Ticket 01)', () => 
     expect(screen.getByText('Hôm nay ai vào bếp?')).toBeInTheDocument();
     expect(screen.queryByTestId('plan-view')).not.toBeInTheDocument();
   });
+
+  describe('Add New Member via Bottom Drawer Integration (Ticket 02)', () => {
+    it('tapping "➕ Thêm thành viên mới" opens drawer, submitting persists member, displays on grid, and allows entering Weekly Plan', async () => {
+      const user = userEvent.setup();
+      render(
+        <App
+          storage={storage}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          memberRepository={memberRepo}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      });
+
+      // Tapping "➕ Thêm thành viên mới" opens MemberDrawer
+      const addBtn = screen.getByTestId('open-add-member-drawer');
+      expect(addBtn).toBeInTheDocument();
+      await user.click(addBtn);
+
+      expect(screen.getByTestId('member-drawer')).toBeInTheDocument();
+      expect(screen.getByText('Thêm Thành Viên Mới')).toBeInTheDocument();
+
+      // Enter name "Bé An" and choose preset 🥑
+      const nameInput = screen.getByTestId('member-name-input');
+      await user.type(nameInput, 'Bé An');
+      await user.click(screen.getByTestId('avatar-preset-🥑'));
+
+      // Submit new member
+      await user.click(screen.getByTestId('save-member-btn'));
+
+      // Drawer closes, new member is on grid
+      await waitFor(() => {
+        expect(screen.queryByTestId('member-drawer')).not.toBeInTheDocument();
+      });
+      expect(screen.getByText('Bé An')).toBeInTheDocument();
+      expect(screen.getByText('🥑')).toBeInTheDocument();
+
+      // Persisted to repository
+      const membersInDb = await memberRepo.getMembers(householdCode);
+      const created = membersInDb.find((m) => m.name === 'Bé An');
+      expect(created).toBeDefined();
+      expect(created?.avatarIcon).toBe('🥑');
+
+      // Tapping newly added member enters Weekly Plan as that member
+      await user.click(screen.getByText('Bé An'));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('member-select-modal')).not.toBeInTheDocument();
+      });
+      expect(screen.getByTestId('plan-view')).toBeInTheDocument();
+      expect(screen.getByTestId('nickname-badge')).toHaveTextContent('• Bé An');
+      expect(screen.getByTestId('active-member-avatar')).toHaveTextContent('🥑');
+    });
+
+    it('shows error when submitting duplicate or empty name in drawer', async () => {
+      const user = userEvent.setup();
+      render(
+        <App
+          storage={storage}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          memberRepository={memberRepo}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId('open-add-member-drawer'));
+      expect(screen.getByTestId('member-drawer')).toBeInTheDocument();
+
+      // Empty name submit
+      const saveBtn = screen.getByTestId('save-member-btn');
+      await user.click(saveBtn);
+
+      expect(screen.getByTestId('member-name-error')).toBeInTheDocument();
+      expect(screen.getByTestId('member-name-error')).toHaveTextContent(/Vui lòng nhập tên thành viên/i);
+
+      // Duplicate name submit (case-insensitive)
+      const nameInput = screen.getByTestId('member-name-input');
+      await user.type(nameInput, '   mẹ bắp   ');
+      await user.click(saveBtn);
+
+      expect(screen.getByTestId('member-name-error')).toBeInTheDocument();
+      expect(screen.getByTestId('member-name-error')).toHaveTextContent(/đã tồn tại|đã có trong gia đình/i);
+
+      // Ensure drawer is still open and duplicate was not added
+      expect(screen.getByTestId('member-drawer')).toBeInTheDocument();
+      const currentList = await memberRepo.getMembers(householdCode);
+      expect(currentList.filter((m) => m.name.toLowerCase() === 'mẹ bắp')).toHaveLength(1);
+    });
+  });
 });

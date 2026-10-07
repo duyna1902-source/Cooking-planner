@@ -242,6 +242,13 @@ export const App: React.FC<AppProps> = ({
               members={members}
               onSelectMember={handleSelectMember}
               isLoading={isLoadingMembers}
+              memberRepository={activeMemberRepo}
+              onMemberAdded={(newMember) => {
+                setMembers((prev) => {
+                  if (prev.some((m) => m.id === newMember.id)) return prev;
+                  return [...prev, newMember];
+                });
+              }}
             />
           ) : activeTab === 'plan' ? (
             <PlanView
