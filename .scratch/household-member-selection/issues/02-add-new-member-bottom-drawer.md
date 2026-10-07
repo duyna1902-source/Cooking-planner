@@ -5,7 +5,7 @@ Trên màn hình chọn Thành viên, một nút bấm lớn dạng pill mang n�
 
 **Blocked by:** 01: Core Member Selection Modal & Session Gate
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] Hiển thị nút "➕ Thêm thành viên mới" dạng pill tròn đầy đủ chiều ngang (`w-full py-3.5 rounded-full bg-[#5B7C99] text-white font-bold`) ghim cố định ở đáy màn hình chọn Thành viên.
 - [ ] Bấm vào nút sẽ kích hoạt Bottom Drawer trượt mượt mà từ dưới lên với nền mờ backdrop blur và vạch kéo bo tròn.
