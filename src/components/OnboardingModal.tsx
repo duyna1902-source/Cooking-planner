@@ -57,17 +57,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   const handleConfirmJoin = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanCode = normalizeHouseholdCode(inputCode);
+    const cleanCode = normalizeHouseholdCode(inputCode || initialCode || '');
     if (!isValidHouseholdCode(cleanCode)) {
       setError('Mã nhà không hợp lệ (ít nhất 3 ký tự)');
       return;
     }
-    if (nickname && nickname.trim() && !isValidNickname(nickname)) {
-      setError('Vui lòng nhập biệt danh của bạn (tối đa 30 ký tự)');
-      return;
-    }
     setError(null);
-    onComplete(cleanCode, nickname.trim() || undefined);
+    onComplete(cleanCode);
   };
 
   const handleCopyLink = () => {
@@ -239,7 +235,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               data-testid="enter-app-button"
               className="w-full py-3 rounded-full bg-[#5B7C99] hover:bg-[#4a6b88] text-white font-bold text-sm shadow-md shadow-[#5B7C99]/30 transition active:scale-98"
             >
-              Vào Bếp ngay
+              Bắt đầu nấu nướng
             </button>
           </div>
         )}
@@ -289,22 +285,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 </div>
               )}
 
-              <div>
-                <label htmlFor="join-nickname-input" className="block text-xs font-semibold text-slate-700 mb-1">
-                  Biệt danh của bạn (không bắt buộc nếu đã có tên trong nhà):
-                </label>
-                <input
-                  id="join-nickname-input"
-                  data-testid="nickname-input"
-                  type="text"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="Ví dụ: Mẹ, Bố, An..."
-                  autoFocus={Boolean(initialCode)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] focus:bg-white transition"
-                />
-              </div>
-
               {error && (
                 <div data-testid="error-message" className="text-xs text-rose-600 font-medium bg-rose-50 p-2.5 rounded-xl border border-rose-100">
                   {error}
@@ -316,7 +296,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 data-testid="confirm-join-button"
                 className="w-full py-3 rounded-full bg-[#5B7C99] hover:bg-[#4a6b88] text-white font-bold text-sm shadow-md shadow-[#5B7C99]/30 transition active:scale-98 flex items-center justify-center gap-1.5 mt-2"
               >
-                <span>Tham Gia Nhà</span>
+                <span>Vào Bếp Ngay</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>

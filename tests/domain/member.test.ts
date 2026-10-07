@@ -3,7 +3,9 @@ import {
   AVATAR_PRESETS,
   isValidMemberName,
   createMemberEntity,
+  isDuplicateMemberName,
   Member,
+  MemberInput,
 } from '../../src/domain/member';
 
 describe('Domain: Member', () => {
@@ -91,6 +93,41 @@ describe('Domain: Member', () => {
       expect(member.name).toBe('Bố');
       expect(member.avatarIcon).toBe('🍜');
       expect(member.avatarColor).toBe('bg-[#E0F2FE]');
+    });
+  });
+
+  describe('isDuplicateMemberName', () => {
+    const existing: Member[] = [
+      {
+        id: 'mem_1',
+        householdCode: 'BEP-892',
+        name: 'Mẹ Bắp',
+        avatarIcon: '🍳',
+        avatarColor: 'bg-[#FEF7DC]',
+        createdAt: '2026-10-07T00:00:00.000Z',
+      },
+      {
+        id: 'mem_2',
+        householdCode: 'BEP-892',
+        name: 'Bố Tuấn',
+        avatarIcon: '🍜',
+        avatarColor: 'bg-[#E0F2FE]',
+        createdAt: '2026-10-07T00:00:00.000Z',
+      },
+    ];
+
+    it('returns true when name matches existing member case-insensitively and trimmed', () => {
+      expect(isDuplicateMemberName(existing, 'mẹ bắp')).toBe(true);
+      expect(isDuplicateMemberName(existing, '  BỐ TUẤN  ')).toBe(true);
+    });
+
+    it('returns false when name does not match any existing member', () => {
+      expect(isDuplicateMemberName(existing, 'Bé An')).toBe(false);
+    });
+
+    it('ignores member with excludeId when editing existing member', () => {
+      expect(isDuplicateMemberName(existing, 'Mẹ Bắp', 'mem_1')).toBe(false);
+      expect(isDuplicateMemberName(existing, 'Bố Tuấn', 'mem_1')).toBe(true);
     });
   });
 });

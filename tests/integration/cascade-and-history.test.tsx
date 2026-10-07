@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../../src/App';
+import { Member } from '../../src/domain/member';
 import { PlanView } from '../../src/components/PlanView';
 import { MenuView } from '../../src/components/MenuView';
 import { InMemoryDishRepository } from '../../src/services/dishRepository';
@@ -43,11 +44,21 @@ describe('Cascade Delete and Two-Week History Retention Integration (Ticket 05)'
       await planRepo.addComment(householdCode, futureItems[0].id, nickname, 'Ghi chú tuần sau');
 
       // 4. Render App with active household
+      const activeMember: Member = {
+        id: 'mem_1',
+        householdCode,
+        name: nickname,
+        avatarIcon: '🍳',
+        avatarColor: 'bg-[#FEF7DC]',
+        createdAt: new Date().toISOString(),
+      };
+
       render(
         <App
           storage={storage}
           dishRepository={dishRepo}
           planRepository={planRepo}
+          initialActiveMember={activeMember}
         />
       );
 

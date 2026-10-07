@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home } from 'lucide-react';
-import { Member } from '../domain/member';
+import { Member, MemberInput } from '../domain/member';
 import { MemberRepository } from '../services/memberRepository';
 import { MemberDrawer } from './MemberDrawer';
 
@@ -93,15 +93,11 @@ export const MemberSelectModal: React.FC<MemberSelectModalProps> = ({
     onMemberDeleted?.(target.id);
   };
 
-  const handleSaveMember = async (data: {
-    name: string;
-    avatarIcon: string;
-    avatarColor: string;
-  }) => {
+  const handleSaveMember = async (data: MemberInput) => {
     if (editingMember) {
       let updatedMember: Member;
       if (memberRepository) {
-        updatedMember = await memberRepository.updateMember(editingMember.id, {
+        updatedMember = await memberRepository.updateMember(editingMember.id, householdCode, {
           name: data.name,
           avatarIcon: data.avatarIcon,
           avatarColor: data.avatarColor,
@@ -188,7 +184,7 @@ export const MemberSelectModal: React.FC<MemberSelectModalProps> = ({
             id="member-select-title"
             className="text-2xl font-black text-[#334E68] tracking-tight"
           >
-            Hôm nay ai vào bếp?
+            Ai đang vào bếp?
           </h2>
           <p className="text-xs text-slate-500 mt-1">
             {isManageMode
@@ -275,7 +271,7 @@ export const MemberSelectModal: React.FC<MemberSelectModalProps> = ({
           <span>Thêm thành viên mới</span>
         </button>
         <span className="text-[11px] text-center text-slate-400">
-          Mỗi lần mở web lên sẽ luôn xuất hiện bảng này để chọn người vào bếp
+          Mỗi lần mở web lên sẽ luôn xuất hiện bảng này để chọn thành viên vào bếp
         </span>
       </div>
 

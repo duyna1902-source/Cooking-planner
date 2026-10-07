@@ -98,7 +98,7 @@ describe('MemberRepository (LocalStorage & InMemory)', () => {
         avatarColor: 'bg-[#E0F2FE]',
       });
 
-      const updated = await repo.updateMember(created.id, {
+      const updated = await repo.updateMember(created.id, 'BEP-892', {
         name: 'Bố Yêu',
         avatarIcon: '🍲',
         avatarColor: 'bg-[#F3E8FF]',
@@ -110,6 +110,23 @@ describe('MemberRepository (LocalStorage & InMemory)', () => {
 
       const members = await repo.getMembers('BEP-892');
       expect(members[0].name).toBe('Bố Yêu');
+    });
+
+    it('rejects updating member name to a duplicate name in the same household', async () => {
+      await repo.addMember('BEP-892', {
+        name: 'Mẹ Bắp',
+        avatarIcon: '🍳',
+        avatarColor: 'bg-[#FEF7DC]',
+      });
+      const m2 = await repo.addMember('BEP-892', {
+        name: 'Bố Tuấn',
+        avatarIcon: '🍜',
+        avatarColor: 'bg-[#E0F2FE]',
+      });
+
+      await expect(
+        repo.updateMember(m2.id, 'BEP-892', { name: '  mẹ bắp  ' })
+      ).rejects.toThrow('Tên thành viên đã tồn tại');
     });
 
     it('deletes a member', async () => {
@@ -163,7 +180,7 @@ describe('MemberRepository (LocalStorage & InMemory)', () => {
         avatarColor: 'bg-[#FCE7F3]',
       });
 
-      await repo.updateMember(created.id, { name: 'Con Út' });
+      await repo.updateMember(created.id, 'BEP-999', { name: 'Con Út' });
 
       const members = await repo.getMembers('BEP-999');
       expect(members[0].name).toBe('Con Út');

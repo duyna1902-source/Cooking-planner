@@ -55,7 +55,6 @@ describe('Household Setup and PWA Shell Integration', () => {
 
     // 7. Data is stored in storage
     expect(storage.getHouseholdCode()).toBe(generatedCode);
-    expect(storage.getNickname()).toBe('Mẹ');
 
     // 8. Founding member is saved to MemberRepository with default preset 🍳
     const savedMembers = await memberRepo.getMembers(generatedCode);
@@ -75,40 +74,46 @@ describe('Household Setup and PWA Shell Integration', () => {
     await waitFor(() => {
       expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
     });
-    expect(screen.getByText('Hôm nay ai vào bếp?')).toBeInTheDocument();
+    expect(screen.getByText('Ai đang vào bếp?')).toBeInTheDocument();
     expect(screen.getByText('Mẹ')).toBeInTheDocument();
     expect(screen.getByText('🍳')).toBeInTheDocument();
   });
 
-  it('allows a user to join via direct URL ?join=CODE and prompt for nickname', async () => {
+  it('allows a user to join via direct URL ?join=CODE and prompt for member selection', async () => {
     const user = userEvent.setup();
-    render(<App storage={storage} initialUrl="?join=BEP-999" />);
+    const memberRepo = new InMemoryMemberRepository();
+    render(<App storage={storage} memberRepository={memberRepo} initialUrl="?join=BEP-999" />);
 
-    // Directly in Join step with pre-filled code
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByTestId('initial-code-display')).toHaveTextContent('BEP-999');
+    // Directly transitions to member selection modal
+    await waitFor(() => {
+      expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Ai đang vào bếp?')).toBeInTheDocument();
+    expect(screen.getByText('Mã: BEP-999')).toBeInTheDocument();
 
-    // Enter nickname
-    const nicknameInput = screen.getByTestId('nickname-input');
-    await user.type(nicknameInput, 'Bố');
+    // Add member
+    await user.click(screen.getByTestId('open-add-member-drawer'));
+    await user.type(screen.getByTestId('member-name-input'), 'Bố');
+    await user.click(screen.getByTestId('save-member-btn'));
 
-    // Submit join
-    const confirmJoinBtn = screen.getByTestId('confirm-join-button');
-    await user.click(confirmJoinBtn);
+    // Select member to enter app
+    await user.click(await screen.findByText('Bố'));
 
     // Enters app successfully
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByTestId('member-select-modal')).not.toBeInTheDocument();
+    });
     expect(screen.getByTestId('household-code-badge')).toHaveTextContent('Mã: BEP-999');
     expect(screen.getByTestId('nickname-badge')).toHaveTextContent('• Bố');
 
     // Persisted to storage
     expect(storage.getHouseholdCode()).toBe('BEP-999');
-    expect(storage.getNickname()).toBe('Bố');
   });
 
-  it('allows a user to join manually by typing code and nickname', async () => {
+  it('allows a user to join manually by typing code and selecting member', async () => {
     const user = userEvent.setup();
-    render(<App storage={storage} />);
+    const memberRepo = new InMemoryMemberRepository();
+    render(<App storage={storage} memberRepository={memberRepo} />);
 
     const joinBtn = screen.getByTestId('join-household-button');
     await user.click(joinBtn);
@@ -116,17 +121,29 @@ describe('Household Setup and PWA Shell Integration', () => {
     const codeInput = screen.getByTestId('household-code-input');
     await user.type(codeInput, 'bep-321');
 
-    const nicknameInput = screen.getByTestId('nickname-input');
-    await user.type(nicknameInput, 'Anh Cả');
-
     const confirmJoinBtn = screen.getByTestId('confirm-join-button');
     await user.click(confirmJoinBtn);
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // Transitions to member selection modal
+    await waitFor(() => {
+      expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Ai đang vào bếp?')).toBeInTheDocument();
+
+    // Add member
+    await user.click(screen.getByTestId('open-add-member-drawer'));
+    await user.type(screen.getByTestId('member-name-input'), 'Anh Cả');
+    await user.click(screen.getByTestId('save-member-btn'));
+
+    // Select member to enter app
+    await user.click(await screen.findByText('Anh Cả'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('member-select-modal')).not.toBeInTheDocument();
+    });
     expect(screen.getByTestId('household-code-badge')).toHaveTextContent('Mã: BEP-321');
     expect(screen.getByTestId('nickname-badge')).toHaveTextContent('• Anh Cả');
     expect(storage.getHouseholdCode()).toBe('BEP-321');
-    expect(storage.getNickname()).toBe('Anh Cả');
   });
 
   it('displays validation errors when nickname or code is empty/invalid', async () => {
@@ -142,19 +159,30 @@ describe('Household Setup and PWA Shell Integration', () => {
     // Go back and test join without valid code
     await user.click(screen.getByText('Quay lại'));
     await user.click(screen.getByTestId('join-household-button'));
-    await user.type(screen.getByTestId('nickname-input'), 'Thành Viên');
     await user.click(screen.getByTestId('confirm-join-button'));
 
     expect(screen.getByTestId('error-message')).toHaveTextContent('Mã nhà không hợp lệ');
   });
 
   it('switches navigation between Kế hoạch and Menu', async () => {
-    // Pre-populate storage for direct app load
+    // Pre-populate storage for direct app load with existing member
     storage.setHouseholdCode('BEP-892');
-    storage.setNickname('Mẹ');
+    const memberRepo = new InMemoryMemberRepository([
+      {
+        id: 'mem_1',
+        householdCode: 'BEP-892',
+        name: 'Mẹ',
+        avatarIcon: '🍳',
+        avatarColor: 'bg-[#FEF7DC]',
+        createdAt: new Date().toISOString(),
+      },
+    ]);
 
     const user = userEvent.setup();
-    render(<App storage={storage} />);
+    render(<App storage={storage} memberRepository={memberRepo} />);
+
+    // Select member to enter Plan view
+    await user.click(await screen.findByText('Mẹ'));
 
     // Starts in Plan view
     expect(screen.getByTestId('plan-view')).toBeInTheDocument();
@@ -176,23 +204,33 @@ describe('Household Setup and PWA Shell Integration', () => {
     expect(screen.getByTestId('plan-view')).toBeInTheDocument();
   });
 
-  it('automatically sets active household and does not prompt for nickname when user with existing nickname opens ?join=CODE', async () => {
-    // User already has nickname set locally
-    storage.setNickname('Bà Nội');
+  it('automatically sets active household and shows member selection when opening ?join=CODE', async () => {
     storage.setHouseholdCode('BEP-OLD');
+    const memberRepo = new InMemoryMemberRepository([
+      {
+        id: 'mem_1',
+        householdCode: 'BEP-NEW',
+        name: 'Bà Nội',
+        avatarIcon: '🍳',
+        avatarColor: 'bg-[#FEF7DC]',
+        createdAt: new Date().toISOString(),
+      },
+    ]);
 
-    render(<App storage={storage} initialUrl="?join=BEP-NEW" />);
+    const user = userEvent.setup();
+    render(<App storage={storage} memberRepository={memberRepo} initialUrl="?join=BEP-NEW" />);
 
-    // Does NOT show onboarding dialog
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-
-    // Automatically switches to the new household
+    // Shows member selection modal for BEP-NEW
     await waitFor(() => {
-      expect(screen.getByTestId('household-code-badge')).toHaveTextContent('Mã: BEP-NEW');
+      expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
     });
-    expect(screen.getByTestId('nickname-badge')).toHaveTextContent('• Bà Nội');
+    expect(screen.getByText('Mã: BEP-NEW')).toBeInTheDocument();
+    expect(screen.getByText('Bà Nội')).toBeInTheDocument();
     expect(storage.getHouseholdCode()).toBe('BEP-NEW');
-    expect(storage.getNickname()).toBe('Bà Nội');
+
+    // Select member to enter app
+    await user.click(screen.getByText('Bà Nội'));
+    expect(screen.getByTestId('nickname-badge')).toHaveTextContent('• Bà Nội');
   });
 
   it('opens member selection modal with household members when joining via direct URL ?join=CODE for existing household', async () => {
@@ -222,7 +260,7 @@ describe('Household Setup and PWA Shell Integration', () => {
     await waitFor(() => {
       expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
     });
-    expect(screen.getByText('Hôm nay ai vào bếp?')).toBeInTheDocument();
+    expect(screen.getByText('Ai đang vào bếp?')).toBeInTheDocument();
     expect(screen.getByText('Mã: BEP-777')).toBeInTheDocument();
     expect(screen.getByText('Chị Hai')).toBeInTheDocument();
     expect(screen.getByText('Em Út')).toBeInTheDocument();

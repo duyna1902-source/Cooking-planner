@@ -8,12 +8,21 @@ import { InMemoryHouseholdStorage } from '../../src/services/storage';
 import { InMemoryDishRepository } from '../../src/services/dishRepository';
 import { InMemoryPlanRepository } from '../../src/services/planRepository';
 import { InMemoryMemberRepository } from '../../src/services/memberRepository';
+import { Member } from '../../src/domain/member';
 import {
   setSupabaseClientForTesting,
 } from '../../src/services/supabaseClient';
 
 describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
   const originalEnv = { ...import.meta.env };
+  const sampleMember: Member = {
+    id: 'mem_1',
+    householdCode: 'NHA123',
+    name: 'Mẹ',
+    avatarIcon: '🍳',
+    avatarColor: 'bg-[#FEF7DC]',
+    createdAt: new Date().toISOString(),
+  };
 
   beforeEach(() => {
     setSupabaseClientForTesting(null);
@@ -66,7 +75,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       import.meta.env.VITE_SUPABASE_ANON_KEY = '';
 
       const storage = new InMemoryHouseholdStorage('NHA123', 'Mẹ');
-      render(<App storage={storage} />);
+      render(<App storage={storage} initialActiveMember={sampleMember} />);
 
       await waitFor(() => {
         const badge = screen.getByTestId('sync-status-badge');
@@ -79,7 +88,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       setSupabaseClientForTesting(mockClient);
 
       const storage = new InMemoryHouseholdStorage('NHA123', 'Mẹ');
-      render(<App storage={storage} isOnline={true} />);
+      render(<App storage={storage} isOnline={true} initialActiveMember={sampleMember} />);
 
       await waitFor(() => {
         const badge = screen.getByTestId('sync-status-badge');
@@ -116,6 +125,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
           dishRepository={dishRepo}
           planRepository={planRepo}
           isOnline={true}
+          initialActiveMember={sampleMember}
         />
       );
 
@@ -161,6 +171,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
           dishRepository={dishRepo}
           planRepository={planRepo}
           isOnline={true}
+          initialActiveMember={sampleMember}
         />
       );
 
@@ -218,6 +229,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
           dishRepository={dishRepo}
           planRepository={planRepo}
           isOnline={true}
+          initialActiveMember={sampleMember}
         />
       );
 

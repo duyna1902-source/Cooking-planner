@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Member, isValidMemberName, createMemberEntity } from '../domain/member';
+import { Member, MemberInput, isValidMemberName, createMemberEntity } from '../domain/member';
 import { MemberRepository } from './memberRepository';
 
 export interface MemberRow {
@@ -44,15 +44,33 @@ export class SupabaseMemberRepository implements MemberRepository {
     return (data || []).map(mapMemberRowToEntity);
   }
 
-  async addMember(member: Omit<Member, 'id' | 'createdAt'>): Promise<Member> {
-    if (!isValidMemberName(member.name)) {
+  async addMember(
+    householdCodeOrMember: string | Omit<Member, 'id' | 'createdAt'>,
+    maybeMember?: MemberInput
+  ): Promise<Member> {
+    let householdCode: string;
+    let input: MemberInput;
+
+    if (typeof householdCodeOrMember === 'string') {
+      householdCode = householdCodeOrMember;
+      input = maybeMember!;
+    } else {
+      householdCode = householdCodeOrMember.householdCode;
+      input = {
+        name: householdCodeOrMember.name,
+        avatarIcon: householdCodeOrMember.avatarIcon,
+        avatarColor: householdCodeOrMember.avatarColor,
+      };
+    }
+
+    if (!isValidMemberName(input.name)) {
       throw new Error('Tên thành viên không hợp lệ');
     }
 
-    const newMember = createMemberEntity(member.householdCode, {
-      name: member.name,
-      avatarIcon: member.avatarIcon,
-      avatarColor: member.avatarColor,
+    const newMember = createMemberEntity(householdCode, {
+      name: input.name,
+      avatarIcon: input.avatarIcon,
+      avatarColor: input.avatarColor,
     });
 
     const { error } = await this.client.from('members').insert({
@@ -80,7 +98,8 @@ export class SupabaseMemberRepository implements MemberRepository {
 
   async updateMember(
     id: string,
-    updates: Partial<Pick<Member, 'name' | 'avatarIcon' | 'avatarColor'>>
+    householdCode: string,
+    updates: Partial<MemberInput>
   ): Promise<Member> {
     const patch: Record<string, any> = {};
 
@@ -97,10 +116,16 @@ export class SupabaseMemberRepository implements MemberRepository {
       patch.avatar_color = updates.avatarColor;
     }
 
-    const { data, error } = await this.client
+    let query = this.client
       .from('members')
       .update(patch)
-      .eq('id', id)
+      .eq('id', id);
+
+    if (householdCode) {
+      query = query.eq('household_code', householdCode);
+    }
+
+    const { data, error } = await query
       .select()
       .single();
 

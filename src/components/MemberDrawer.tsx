@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Member, AVATAR_PRESETS, AvatarPreset } from '../domain/member';
+import {
+  Member,
+  MemberInput,
+  AVATAR_PRESETS,
+  AvatarPreset,
+  isDuplicateMemberName,
+} from '../domain/member';
+
+const defaultPreset = AVATAR_PRESETS[0];
 
 export interface MemberDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { name: string; avatarIcon: string; avatarColor: string }) => void | Promise<void>;
+  onSave: (data: MemberInput) => void | Promise<void>;
   existingMembers?: Member[];
   title?: string;
   submitButtonText?: string;
@@ -38,7 +46,7 @@ export const MemberDrawer: React.FC<MemberDrawerProps> = ({
         (p) =>
           p.icon === initialAvatarIcon ||
           (initialAvatarColor && p.bg === initialAvatarColor)
-      ) || AVATAR_PRESETS[0]
+      ) || defaultPreset
     );
   });
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +60,7 @@ export const MemberDrawer: React.FC<MemberDrawerProps> = ({
           (p) =>
             p.icon === initialAvatarIcon ||
             (initialAvatarColor && p.bg === initialAvatarColor)
-        ) || AVATAR_PRESETS[0]
+        ) || defaultPreset
       );
       setError(null);
       setTimeout(() => {
@@ -77,11 +85,7 @@ export const MemberDrawer: React.FC<MemberDrawerProps> = ({
       return;
     }
 
-    const isDuplicate = existingMembers.some(
-      (m) =>
-        (editingMemberId ? m.id !== editingMemberId : true) &&
-        m.name.trim().toLowerCase() === trimmed.toLowerCase()
-    );
+    const isDuplicate = isDuplicateMemberName(existingMembers, trimmed, editingMemberId);
     if (isDuplicate) {
       setError('Tên thành viên này đã có trong gia đình. Vui lòng chọn tên khác!');
       return;

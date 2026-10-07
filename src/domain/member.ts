@@ -25,6 +25,19 @@ export const AVATAR_PRESETS: AvatarPreset[] = [
   { icon: '🍲', bg: 'bg-[#F3E8FF]', border: 'border-[#E9D5FF]', label: 'Lẩu gia đình' },
 ];
 
+export type MemberInput = Pick<Member, 'name' | 'avatarIcon' | 'avatarColor'>;
+
+export function isDuplicateMemberName(
+  existingMembers: Member[],
+  name: string,
+  excludeId?: string
+): boolean {
+  const trimmed = name.trim().toLowerCase();
+  return existingMembers.some(
+    (m) => m.id !== excludeId && m.name.trim().toLowerCase() === trimmed
+  );
+}
+
 export function isValidMemberName(name: string): boolean {
   if (typeof name !== 'string') return false;
   const trimmed = name.trim();

@@ -82,12 +82,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {onSwitchMember && (
           <button
             onClick={onSwitchMember}
-            data-testid="switch-member-button"
+            data-testid="switch-member-btn"
             title="Đổi thành viên"
             className="h-8 px-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center gap-1 text-[11px] font-medium transition active:scale-95"
           >
             <Users className="w-3 h-3 text-[#5B7C99]" />
-            <span>Đổi người</span>
+            <span>Đổi thành viên</span>
           </button>
         )}
         <button

@@ -34,7 +34,7 @@ describe('MemberSelectModal', () => {
     },
   ];
 
-  it('renders household code badge and title "Hôm nay ai vào bếp?"', () => {
+  it('renders household code badge and title "Ai đang vào bếp?"', () => {
     const handleSelect = vi.fn();
     render(
       <MemberSelectModal
@@ -45,7 +45,7 @@ describe('MemberSelectModal', () => {
     );
 
     expect(screen.getByText(/BEP-892/)).toBeInTheDocument();
-    expect(screen.getByText('Hôm nay ai vào bếp?')).toBeInTheDocument();
+    expect(screen.getByText('Ai đang vào bếp?')).toBeInTheDocument();
   });
 
   it('renders 2-column grid with member cards displaying avatar icon and bold name', () => {

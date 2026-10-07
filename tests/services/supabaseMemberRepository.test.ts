@@ -176,8 +176,9 @@ describe('SupabaseMemberRepository', () => {
 
       const singleMock = vi.fn().mockResolvedValue({ data: updatedRow, error: null });
       const selectMock = vi.fn().mockReturnValue({ single: singleMock });
-      const eqMock = vi.fn().mockReturnValue({ select: selectMock });
-      const updateMock = vi.fn().mockReturnValue({ eq: eqMock });
+      const eqHouseholdMock = vi.fn().mockReturnValue({ select: selectMock });
+      const eqIdMock = vi.fn().mockReturnValue({ eq: eqHouseholdMock });
+      const updateMock = vi.fn().mockReturnValue({ eq: eqIdMock });
 
       mockClient = {
         from: vi.fn().mockReturnValue({
@@ -186,7 +187,7 @@ describe('SupabaseMemberRepository', () => {
       };
 
       const repo = new SupabaseMemberRepository(mockClient);
-      const result = await repo.updateMember('mem_1', {
+      const result = await repo.updateMember('mem_1', 'BEP-892', {
         name: 'Mẹ Yêu',
         avatarIcon: '🥗',
         avatarColor: 'bg-[#DCFCE7]',
@@ -200,7 +201,8 @@ describe('SupabaseMemberRepository', () => {
           avatar_color: 'bg-[#DCFCE7]',
         })
       );
-      expect(eqMock).toHaveBeenCalledWith('id', 'mem_1');
+      expect(eqIdMock).toHaveBeenCalledWith('id', 'mem_1');
+      expect(eqHouseholdMock).toHaveBeenCalledWith('household_code', 'BEP-892');
       expect(result.name).toBe('Mẹ Yêu');
     });
   });

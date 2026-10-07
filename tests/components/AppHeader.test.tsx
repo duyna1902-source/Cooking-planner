@@ -58,7 +58,9 @@ describe('AppHeader', () => {
       />
     );
 
-    const switchBtn = screen.getByTestId('switch-member-button');
+    const switchBtn = screen.getByTestId('switch-member-btn');
+    expect(switchBtn).toHaveTextContent('Đổi thành viên');
+    expect(switchBtn).toHaveAttribute('title', 'Đổi thành viên');
     await user.click(switchBtn);
     expect(handleSwitch).toHaveBeenCalledTimes(1);
   });

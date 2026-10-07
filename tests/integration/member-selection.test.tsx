@@ -61,11 +61,11 @@ describe('Member Selection Modal & Session Gate Integration (Ticket 01)', () => 
     // Member selection modal is shown
     await waitFor(() => {
       expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      expect(screen.getByText('Ai đang vào bếp?')).toBeInTheDocument();
+      expect(screen.getByText('Mã: BEP-892')).toBeInTheDocument();
+      expect(screen.getByText('Mẹ Bắp')).toBeInTheDocument();
+      expect(screen.getByText('Bố Tuấn')).toBeInTheDocument();
     });
-    expect(screen.getByText('Hôm nay ai vào bếp?')).toBeInTheDocument();
-    expect(screen.getByText('Mã: BEP-892')).toBeInTheDocument();
-    expect(screen.getByText('Mẹ Bắp')).toBeInTheDocument();
-    expect(screen.getByText('Bố Tuấn')).toBeInTheDocument();
 
     // PlanView is blocked
     expect(screen.queryByTestId('plan-view')).not.toBeInTheDocument();
@@ -84,6 +84,7 @@ describe('Member Selection Modal & Session Gate Integration (Ticket 01)', () => 
 
     await waitFor(() => {
       expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      expect(screen.getByText('Mẹ Bắp')).toBeInTheDocument();
     });
 
     // Tap member card for "Mẹ Bắp"
@@ -179,7 +180,7 @@ describe('Member Selection Modal & Session Gate Integration (Ticket 01)', () => 
     await waitFor(() => {
       expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
     });
-    expect(screen.getByText('Hôm nay ai vào bếp?')).toBeInTheDocument();
+    expect(screen.getByText('Ai đang vào bếp?')).toBeInTheDocument();
     expect(screen.queryByTestId('plan-view')).not.toBeInTheDocument();
   });
 
@@ -591,7 +592,7 @@ describe('Member Selection Modal & Session Gate Integration (Ticket 01)', () => 
       await waitFor(() => {
         expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
       });
-      expect(screen.getByText('Hôm nay ai vào bếp?')).toBeInTheDocument();
+      expect(screen.getByText('Ai đang vào bếp?')).toBeInTheDocument();
       expect(screen.getByText('Mã: BEP-555')).toBeInTheDocument();
       expect(screen.getByText('Bố Hoàng')).toBeInTheDocument();
       expect(screen.getByText('Mẹ Hằng')).toBeInTheDocument();

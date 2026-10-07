@@ -1,12 +1,20 @@
-import { Member, isValidMemberName, createMemberEntity } from '../domain/member';
+import {
+  Member,
+  MemberInput,
+  isValidMemberName,
+  createMemberEntity,
+  isDuplicateMemberName,
+} from '../domain/member';
 
 export interface MemberRepository {
   readonly isOnline?: boolean;
   getMembers(householdCode: string): Promise<Member[]>;
   addMember(member: Omit<Member, 'id' | 'createdAt'>): Promise<Member>;
+  addMember(householdCode: string, member: MemberInput): Promise<Member>;
   updateMember(
     id: string,
-    updates: Partial<Pick<Member, 'name' | 'avatarIcon' | 'avatarColor'>>
+    householdCode: string,
+    updates: Partial<MemberInput>
   ): Promise<Member>;
   deleteMember(id: string, householdCode: string): Promise<void>;
   subscribe?(householdCode: string, onUpdate: () => void): () => void;
@@ -35,53 +43,69 @@ export class InMemoryMemberRepository implements MemberRepository {
     });
   }
 
-  async addMember(member: Omit<Member, 'id' | 'createdAt'>): Promise<Member> {
-    if (!isValidMemberName(member.name)) {
+  async addMember(
+    householdCodeOrMember: string | Omit<Member, 'id' | 'createdAt'>,
+    maybeMember?: MemberInput
+  ): Promise<Member> {
+    let householdCode: string;
+    let input: MemberInput;
+
+    if (typeof householdCodeOrMember === 'string') {
+      householdCode = householdCodeOrMember;
+      input = maybeMember!;
+    } else {
+      householdCode = householdCodeOrMember.householdCode;
+      input = {
+        name: householdCodeOrMember.name,
+        avatarIcon: householdCodeOrMember.avatarIcon,
+        avatarColor: householdCodeOrMember.avatarColor,
+      };
+    }
+
+    if (!isValidMemberName(input.name)) {
       throw new Error('Tên thành viên không hợp lệ');
     }
 
-    const trimmed = member.name.trim();
-    const existing = this.members.find(
-      (m) =>
-        m.householdCode === member.householdCode &&
-        m.name.toLowerCase() === trimmed.toLowerCase()
-    );
-    if (existing) {
+    const trimmed = input.name.trim();
+    const existing = this.members.filter((m) => m.householdCode === householdCode);
+    if (isDuplicateMemberName(existing, trimmed)) {
       throw new Error('Tên thành viên đã tồn tại');
     }
 
-    const newMember = createMemberEntity(member.householdCode, {
+    const newMember = createMemberEntity(householdCode, {
       name: trimmed,
-      avatarIcon: member.avatarIcon,
-      avatarColor: member.avatarColor,
+      avatarIcon: input.avatarIcon,
+      avatarColor: input.avatarColor,
     });
     this.members.push(newMember);
-    this.notifySubscribers(member.householdCode);
+    this.notifySubscribers(householdCode);
     return newMember;
   }
 
   async updateMember(
     id: string,
-    updates: Partial<Pick<Member, 'name' | 'avatarIcon' | 'avatarColor'>>
+    householdCodeOrUpdates: string | Partial<MemberInput>,
+    maybeUpdates?: Partial<MemberInput>
   ): Promise<Member> {
+    const isHouseholdString = typeof householdCodeOrUpdates === 'string';
+    const householdCode = isHouseholdString ? (householdCodeOrUpdates as string) : undefined;
+    const updates = isHouseholdString ? maybeUpdates! : (householdCodeOrUpdates as Partial<MemberInput>);
+
     const index = this.members.findIndex((m) => m.id === id);
     if (index === -1) {
       throw new Error('Thành viên không tồn tại');
     }
 
     const current = this.members[index];
+    const targetHousehold = householdCode || current.householdCode;
+    const householdMembers = this.members.filter((m) => m.householdCode === targetHousehold);
+
     if (updates.name !== undefined) {
       if (!isValidMemberName(updates.name)) {
         throw new Error('Tên thành viên không hợp lệ');
       }
       const trimmed = updates.name.trim();
-      const duplicate = this.members.find(
-        (m) =>
-          m.householdCode === current.householdCode &&
-          m.id !== id &&
-          m.name.toLowerCase() === trimmed.toLowerCase()
-      );
-      if (duplicate) {
+      if (isDuplicateMemberName(householdMembers, trimmed, id)) {
         throw new Error('Tên thành viên đã tồn tại');
       }
       current.name = trimmed;
@@ -140,67 +164,60 @@ export class LocalStorageMemberRepository implements MemberRepository {
     }
   }
 
-  private findHouseholdKeyForMember(id: string): { householdCode: string; members: Member[] } | null {
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('cooking_plan_members_')) {
-          const raw = localStorage.getItem(key);
-          if (raw) {
-            const members: Member[] = JSON.parse(raw);
-            const found = members.find((m) => m.id === id);
-            if (found) {
-              const householdCode = key.replace('cooking_plan_members_', '');
-              return { householdCode, members };
-            }
-          }
-        }
-      }
-    } catch {
-      // Ignored
-    }
-    return null;
-  }
-
   async getMembers(householdCode: string): Promise<Member[]> {
     return this.readMembers(householdCode);
   }
 
-  async addMember(member: Omit<Member, 'id' | 'createdAt'>): Promise<Member> {
-    if (!isValidMemberName(member.name)) {
+  async addMember(
+    householdCodeOrMember: string | Omit<Member, 'id' | 'createdAt'>,
+    maybeMember?: MemberInput
+  ): Promise<Member> {
+    let householdCode: string;
+    let input: MemberInput;
+
+    if (typeof householdCodeOrMember === 'string') {
+      householdCode = householdCodeOrMember;
+      input = maybeMember!;
+    } else {
+      householdCode = householdCodeOrMember.householdCode;
+      input = {
+        name: householdCodeOrMember.name,
+        avatarIcon: householdCodeOrMember.avatarIcon,
+        avatarColor: householdCodeOrMember.avatarColor,
+      };
+    }
+
+    if (!isValidMemberName(input.name)) {
       throw new Error('Tên thành viên không hợp lệ');
     }
 
-    const members = this.readMembers(member.householdCode);
-    const trimmed = member.name.trim();
-    const existing = members.find(
-      (m) => m.name.toLowerCase() === trimmed.toLowerCase()
-    );
-    if (existing) {
+    const trimmed = input.name.trim();
+    const members = this.readMembers(householdCode);
+    if (isDuplicateMemberName(members, trimmed)) {
       throw new Error('Tên thành viên đã tồn tại');
     }
 
-    const newMember = createMemberEntity(member.householdCode, {
+    const newMember = createMemberEntity(householdCode, {
       name: trimmed,
-      avatarIcon: member.avatarIcon,
-      avatarColor: member.avatarColor,
+      avatarIcon: input.avatarIcon,
+      avatarColor: input.avatarColor,
     });
     members.push(newMember);
-    this.writeMembers(member.householdCode, members);
+    this.writeMembers(householdCode, members);
     return newMember;
   }
 
   async updateMember(
     id: string,
-    updates: Partial<Pick<Member, 'name' | 'avatarIcon' | 'avatarColor'>>
+    householdCode: string,
+    updates: Partial<MemberInput>
   ): Promise<Member> {
-    const found = this.findHouseholdKeyForMember(id);
-    if (!found) {
+    const members = this.readMembers(householdCode);
+    const index = members.findIndex((m) => m.id === id);
+    if (index === -1) {
       throw new Error('Thành viên không tồn tại');
     }
 
-    const { householdCode, members } = found;
-    const index = members.findIndex((m) => m.id === id);
     const current = members[index];
 
     if (updates.name !== undefined) {
@@ -208,10 +225,7 @@ export class LocalStorageMemberRepository implements MemberRepository {
         throw new Error('Tên thành viên không hợp lệ');
       }
       const trimmed = updates.name.trim();
-      const duplicate = members.find(
-        (m) => m.id !== id && m.name.toLowerCase() === trimmed.toLowerCase()
-      );
-      if (duplicate) {
+      if (isDuplicateMemberName(members, trimmed, id)) {
         throw new Error('Tên thành viên đã tồn tại');
       }
       current.name = trimmed;
