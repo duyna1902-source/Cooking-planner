@@ -5,7 +5,7 @@ Cung cấp chế độ Quản lý Thành viên trực tiếp trên màn hình ch
 
 **Blocked by:** 02: Add New Member via Bottom Drawer
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] Hiển thị nút bấm "Chỉnh sửa" nhỏ gọn ở góc trên bên phải thanh tiêu đề màn hình chọn Thành viên.
 - [ ] Bấm vào nút chuyển đổi trạng thái giao diện sang Chế độ Quản lý (`isManageMode`), nút đổi thành "Xong" với màu sắc nhấn rõ ràng.
