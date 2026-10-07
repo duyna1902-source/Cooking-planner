@@ -183,4 +183,83 @@ describe('MemberDrawer', () => {
     await user.click(cancelBtn);
     expect(handleClose).toHaveBeenCalledTimes(2);
   });
+
+  describe('Edit mode', () => {
+    it('renders edit title, button text, and pre-fills values when editingMemberId is passed', () => {
+      render(
+        <MemberDrawer
+          isOpen={true}
+          onClose={vi.fn()}
+          onSave={vi.fn()}
+          existingMembers={existingMembers}
+          editingMemberId="m1"
+          initialName="Mẹ Bắp"
+          initialAvatarIcon="🍳"
+          initialAvatarColor="bg-[#FEF7DC]"
+        />
+      );
+
+      expect(screen.getByText('Chỉnh Sửa Thành Viên')).toBeInTheDocument();
+      expect(screen.getByTestId('save-member-btn')).toHaveTextContent('Lưu thay đổi');
+      const input = screen.getByTestId('member-name-input');
+      expect(input).toHaveValue('Mẹ Bắp');
+      const eggPreset = screen.getByTestId('avatar-preset-🍳');
+      expect(eggPreset.className).toContain('ring-2 ring-[#5B7C99]');
+    });
+
+    it('allows saving without duplicate error when keeping the same name', async () => {
+      const user = userEvent.setup();
+      const handleSave = vi.fn();
+      render(
+        <MemberDrawer
+          isOpen={true}
+          onClose={vi.fn()}
+          onSave={handleSave}
+          existingMembers={existingMembers}
+          editingMemberId="m1"
+          initialName="Mẹ Bắp"
+          initialAvatarIcon="🍳"
+        />
+      );
+
+      // Submit immediately with same name
+      const saveBtn = screen.getByTestId('save-member-btn');
+      await user.click(saveBtn);
+
+      expect(screen.queryByTestId('member-name-error')).not.toBeInTheDocument();
+      expect(handleSave).toHaveBeenCalledTimes(1);
+      expect(handleSave).toHaveBeenCalledWith({
+        name: 'Mẹ Bắp',
+        avatarIcon: '🍳',
+        avatarColor: 'bg-[#FEF7DC]',
+      });
+    });
+
+    it('shows duplicate error when editing to match another existing member name', async () => {
+      const user = userEvent.setup();
+      const handleSave = vi.fn();
+      render(
+        <MemberDrawer
+          isOpen={true}
+          onClose={vi.fn()}
+          onSave={handleSave}
+          existingMembers={existingMembers}
+          editingMemberId="m1"
+          initialName="Mẹ Bắp"
+          initialAvatarIcon="🍳"
+        />
+      );
+
+      const input = screen.getByTestId('member-name-input');
+      await user.clear(input);
+      await user.type(input, 'Bố Tuấn');
+
+      const saveBtn = screen.getByTestId('save-member-btn');
+      await user.click(saveBtn);
+
+      expect(screen.getByTestId('member-name-error')).toBeInTheDocument();
+      expect(screen.getByTestId('member-name-error')).toHaveTextContent(/đã có trong gia đình|đã tồn tại/i);
+      expect(handleSave).not.toHaveBeenCalled();
+    });
+  });
 });

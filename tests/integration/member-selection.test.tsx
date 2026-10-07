@@ -278,4 +278,222 @@ describe('Member Selection Modal & Session Gate Integration (Ticket 01)', () => 
       expect(currentList.filter((m) => m.name.toLowerCase() === 'mẹ bắp')).toHaveLength(1);
     });
   });
+
+  describe('Member Management Mode Integration (Ticket 03)', () => {
+    it('toggles manage mode, edits member name and avatar, and verifies update in weekly plan', async () => {
+      const user = userEvent.setup();
+      render(
+        <App
+          storage={storage}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          memberRepository={memberRepo}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      });
+
+      // Toggle manage mode
+      const toggleBtn = screen.getByTestId('toggle-manage-mode');
+      await user.click(toggleBtn);
+      expect(toggleBtn).toHaveTextContent('Xong');
+
+      // Member cards should have wiggle effect
+      const members = await memberRepo.getMembers(householdCode);
+      const meBap = members.find((m) => m.name === 'Mẹ Bắp')!;
+      const card = screen.getByTestId(`member-card-${meBap.id}`);
+      expect(card.className).toContain('animate-wiggle');
+
+      // Click card to open edit drawer
+      await user.click(card);
+      expect(screen.getByTestId('member-drawer')).toBeInTheDocument();
+      expect(screen.getByText('Chỉnh Sửa Thành Viên')).toBeInTheDocument();
+
+      const nameInput = screen.getByTestId('member-name-input');
+      expect(nameInput).toHaveValue('Mẹ Bắp');
+
+      // Update name to "Mẹ Yêu" and select pizza preset 🍕
+      await user.clear(nameInput);
+      await user.type(nameInput, 'Mẹ Yêu');
+      await user.click(screen.getByTestId('avatar-preset-🍕'));
+
+      // Save
+      await user.click(screen.getByTestId('save-member-btn'));
+
+      // Drawer closes, grid updates
+      await waitFor(() => {
+        expect(screen.queryByTestId('member-drawer')).not.toBeInTheDocument();
+      });
+      expect(screen.getByText('Mẹ Yêu')).toBeInTheDocument();
+      expect(screen.getByText('🍕')).toBeInTheDocument();
+
+      // Verified in repository
+      const updatedRepoMembers = await memberRepo.getMembers(householdCode);
+      const updatedMember = updatedRepoMembers.find((m) => m.id === meBap.id);
+      expect(updatedMember?.name).toBe('Mẹ Yêu');
+      expect(updatedMember?.avatarIcon).toBe('🍕');
+
+      // Turn off manage mode
+      await user.click(screen.getByTestId('toggle-manage-mode'));
+
+      // Select "Mẹ Yêu" to enter Weekly Plan
+      await user.click(screen.getByText('Mẹ Yêu'));
+      await waitFor(() => {
+        expect(screen.queryByTestId('member-select-modal')).not.toBeInTheDocument();
+      });
+      expect(screen.getByTestId('plan-view')).toBeInTheDocument();
+      expect(screen.getByTestId('nickname-badge')).toHaveTextContent('• Mẹ Yêu');
+      expect(screen.getByTestId('active-member-avatar')).toHaveTextContent('🍕');
+    });
+
+    it('deletes a member when multiple exist and verifies removal from list', async () => {
+      const user = userEvent.setup();
+      render(
+        <App
+          storage={storage}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          memberRepository={memberRepo}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      });
+
+      // Toggle manage mode
+      await user.click(screen.getByTestId('toggle-manage-mode'));
+
+      const members = await memberRepo.getMembers(householdCode);
+      const boTuan = members.find((m) => m.name === 'Bố Tuấn')!;
+      const deleteBtn = screen.getByTestId(`delete-member-${boTuan.id}`);
+
+      // Click delete button
+      await user.click(deleteBtn);
+
+      // Confirm modal appears
+      expect(screen.getByTestId('confirm-delete-modal')).toBeInTheDocument();
+      expect(screen.getByText(/"Bố Tuấn"/i)).toBeInTheDocument();
+
+      // Confirm delete
+      await user.click(screen.getByTestId('confirm-delete-member-btn'));
+
+      // Modal closes, "Bố Tuấn" removed from UI
+      await waitFor(() => {
+        expect(screen.queryByTestId('confirm-delete-modal')).not.toBeInTheDocument();
+      });
+      expect(screen.queryByText('Bố Tuấn')).not.toBeInTheDocument();
+
+      // Removed from repository
+      const remaining = await memberRepo.getMembers(householdCode);
+      expect(remaining.some((m) => m.id === boTuan.id)).toBe(false);
+      expect(remaining).toHaveLength(1);
+    });
+
+    it('blocks deletion when only 1 member remains', async () => {
+      const user = userEvent.setup();
+
+      // Leave only 1 member in repo
+      const members = await memberRepo.getMembers(householdCode);
+      const boTuan = members.find((m) => m.name === 'Bố Tuấn')!;
+      await memberRepo.deleteMember(boTuan.id, householdCode);
+
+      render(
+        <App
+          storage={storage}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          memberRepository={memberRepo}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      });
+
+      // Toggle manage mode
+      await user.click(screen.getByTestId('toggle-manage-mode'));
+
+      const meBap = members.find((m) => m.name === 'Mẹ Bắp')!;
+      const deleteBtn = screen.getByTestId(`delete-member-${meBap.id}`);
+
+      // Attempt to delete last remaining member
+      await user.click(deleteBtn);
+
+      // Safety warning dialog appears
+      expect(screen.getByTestId('delete-blocked-modal')).toBeInTheDocument();
+      expect(screen.getByText(/Gia đình phải có ít nhất 1 thành viên/i)).toBeInTheDocument();
+      expect(screen.queryByTestId('confirm-delete-modal')).not.toBeInTheDocument();
+
+      // Dismiss dialog
+      await user.click(screen.getByTestId('close-delete-blocked-btn'));
+      expect(screen.queryByTestId('delete-blocked-modal')).not.toBeInTheDocument();
+
+      // Member still exists
+      expect(screen.getByText('Mẹ Bắp')).toBeInTheDocument();
+      const currentMembers = await memberRepo.getMembers(householdCode);
+      expect(currentMembers).toHaveLength(1);
+    });
+
+    it('preserves past plan comments authored by a deleted member', async () => {
+      const user = userEvent.setup();
+
+      // Pre-seed a comment authored by "Bố Tuấn" on the dinner dish
+      const items = await planRepo.getPlanItems(householdCode, today, today);
+      await planRepo.addComment(
+        householdCode,
+        items[0].id,
+        'Bố Tuấn',
+        'Bố đã mua đủ gia vị cho món này rồi nhé!'
+      );
+
+      render(
+        <App
+          storage={storage}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+          memberRepository={memberRepo}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('member-select-modal')).toBeInTheDocument();
+      });
+
+      // Switch to manage mode and delete "Bố Tuấn"
+      await user.click(screen.getByTestId('toggle-manage-mode'));
+      const members = await memberRepo.getMembers(householdCode);
+      const boTuan = members.find((m) => m.name === 'Bố Tuấn')!;
+      await user.click(screen.getByTestId(`delete-member-${boTuan.id}`));
+      await user.click(screen.getByTestId('confirm-delete-member-btn'));
+
+      await waitFor(() => {
+        expect(screen.queryByText('Bố Tuấn')).not.toBeInTheDocument();
+      });
+
+      // Switch off manage mode
+      await user.click(screen.getByTestId('toggle-manage-mode'));
+
+      // Enter weekly plan as "Mẹ Bắp"
+      await user.click(screen.getByText('Mẹ Bắp'));
+      await waitFor(() => {
+        expect(screen.getByTestId('plan-view')).toBeInTheDocument();
+      });
+
+      // Open the dish detail drawer for "Thịt kho tàu"
+      const dishCard = screen.getByTestId('plan-dish-card-trigger-Thịt kho tàu');
+      await user.click(dishCard);
+
+      // Verify Dish Detail Drawer is open
+      await waitFor(() => {
+        expect(screen.getByTestId('dish-detail-drawer')).toBeInTheDocument();
+      });
+
+      // Verify the past comment authored by deleted member "Bố Tuấn" is still present
+      expect(screen.getByText('Bố đã mua đủ gia vị cho món này rồi nhé!')).toBeInTheDocument();
+      expect(screen.getByText('Bố Tuấn')).toBeInTheDocument();
+    });
+  });
 });

@@ -7,12 +7,12 @@ Cung cấp chế độ Quản lý Thành viên trực tiếp trên màn hình ch
 
 **Status:** claimed
 
-- [ ] Hiển thị nút bấm "Chỉnh sửa" nhỏ gọn ở góc trên bên phải thanh tiêu đề màn hình chọn Thành viên.
-- [ ] Bấm vào nút chuyển đổi trạng thái giao diện sang Chế độ Quản lý (`isManageMode`), nút đổi thành "Xong" với màu sắc nhấn rõ ràng.
-- [ ] Trong Chế độ Quản lý, các thẻ Thành viên hiển thị biểu tượng xóa (dấu ✕ hoặc nút xóa màu đỏ ở góc thẻ) và hiệu ứng rung nhẹ (`animate-wiggle`).
-- [ ] Bấm vào thẻ trong Chế độ Quản lý sẽ mở Bottom Drawer với tiêu đề "Chỉnh Sửa Thành Viên", nạp sẵn tên và biểu tượng hiện tại của Thành viên đó để người dùng cập nhật.
-- [ ] Khi sửa tên, tiếp tục kiểm tra không được để trống và không được trùng với các Thành viên khác trong cùng gia đình; bấm "Lưu thay đổi" sẽ gọi `updateMember` và cập nhật dữ liệu.
-- [ ] Bấm nút xóa trên thẻ sẽ hiển thị hộp thoại xác nhận (Confirm Dialog) ghi rõ tên Thành viên cần xóa.
-- [ ] Ràng buộc an toàn 1: Nếu gia đình chỉ còn duy nhất 1 Thành viên, hệ thống từ chối xóa và hiển thị thông báo rõ ràng rằng gia đình phải có ít nhất 1 thành viên.
-- [ ] Ràng buộc an toàn 2: Khi xóa một Thành viên, chỉ xóa bản ghi trong bảng `members`. Tất cả các bình luận dặn dò (`plan_comments`) do người đó tạo trước đây trong Kế hoạch vẫn giữ nguyên tên tác giả (`author_nickname`).
-- [ ] Bộ kiểm thử tự động (Unit & Integration tests) bao phủ trọn vẹn việc bật/tắt quản lý, chỉnh sửa tên/icon, xóa thành viên, chặn xóa thành viên cuối cùng và kiểm tra giữ nguyên bình luận cũ.
+- [x] Hiển thị nút bấm "Chỉnh sửa" nhỏ gọn ở góc trên bên phải thanh tiêu đề màn hình chọn Thành viên.
+- [x] Bấm vào nút chuyển đổi trạng thái giao diện sang Chế độ Quản lý (`isManageMode`), nút đổi thành "Xong" với màu sắc nhấn rõ ràng.
+- [x] Trong Chế độ Quản lý, các thẻ Thành viên hiển thị biểu tượng xóa (dấu ✕ hoặc nút xóa màu đỏ ở góc thẻ) và hiệu ứng rung nhẹ (`animate-wiggle`).
+- [x] Bấm vào thẻ trong Chế độ Quản lý sẽ mở Bottom Drawer với tiêu đề "Chỉnh Sửa Thành Viên", nạp sẵn tên và biểu tượng hiện tại của Thành viên đó để người dùng cập nhật.
+- [x] Khi sửa tên, tiếp tục kiểm tra không được để trống và không được trùng với các Thành viên khác trong cùng gia đình; bấm "Lưu thay đổi" sẽ gọi `updateMember` và cập nhật dữ liệu.
+- [x] Bấm nút xóa trên thẻ sẽ hiển thị hộp thoại xác nhận (Confirm Dialog) ghi rõ tên Thành viên cần xóa.
+- [x] Ràng buộc an toàn 1: Nếu gia đình chỉ còn duy nhất 1 Thành viên, hệ thống từ chối xóa và hiển thị thông báo rõ ràng rằng gia đình phải có ít nhất 1 thành viên.
+- [x] Ràng buộc an toàn 2: Khi xóa một Thành viên, chỉ xóa bản ghi trong bảng `members`. Tất cả các bình luận dặn dò (`plan_comments`) do người đó tạo trước đây trong Kế hoạch vẫn giữ nguyên tên tác giả (`author_nickname`).
+- [x] Bộ kiểm thử tự động (Unit & Integration tests) bao phủ trọn vẹn việc bật/tắt quản lý, chỉnh sửa tên/icon, xóa thành viên, chặn xóa thành viên cuối cùng và kiểm tra giữ nguyên bình luận cũ.

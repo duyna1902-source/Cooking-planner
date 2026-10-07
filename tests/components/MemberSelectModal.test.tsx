@@ -7,7 +7,7 @@ import { Member } from '../../src/domain/member';
 import { InMemoryMemberRepository } from '../../src/services/memberRepository';
 
 describe('MemberSelectModal', () => {
-  const sampleMembers: Member[] = [
+  const getSampleMembers = (): Member[] => [
     {
       id: 'm1',
       householdCode: 'BEP-892',
@@ -39,7 +39,7 @@ describe('MemberSelectModal', () => {
     render(
       <MemberSelectModal
         householdCode="BEP-892"
-        members={sampleMembers}
+        members={getSampleMembers()}
         onSelectMember={handleSelect}
       />
     );
@@ -53,7 +53,7 @@ describe('MemberSelectModal', () => {
     render(
       <MemberSelectModal
         householdCode="BEP-892"
-        members={sampleMembers}
+        members={getSampleMembers()}
         onSelectMember={handleSelect}
       />
     );
@@ -74,10 +74,11 @@ describe('MemberSelectModal', () => {
   it('calls onSelectMember with the clicked member when tapping a card', async () => {
     const user = userEvent.setup();
     const handleSelect = vi.fn();
+    const members = getSampleMembers();
     render(
       <MemberSelectModal
         householdCode="BEP-892"
-        members={sampleMembers}
+        members={members}
         onSelectMember={handleSelect}
       />
     );
@@ -86,7 +87,7 @@ describe('MemberSelectModal', () => {
     await user.click(card);
 
     expect(handleSelect).toHaveBeenCalledTimes(1);
-    expect(handleSelect).toHaveBeenCalledWith(sampleMembers[1]);
+    expect(handleSelect).toHaveBeenCalledWith(members[1]);
   });
 
   it('renders sticky bottom button "➕ Thêm thành viên mới" and opens MemberDrawer on tap', async () => {
@@ -94,7 +95,7 @@ describe('MemberSelectModal', () => {
     render(
       <MemberSelectModal
         householdCode="BEP-892"
-        members={sampleMembers}
+        members={getSampleMembers()}
         onSelectMember={vi.fn()}
       />
     );
@@ -111,14 +112,15 @@ describe('MemberSelectModal', () => {
 
   it('adds member to repository, updates grid, closes drawer, and allows selecting new member', async () => {
     const user = userEvent.setup();
-    const memberRepo = new InMemoryMemberRepository(sampleMembers);
+    const members = getSampleMembers();
+    const memberRepo = new InMemoryMemberRepository(members);
     const handleSelect = vi.fn();
     const handleMemberAdded = vi.fn();
 
     render(
       <MemberSelectModal
         householdCode="BEP-892"
-        members={sampleMembers}
+        members={members}
         onSelectMember={handleSelect}
         memberRepository={memberRepo}
         onMemberAdded={handleMemberAdded}
@@ -158,5 +160,167 @@ describe('MemberSelectModal', () => {
     expect(handleSelect).toHaveBeenCalledTimes(1);
     expect(handleSelect.mock.calls[0][0].name).toBe('Bà Ngoại');
     expect(handleSelect.mock.calls[0][0].avatarIcon).toBe('🥗');
+  });
+
+  describe('Manage mode', () => {
+    it('toggles manage mode on and off when clicking toggle button', async () => {
+      const user = userEvent.setup();
+      render(
+        <MemberSelectModal
+          householdCode="BEP-892"
+          members={getSampleMembers()}
+          onSelectMember={vi.fn()}
+        />
+      );
+
+      const toggleBtn = screen.getByTestId('toggle-manage-mode');
+      expect(toggleBtn).toBeInTheDocument();
+      expect(toggleBtn).toHaveTextContent('Chỉnh sửa');
+
+      // Before clicking, no delete buttons and no wiggle animation
+      expect(screen.queryByTestId('delete-member-m1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('member-card-m1').className).not.toContain('animate-wiggle');
+
+      // Click to toggle on
+      await user.click(toggleBtn);
+      expect(toggleBtn).toHaveTextContent('Xong');
+      expect(screen.getByTestId('delete-member-m1')).toBeInTheDocument();
+      expect(screen.getByTestId('member-card-m1').className).toContain('animate-wiggle');
+
+      // Click to toggle off
+      await user.click(toggleBtn);
+      expect(toggleBtn).toHaveTextContent('Chỉnh sửa');
+      expect(screen.queryByTestId('delete-member-m1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('member-card-m1').className).not.toContain('animate-wiggle');
+    });
+
+    it('tapping member card in manage mode opens MemberDrawer in edit mode to update member', async () => {
+      const user = userEvent.setup();
+      const members = getSampleMembers();
+      const memberRepo = new InMemoryMemberRepository(members);
+      const handleSelect = vi.fn();
+
+      render(
+        <MemberSelectModal
+          householdCode="BEP-892"
+          members={members}
+          onSelectMember={handleSelect}
+          memberRepository={memberRepo}
+        />
+      );
+
+      // Toggle manage mode
+      await user.click(screen.getByTestId('toggle-manage-mode'));
+
+      // Click on member card "Mẹ"
+      await user.click(screen.getByTestId('member-card-m1'));
+
+      // onSelectMember should NOT be called in manage mode
+      expect(handleSelect).not.toHaveBeenCalled();
+
+      // Drawer opens in edit mode
+      expect(screen.getByTestId('member-drawer')).toBeInTheDocument();
+      expect(screen.getByText('Chỉnh Sửa Thành Viên')).toBeInTheDocument();
+      const input = screen.getByTestId('member-name-input');
+      expect(input).toHaveValue('Mẹ');
+
+      // Edit name and choose cake preset 🍰
+      await user.clear(input);
+      await user.type(input, 'Mẹ Yêu');
+      await user.click(screen.getByTestId('avatar-preset-🍰'));
+
+      // Submit
+      await user.click(screen.getByTestId('save-member-btn'));
+
+      // Drawer closes, updated info rendered in grid
+      expect(screen.queryByTestId('member-drawer')).not.toBeInTheDocument();
+      expect(screen.getByText('Mẹ Yêu')).toBeInTheDocument();
+      expect(screen.getByText('🍰')).toBeInTheDocument();
+
+      // Updated in repository
+      const membersInDb = await memberRepo.getMembers('BEP-892');
+      const updated = membersInDb.find((m) => m.id === 'm1');
+      expect(updated?.name).toBe('Mẹ Yêu');
+      expect(updated?.avatarIcon).toBe('🍰');
+    });
+
+    it('shows confirmation dialog when clicking delete, and deletes member on confirmation', async () => {
+      const user = userEvent.setup();
+      const members = getSampleMembers();
+      const memberRepo = new InMemoryMemberRepository(members);
+
+      render(
+        <MemberSelectModal
+          householdCode="BEP-892"
+          members={members}
+          onSelectMember={vi.fn()}
+          memberRepository={memberRepo}
+        />
+      );
+
+      await user.click(screen.getByTestId('toggle-manage-mode'));
+
+      // Click delete button on "Bố" (m2)
+      const deleteBtn = screen.getByTestId('delete-member-m2');
+      await user.click(deleteBtn);
+
+      // Confirmation modal appears
+      expect(screen.getByTestId('confirm-delete-modal')).toBeInTheDocument();
+      expect(screen.getByText(/"Bố"/i)).toBeInTheDocument();
+
+      // Can cancel
+      const cancelBtn = screen.getByTestId('cancel-delete-member-btn');
+      await user.click(cancelBtn);
+      expect(screen.queryByTestId('confirm-delete-modal')).not.toBeInTheDocument();
+      expect(screen.getByText('Bố')).toBeInTheDocument();
+
+      // Click delete again and confirm
+      await user.click(deleteBtn);
+      const confirmBtn = screen.getByTestId('confirm-delete-member-btn');
+      await user.click(confirmBtn);
+
+      // Confirmation modal closes
+      expect(screen.queryByTestId('confirm-delete-modal')).not.toBeInTheDocument();
+
+      // "Bố" removed from grid
+      expect(screen.queryByText('Bố')).not.toBeInTheDocument();
+
+      // "Bố" removed from repository
+      const membersInDb = await memberRepo.getMembers('BEP-892');
+      expect(membersInDb.some((m) => m.id === 'm2')).toBe(false);
+      expect(membersInDb).toHaveLength(2);
+    });
+
+    it('blocks deletion and displays safety constraint message when only 1 member remains', async () => {
+      const user = userEvent.setup();
+      const singleMember: Member[] = [getSampleMembers()[0]];
+      const memberRepo = new InMemoryMemberRepository(singleMember);
+      const deleteSpy = vi.spyOn(memberRepo, 'deleteMember');
+
+      render(
+        <MemberSelectModal
+          householdCode="BEP-892"
+          members={singleMember}
+          onSelectMember={vi.fn()}
+          memberRepository={memberRepo}
+        />
+      );
+
+      await user.click(screen.getByTestId('toggle-manage-mode'));
+
+      // Click delete button
+      const deleteBtn = screen.getByTestId('delete-member-m1');
+      await user.click(deleteBtn);
+
+      // Blocks deletion and shows safety warning
+      expect(screen.getByText(/Gia đình phải có ít nhất 1 thành viên/i)).toBeInTheDocument();
+      expect(deleteSpy).not.toHaveBeenCalled();
+
+      // Confirmation modal should not appear
+      expect(screen.queryByTestId('confirm-delete-modal')).not.toBeInTheDocument();
+
+      // Member still exists
+      expect(screen.getByText('Mẹ')).toBeInTheDocument();
+    });
   });
 });
