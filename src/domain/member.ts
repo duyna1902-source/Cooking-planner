@@ -5,12 +5,24 @@ export interface Member {
   createdAt: string;
 }
 
-export type MemberErrorCode = 'duplicate-name' | 'invalid-name' | 'invalid-household' | 'unavailable';
+export type MemberErrorCode =
+  | 'duplicate-name'
+  | 'invalid-name'
+  | 'invalid-household'
+  | 'unavailable'
+  | 'capacity-exceeded';
 
-export const MAX_MEMBERS_PER_HOUSEHOLD = 6;
+export const MAX_MEMBERS = 6;
+export const MAX_MEMBERS_PER_HOUSEHOLD = MAX_MEMBERS;
 
 export class MemberError extends Error {
   constructor(public readonly code: MemberErrorCode, message: string) { super(message); this.name = 'MemberError'; }
+}
+
+export function validateMemberCapacity(currentCount: number): void {
+  if (currentCount >= MAX_MEMBERS) {
+    throw new MemberError('capacity-exceeded', 'Gia đình đã có tối đa 6 Thành viên.');
+  }
 }
 
 export function normalizeMemberName(name: string): string {

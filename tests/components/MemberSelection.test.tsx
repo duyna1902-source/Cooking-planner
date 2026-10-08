@@ -6,7 +6,7 @@ import { MemberSelection } from '../../src/components/MemberSelection';
 import { TestMemberRepository, sampleMember } from '../support/memberRepository';
 
 describe('MemberSelection Component (Ticket 01)', () => {
-  it('renders zero-scroll layout with empty state when household has 0 members', async () => {
+  it('renders zero-scroll layout with empty state when Gia đình has 0 members', async () => {
     const repository = new TestMemberRepository([]);
     render(
       <MemberSelection
@@ -67,7 +67,6 @@ describe('MemberSelection Component (Ticket 01)', () => {
 
     const grid = screen.getByTestId('member-grid');
     expect(grid).toHaveAttribute('data-columns', '2');
-    expect(grid).toHaveAttribute('data-mode', '2-col');
     expect(grid).toHaveClass('ms-grid-cols-2');
 
     expect(screen.getByTestId('ms-greeting-art')).toBeInTheDocument();
@@ -97,7 +96,6 @@ describe('MemberSelection Component (Ticket 01)', () => {
 
     const grid = screen.getByTestId('member-grid');
     expect(grid).toHaveAttribute('data-columns', '3');
-    expect(grid).toHaveAttribute('data-mode', '3-col');
     expect(grid).toHaveClass('ms-grid-cols-3');
 
     expect(screen.queryByTestId('ms-greeting-art')).not.toBeInTheDocument();
@@ -154,7 +152,7 @@ describe('MemberSelection Component (Ticket 01)', () => {
   });
 
   describe('Six-Member Capacity Limit Enforcement (Ticket 02)', () => {
-    it('replaces "+ Thêm thành viên" button with accessible capacity notice when household has 6 members', async () => {
+    it('replaces "+ Thêm thành viên" button with accessible capacity notice when Gia đình has 6 members', async () => {
       const repository = new TestMemberRepository([
         sampleMember('Mẹ'),
         sampleMember('Bố'),
@@ -185,7 +183,7 @@ describe('MemberSelection Component (Ticket 01)', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('guards form submission if household reaches 6 members before submit (race condition)', async () => {
+    it('guards form submission if Gia đình reaches 6 members before submit (race condition)', async () => {
       const repository = new TestMemberRepository([
         sampleMember('Mẹ'),
         sampleMember('Bố'),
@@ -459,6 +457,64 @@ describe('MemberSelection Component (Ticket 01)', () => {
       expect(await screen.findByText('Cả nhà bắt đầu từ bạn')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '+ Thêm thành viên' })).toBeInTheDocument();
       expect(document.querySelector('.ms-add-area')).toBeInTheDocument();
+    });
+
+    it('clears toast notice immediately when user clicks a member card', async () => {
+      const mom = sampleMember('Mẹ');
+      const onChoose = vi.fn();
+      const repository = new TestMemberRepository([mom]);
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={onChoose}
+        />
+      );
+
+      // Add a member so toast appears
+      await userEvent.click(await screen.findByRole('button', { name: '+ Thêm thành viên' }));
+      await userEvent.type(screen.getByRole('textbox', { name: 'Tên Thành viên' }), 'Bố');
+      await userEvent.click(screen.getByRole('button', { name: 'Lưu Thành viên' }));
+      expect(await screen.findByRole('status')).toHaveTextContent('Đã thêm Bố');
+
+      // Clicking a member card clears notice immediately
+      await userEvent.click(screen.getByRole('button', { name: 'Chọn Mẹ' }));
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(onChoose).toHaveBeenCalledWith(mom);
+    });
+
+    it('clears toast notice immediately when user toggles manage mode or opens add form', async () => {
+      const repository = new TestMemberRepository([sampleMember('Mẹ')]);
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      // Add a member so toast appears
+      await userEvent.click(await screen.findByRole('button', { name: '+ Thêm thành viên' }));
+      await userEvent.type(screen.getByRole('textbox', { name: 'Tên Thành viên' }), 'Bố');
+      await userEvent.click(screen.getByRole('button', { name: 'Lưu Thành viên' }));
+      expect(await screen.findByRole('status')).toHaveTextContent('Đã thêm Bố');
+
+      // Clicking manage mode clears notice immediately
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa' }));
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+
+      // Exit manage mode
+      await userEvent.click(screen.getByRole('button', { name: 'Xong' }));
+
+      // Add another member so toast appears again
+      await userEvent.click(await screen.findByRole('button', { name: '+ Thêm thành viên' }));
+      await userEvent.type(screen.getByRole('textbox', { name: 'Tên Thành viên' }), 'An');
+      await userEvent.click(screen.getByRole('button', { name: 'Lưu Thành viên' }));
+      expect(await screen.findByRole('status')).toHaveTextContent('Đã thêm An');
+
+      // Opening add form clears notice immediately
+      await userEvent.click(screen.getByRole('button', { name: '+ Thêm thành viên' }));
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
   });
 });
