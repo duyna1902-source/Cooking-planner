@@ -27,7 +27,7 @@ Tài liệu này hướng dẫn cách kết nối cơ sở dữ liệu Supabase 
    - Ràng buộc tự động xóa tầng (`ON DELETE CASCADE`).
    - Kênh Supabase Realtime qua WebSockets.
 
-Với project đã có 4 bảng cũ, chạy riêng `supabase/migrations/20261008_create_member.sql` trong SQL Editor để thêm bảng `member`, ràng buộc tên duy nhất theo Mã nhà và Supabase Realtime. Migration không tạo Thành viên mẫu hoặc tự chuyển Biệt danh cũ thành Thành viên.
+Với project đã có 4 bảng cũ, chạy riêng `supabase/migrations/20261008_create_member.sql`, sau đó chạy `supabase/migrations/20261008_member_delete.sql` trong SQL Editor. Migration thứ hai bổ sung quyền xóa và cấu hình bản ghi cũ cho Realtime; không migration nào tạo Thành viên mẫu hoặc tự chuyển Biệt danh cũ thành Thành viên. Project đã có bảng `member` chỉ cần chạy migration `20261008_member_delete.sql`.
 
 ---
 
@@ -60,10 +60,10 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    npm run dev
    ```
 2. Mở trình duyệt tại `http://localhost:5173`.
-3. Quan sát góc trên bên phải thanh tiêu đề (AppHeader):
+3. Nhập hoặc tạo Mã nhà, rồi chọn Thành viên trên màn hình **Bạn là ai?**. Bước này cần database đã cấu hình; khi thiếu cấu hình hoặc cloud lỗi, ứng dụng giữ màn hình chọn và cho thử lại.
+4. Sau khi chọn, quan sát góc trên bên phải thanh tiêu đề (AppHeader):
    - Chấm trạng thái sẽ hiển thị: **🟢 Online** (hoặc di chuột thấy tooltip *Đang đồng bộ Online*).
-   - (Nếu chưa cấu hình hoặc cấu hình sai, hệ thống tự động hiển thị **🟡 Chế độ máy** và lưu trữ qua LocalStorage an toàn).
-4. **Thử nghiệm Đa Thiết Bị**:
+5. **Thử nghiệm Đa Thiết Bị**:
    - Mở ứng dụng trên 2 tab trình duyệt khác nhau (hoặc trên điện thoại cùng tham gia chung một `Mã nhà`).
    - Thêm một Món ăn mới hoặc bình luận dặn dò trên một máy.
    - Máy còn lại sẽ lập tức hiển thị dữ liệu mới trong tích tắc mà **không cần bấm F5 / reload trang**!

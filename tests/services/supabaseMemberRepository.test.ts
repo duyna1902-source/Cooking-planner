@@ -3,6 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 import { SupabaseMemberRepository } from '../../src/services/supabaseMemberRepository';
 
 describe('SupabaseMemberRepository public database contract', () => {
+  it('preserves creation order for Thành viên created within the same millisecond', async () => {
+    const rows = [
+      { id: 'z', household_code: 'BEP-123', name: 'Mẹ', created_at: '2026-10-08T00:00:00.123100+00:00' },
+      { id: 'a', household_code: 'BEP-123', name: 'Bố', created_at: '2026-10-08T00:00:00.123900+00:00' },
+    ];
+    const client = createClient('https://database.example', 'test-key', {
+      auth: { persistSession: false, storageKey: 'member-order-precision' },
+      global: { fetch: async () => new Response(JSON.stringify(rows), { status: 200 }) },
+    });
+    const repository = new SupabaseMemberRepository(client);
+    expect((await repository.getMembers('BEP-123')).map(member => member.id)).toEqual(['z', 'a']);
+  });
   it('saves confirmed rows, loads in creation order, and confines deletion to Gia đình and ID', async () => {
     let rows = [
       { id: 'b', household_code: 'BEP-123', name: 'Bố', created_at: '2026-10-08T00:00:00Z' },
