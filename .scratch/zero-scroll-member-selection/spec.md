@@ -1,6 +1,6 @@
 # Spec: Màn hình chọn Thành viên cố định không cuộn (Zero-Scroll Member Selection)
 
-Status: ready-for-agent
+Status: completed
 
 ## Problem Statement
 
