@@ -209,7 +209,7 @@ export interface PlanComment {
   id: string;
   householdCode: string;
   planItemId: string;
-  authorNickname: string;
+  authorName: string;
   content: string;
   createdAt: string;
 }
@@ -217,7 +217,7 @@ export interface PlanComment {
 export interface PlanCommentInput {
   householdCode: string;
   planItemId: string;
-  authorNickname: string;
+  authorName: string;
   content: string;
 }
 
@@ -232,8 +232,8 @@ export function validateCommentInput(input: PlanCommentInput): { valid: boolean;
   if (!input.planItemId || !input.planItemId.trim()) {
     return { valid: false, error: 'Món ăn trong Kế hoạch không hợp lệ' };
   }
-  if (!input.authorNickname || !input.authorNickname.trim()) {
-    return { valid: false, error: 'Biệt danh người gửi không được để trống' };
+  if (!input.authorName || !input.authorName.trim()) {
+    return { valid: false, error: 'Tên Thành viên gửi không được để trống' };
   }
   if (!input.content || !input.content.trim()) {
     return { valid: false, error: 'Nội dung dặn dò không được để trống' };
@@ -244,10 +244,10 @@ export function validateCommentInput(input: PlanCommentInput): { valid: boolean;
 export function createPlanCommentEntity(
   householdCode: string,
   planItemId: string,
-  authorNickname: string,
+  authorName: string,
   content: string
 ): PlanComment {
-  const validation = validateCommentInput({ householdCode, planItemId, authorNickname, content });
+  const validation = validateCommentInput({ householdCode, planItemId, authorName, content });
   if (!validation.valid) {
     throw new Error(validation.error);
   }
@@ -256,7 +256,7 @@ export function createPlanCommentEntity(
     id: generateCommentId(),
     householdCode: householdCode.trim(),
     planItemId: planItemId.trim(),
-    authorNickname: authorNickname.trim(),
+    authorName: authorName.trim(),
     content: content.trim(),
     createdAt: new Date().toISOString(),
   };

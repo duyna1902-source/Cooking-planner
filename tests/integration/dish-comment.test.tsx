@@ -28,7 +28,7 @@ describe('Dish Detail and Blank Comment Input Integration (Ticket 04)', () => {
     render(
       <PlanView
         householdCode={householdCode}
-        nickname={nickname}
+        memberName={nickname}
         dishRepository={dishRepo}
         planRepository={planRepo}
         initialDate={fixedDate}
@@ -58,7 +58,7 @@ describe('Dish Detail and Blank Comment Input Integration (Ticket 04)', () => {
     render(
       <PlanView
         householdCode={householdCode}
-        nickname={nickname}
+        memberName={nickname}
         dishRepository={dishRepo}
         planRepository={planRepo}
         initialDate={fixedDate}
@@ -81,7 +81,7 @@ describe('Dish Detail and Blank Comment Input Integration (Ticket 04)', () => {
     render(
       <PlanView
         householdCode={householdCode}
-        nickname={nickname}
+        memberName={nickname}
         dishRepository={dishRepo}
         planRepository={planRepo}
         initialDate={fixedDate}
@@ -114,7 +114,7 @@ describe('Dish Detail and Blank Comment Input Integration (Ticket 04)', () => {
     render(
       <PlanView
         householdCode={householdCode}
-        nickname={nickname}
+        memberName={nickname}
         dishRepository={dishRepo}
         planRepository={planRepo}
         initialDate={fixedDate}
@@ -150,7 +150,7 @@ describe('Dish Detail and Blank Comment Input Integration (Ticket 04)', () => {
     render(
       <PlanView
         householdCode={householdCode}
-        nickname={nickname}
+        memberName={nickname}
         dishRepository={dishRepo}
         planRepository={planRepo}
         initialDate={fixedDate}
@@ -189,7 +189,7 @@ describe('Dish Detail and Blank Comment Input Integration (Ticket 04)', () => {
     const { unmount } = render(
       <PlanView
         householdCode={householdCode}
-        nickname="Mẹ Bắp"
+        memberName="Mẹ Bắp"
         dishRepository={dishRepo}
         planRepository={planRepo}
         initialDate={fixedDate}
@@ -215,7 +215,7 @@ describe('Dish Detail and Blank Comment Input Integration (Ticket 04)', () => {
     render(
       <PlanView
         householdCode={householdCode}
-        nickname="Bố Ken"
+        memberName="Bố Ken"
         dishRepository={dishRepo}
         planRepository={planRepo}
         initialDate={fixedDate}
@@ -240,7 +240,7 @@ describe('Dish Detail and Blank Comment Input Integration (Ticket 04)', () => {
     render(
       <PlanView
         householdCode={householdCode}
-        nickname={nickname}
+        memberName={nickname}
         dishRepository={dishRepo}
         planRepository={planRepo}
         initialDate={fixedDate}

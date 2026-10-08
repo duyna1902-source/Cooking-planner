@@ -92,7 +92,7 @@ describe('PlanRepository', () => {
       const comment1 = await repo.addComment('BEP-892', planItemId, 'Mẹ Bắp', 'Mua thịt ba chỉ ít mỡ');
       expect(comment1.id).toBeDefined();
       expect(comment1.content).toBe('Mua thịt ba chỉ ít mỡ');
-      expect(comment1.authorNickname).toBe('Mẹ Bắp');
+      expect(comment1.authorName).toBe('Mẹ Bắp');
 
       const comment2 = await repo.addComment('BEP-892', planItemId, 'Bố Ken', 'Nêm nhạt một chút');
       expect(comment2.id).toBeDefined();

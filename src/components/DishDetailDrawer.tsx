@@ -10,7 +10,7 @@ export interface DishDetailDrawerProps {
   dishTag?: string;
   planItemId: string;
   householdCode: string;
-  nickname: string;
+  authorName: string;
   planRepository: PlanRepository;
 }
 
@@ -21,7 +21,7 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
   dishTag,
   planItemId,
   householdCode,
-  nickname,
+  authorName,
   planRepository,
 }) => {
   const [comments, setComments] = useState<PlanComment[]>([]);
@@ -69,7 +69,7 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmed = commentText.trim();
-    const author = nickname.trim();
+    const author = authorName.trim();
     if (!trimmed || !author || isSubmitting || !householdCode || !planItemId) return;
 
     try {
@@ -147,7 +147,7 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
               >
                 <div className="flex items-center justify-between text-xs">
                   <span data-testid="comment-author" className="font-bold text-[#334E68]">
-                    {comment.authorNickname}
+                    {comment.authorName}
                   </span>
                   <span data-testid="comment-time" className="text-[10px] text-slate-400">
                     {formatCommentTimestamp(comment.createdAt)}
@@ -178,9 +178,9 @@ export const DishDetailDrawer: React.FC<DishDetailDrawerProps> = ({
             <button
               type="submit"
               data-testid="send-comment-btn"
-              disabled={!commentText.trim() || !nickname.trim() || isSubmitting}
+              disabled={!commentText.trim() || !authorName.trim() || isSubmitting}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition active:scale-95 flex-shrink-0 ${
-                commentText.trim() && nickname.trim() && !isSubmitting
+                commentText.trim() && authorName.trim() && !isSubmitting
                   ? 'bg-[#5B7C99] hover:bg-[#46637D] text-white shadow-sm'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}

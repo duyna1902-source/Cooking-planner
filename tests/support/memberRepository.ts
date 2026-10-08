@@ -1,4 +1,4 @@
-import { Member } from '../../src/domain/member';
+import { Member, sortMembers } from '../../src/domain/member';
 import { MemberRepository } from '../../src/services/memberRepository';
 
 // Shared database boundary for App tests; no production fallback uses this repository.
@@ -8,8 +8,7 @@ export class TestMemberRepository implements MemberRepository {
   private listeners = new Map<string, Set<() => void>>();
   constructor(members: Member[] = []) { this.members = members.map(member => ({ ...member })); }
   async getMembers(code: string): Promise<Member[]> {
-    return this.members.filter(member => member.householdCode === code).map(member => ({ ...member }))
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
+    return sortMembers(this.members.filter(member => member.householdCode === code).map(member => ({ ...member })));
   }
   async addMember(code: string, name: string): Promise<Member> {
     const clean = name.trim();

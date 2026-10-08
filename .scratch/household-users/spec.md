@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: completed
 
 # Chọn Thành viên trước khi vào Kế hoạch
 

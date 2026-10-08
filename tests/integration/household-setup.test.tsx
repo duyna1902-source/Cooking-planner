@@ -79,7 +79,7 @@ describe('Household Setup and PWA Shell Integration', () => {
     expect(screen.getByTestId('menu-view')).toBeInTheDocument();
     expect(screen.getByText('Menu gia đình')).toBeInTheDocument();
     expect(screen.queryByTestId('switch-household-button')).not.toBeInTheDocument();
-    expect(screen.getByTestId('nickname-badge')).toHaveTextContent('Mẹ');
+    expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
     await user.click(screen.getByTestId('nav-plan-button'));
     expect(screen.getByTestId('plan-view')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Đổi gia đình' }));
@@ -92,6 +92,6 @@ describe('Household Setup and PWA Shell Integration', () => {
     expect(storage.getHouseholdCode()).toBe('BEP-321');
     expect(screen.queryByTestId('plan-view')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Chọn Bố' }));
-    await waitFor(() => expect(screen.getByTestId('nickname-badge')).toHaveTextContent('Bố'));
+    await waitFor(() => expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Bố'));
   });
 });

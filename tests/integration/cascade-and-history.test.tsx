@@ -146,7 +146,7 @@ describe('Cascade Delete and Two-Week History Retention Integration (Ticket 05)'
       render(
         <PlanView
           householdCode={householdCode}
-          nickname={nickname}
+          memberName={nickname}
           dishRepository={dishRepo}
           planRepository={planRepo}
           initialDate={fixedBaseDate}
@@ -210,7 +210,7 @@ describe('Cascade Delete and Two-Week History Retention Integration (Ticket 05)'
       render(
         <PlanView
           householdCode={householdCode}
-          nickname={nickname}
+          memberName={nickname}
           dishRepository={dishRepo}
           planRepository={planRepo}
           initialDate={fixedBaseDate}

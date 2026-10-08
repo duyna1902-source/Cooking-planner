@@ -5,7 +5,7 @@ import { useClipboardCopy } from '../hooks/useClipboardCopy';
 
 export interface AppHeaderProps {
   householdCode: string;
-  nickname: string;
+  memberName: string;
   activeTab: 'plan' | 'menu';
   isOnline?: boolean;
   onOpenShare?: () => void;
@@ -14,7 +14,7 @@ export interface AppHeaderProps {
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
   householdCode,
-  nickname,
+  memberName,
   activeTab,
   isOnline = false,
   onOpenShare,
@@ -45,10 +45,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             Mã: {householdCode}
           </span>
           <span 
-            data-testid="nickname-badge"
+            data-testid="member-name-badge"
             className="text-xs text-slate-500 font-medium"
           >
-            • {nickname}
+            • {memberName}
           </span>
           <span
             data-testid="sync-status-badge"

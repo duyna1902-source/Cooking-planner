@@ -164,7 +164,7 @@ describe('SupabasePlanRepository', () => {
 
       expect(mockClient.from).toHaveBeenCalledWith('plan_comments');
       expect(comments).toHaveLength(1);
-      expect(comments[0].authorNickname).toBe('Mẹ');
+      expect(comments[0].authorName).toBe('Mẹ');
       expect(comments[0].content).toBe('Nấu ít cay');
     });
 
@@ -178,7 +178,7 @@ describe('SupabasePlanRepository', () => {
       const comment = await repo.addComment('HOUSE123', 'plan_1', 'Bố', 'Mua thêm rau thơm');
 
       expect(comment.content).toBe('Mua thêm rau thơm');
-      expect(comment.authorNickname).toBe('Bố');
+      expect(comment.authorName).toBe('Bố');
       expect(insertMock).toHaveBeenCalledWith(
         expect.objectContaining({
           household_code: 'HOUSE123',

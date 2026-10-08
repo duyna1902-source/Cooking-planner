@@ -148,7 +148,7 @@ describe('Plan Domain Logic', () => {
       expect(comment.id).toMatch(/^comment_/);
       expect(comment.householdCode).toBe('BEP-892');
       expect(comment.planItemId).toBe('plan-item-1');
-      expect(comment.authorNickname).toBe('Mẹ Bắp');
+      expect(comment.authorName).toBe('Mẹ Bắp');
       expect(comment.content).toBe('Nêm ít đường, mua thêm hành lá');
       expect(comment.createdAt).toBeDefined();
     });
@@ -159,7 +159,7 @@ describe('Plan Domain Logic', () => {
         validateCommentInput({
           householdCode: 'BEP-892',
           planItemId: 'plan-item-1',
-          authorNickname: 'Bố Ken',
+          authorName: 'Bố Ken',
           content: 'Nấu cay một chút nhé',
         })
       ).toEqual({ valid: true });
@@ -169,17 +169,17 @@ describe('Plan Domain Logic', () => {
         validateCommentInput({
           householdCode: 'BEP-892',
           planItemId: 'plan-item-1',
-          authorNickname: 'Bố Ken',
+          authorName: 'Bố Ken',
           content: '   ',
         }).valid
       ).toBe(false);
 
-      // Missing author nickname
+      // Missing author name
       expect(
         validateCommentInput({
           householdCode: 'BEP-892',
           planItemId: 'plan-item-1',
-          authorNickname: '',
+          authorName: '',
           content: 'Nấu cay một chút nhé',
         }).valid
       ).toBe(false);
@@ -189,7 +189,7 @@ describe('Plan Domain Logic', () => {
         validateCommentInput({
           householdCode: 'BEP-892',
           planItemId: '',
-          authorNickname: 'Bố Ken',
+          authorName: 'Bố Ken',
           content: 'Nấu cay một chút nhé',
         }).valid
       ).toBe(false);
@@ -199,7 +199,7 @@ describe('Plan Domain Logic', () => {
         validateCommentInput({
           householdCode: '',
           planItemId: 'plan-item-1',
-          authorNickname: 'Bố Ken',
+          authorName: 'Bố Ken',
           content: 'Nấu cay một chút nhé',
         }).valid
       ).toBe(false);
@@ -211,7 +211,7 @@ describe('Plan Domain Logic', () => {
           id: 'c2',
           householdCode: 'BEP-892',
           planItemId: 'item-1',
-          authorNickname: 'Bố Ken',
+          authorName: 'Bố Ken',
           content: 'Nhớ mua rau sống ăn kèm',
           createdAt: '2026-09-29T10:05:00.000Z',
         },
@@ -219,7 +219,7 @@ describe('Plan Domain Logic', () => {
           id: 'c1',
           householdCode: 'BEP-892',
           planItemId: 'item-1',
-          authorNickname: 'Mẹ Bắp',
+          authorName: 'Mẹ Bắp',
           content: 'Kho thịt mềm nhé',
           createdAt: '2026-09-29T09:00:00.000Z',
         },
@@ -227,7 +227,7 @@ describe('Plan Domain Logic', () => {
           id: 'c3',
           householdCode: 'BEP-892',
           planItemId: 'item-2',
-          authorNickname: 'Mẹ Bắp',
+          authorName: 'Mẹ Bắp',
           content: 'Canh chua nấu bắp cải',
           createdAt: '2026-09-29T09:10:00.000Z',
         },
@@ -235,7 +235,7 @@ describe('Plan Domain Logic', () => {
           id: 'c4',
           householdCode: 'OTHER',
           planItemId: 'item-1',
-          authorNickname: 'Ai Đó',
+          authorName: 'Ai Đó',
           content: 'Comment nhà khác',
           createdAt: '2026-09-29T08:00:00.000Z',
         },
@@ -253,7 +253,7 @@ describe('Plan Domain Logic', () => {
           id: 'c1',
           householdCode: 'BEP-892',
           planItemId: 'item-1',
-          authorNickname: 'Mẹ Bắp',
+          authorName: 'Mẹ Bắp',
           content: 'Kho thịt',
           createdAt: '2026-09-29T09:00:00.000Z',
         },
@@ -261,7 +261,7 @@ describe('Plan Domain Logic', () => {
           id: 'c2',
           householdCode: 'BEP-892',
           planItemId: 'item-2',
-          authorNickname: 'Mẹ Bắp',
+          authorName: 'Mẹ Bắp',
           content: 'Nấu canh',
           createdAt: '2026-09-29T09:05:00.000Z',
         },
@@ -278,7 +278,7 @@ describe('Plan Domain Logic', () => {
           id: 'c1',
           householdCode: 'BEP-892',
           planItemId: 'item-1',
-          authorNickname: 'Mẹ Bắp',
+          authorName: 'Mẹ Bắp',
           content: 'Note 1',
           createdAt: '2026-09-29T09:00:00.000Z',
         },
@@ -286,7 +286,7 @@ describe('Plan Domain Logic', () => {
           id: 'c2',
           householdCode: 'BEP-892',
           planItemId: 'item-2',
-          authorNickname: 'Bố Ken',
+          authorName: 'Bố Ken',
           content: 'Note 2',
           createdAt: '2026-09-29T09:05:00.000Z',
         },
@@ -294,7 +294,7 @@ describe('Plan Domain Logic', () => {
           id: 'c3',
           householdCode: 'BEP-892',
           planItemId: 'item-3',
-          authorNickname: 'Con Gái',
+          authorName: 'Con Gái',
           content: 'Note 3',
           createdAt: '2026-09-29T09:10:00.000Z',
         },
@@ -359,9 +359,9 @@ describe('Plan Domain Logic', () => {
       ];
 
       const comments: PlanComment[] = [
-        { id: 'c-old-1', householdCode: 'BEP-892', planItemId: 'item-old-1', authorNickname: 'Mẹ', content: 'Ghi chú cũ 1', createdAt: '2026-09-10T10:05:00Z' },
-        { id: 'c-old-2', householdCode: 'BEP-892', planItemId: 'item-old-2', authorNickname: 'Bố', content: 'Ghi chú cũ 2', createdAt: '2026-09-14T10:05:00Z' },
-        { id: 'c-valid-1', householdCode: 'BEP-892', planItemId: 'item-valid-1', authorNickname: 'Mẹ', content: 'Ghi chú giữ lại', createdAt: '2026-09-15T10:05:00Z' },
+        { id: 'c-old-1', householdCode: 'BEP-892', planItemId: 'item-old-1', authorName: 'Mẹ', content: 'Ghi chú cũ 1', createdAt: '2026-09-10T10:05:00Z' },
+        { id: 'c-old-2', householdCode: 'BEP-892', planItemId: 'item-old-2', authorName: 'Bố', content: 'Ghi chú cũ 2', createdAt: '2026-09-14T10:05:00Z' },
+        { id: 'c-valid-1', householdCode: 'BEP-892', planItemId: 'item-valid-1', authorName: 'Mẹ', content: 'Ghi chú giữ lại', createdAt: '2026-09-15T10:05:00Z' },
       ];
 
       const { remainingItems, remainingComments } = pruneExpiredPlanData(planItems, comments, thresholdDate);

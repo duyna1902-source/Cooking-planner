@@ -34,7 +34,7 @@ export interface PlanRepository {
   addComment(
     householdCode: string,
     planItemId: string,
-    authorNickname: string,
+    authorName: string,
     content: string
   ): Promise<PlanComment>;
   deleteCommentsByPlanItemId(householdCode: string, planItemId: string): Promise<void>;
@@ -111,10 +111,10 @@ export class InMemoryPlanRepository implements PlanRepository {
   async addComment(
     householdCode: string,
     planItemId: string,
-    authorNickname: string,
+    authorName: string,
     content: string
   ): Promise<PlanComment> {
-    const newComment = createPlanCommentEntity(householdCode, planItemId, authorNickname, content);
+    const newComment = createPlanCommentEntity(householdCode, planItemId, authorName, content);
     this.comments.push(newComment);
     return newComment;
   }
@@ -179,7 +179,13 @@ export class LocalStoragePlanRepository implements PlanRepository {
   private readComments(householdCode: string): PlanComment[] {
     try {
       const data = localStorage.getItem(this.getCommentsStorageKey(householdCode));
-      return data ? JSON.parse(data) : [];
+      if (!data) return [];
+      return (JSON.parse(data) as Array<PlanComment & { authorNickname?: string }>).map(
+        ({ authorNickname, ...comment }) => ({
+          ...comment,
+          authorName: comment.authorName ?? authorNickname ?? '',
+        })
+      );
     } catch {
       return [];
     }
@@ -265,11 +271,11 @@ export class LocalStoragePlanRepository implements PlanRepository {
   async addComment(
     householdCode: string,
     planItemId: string,
-    authorNickname: string,
+    authorName: string,
     content: string
   ): Promise<PlanComment> {
     const comments = this.readComments(householdCode);
-    const newComment = createPlanCommentEntity(householdCode, planItemId, authorNickname, content);
+    const newComment = createPlanCommentEntity(householdCode, planItemId, authorName, content);
     comments.push(newComment);
     this.writeComments(householdCode, comments);
     return newComment;

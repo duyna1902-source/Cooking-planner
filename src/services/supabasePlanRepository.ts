@@ -44,7 +44,7 @@ export function mapCommentRowToEntity(row: PlanCommentRow): PlanComment {
     id: row.id,
     householdCode: row.household_code,
     planItemId: row.plan_item_id,
-    authorNickname: row.author_nickname,
+    authorName: row.author_nickname,
     content: row.content,
     createdAt: row.created_at,
   };
@@ -184,13 +184,13 @@ export class SupabasePlanRepository implements PlanRepository {
   async addComment(
     householdCode: string,
     planItemId: string,
-    authorNickname: string,
+    authorName: string,
     content: string
   ): Promise<PlanComment> {
     const validation = validateCommentInput({
       householdCode,
       planItemId,
-      authorNickname,
+      authorName,
       content,
     });
 
@@ -198,13 +198,13 @@ export class SupabasePlanRepository implements PlanRepository {
       throw new Error(validation.error);
     }
 
-    const comment = createPlanCommentEntity(householdCode, planItemId, authorNickname, content);
+    const comment = createPlanCommentEntity(householdCode, planItemId, authorName, content);
 
     const { error } = await this.client.from('plan_comments').insert({
       id: comment.id,
       household_code: comment.householdCode,
       plan_item_id: comment.planItemId,
-      author_nickname: comment.authorNickname,
+      author_nickname: comment.authorName,
       content: comment.content,
       created_at: comment.createdAt,
     });

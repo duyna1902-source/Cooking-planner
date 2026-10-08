@@ -18,7 +18,7 @@ import { Plus, Trash2, Utensils, ChevronLeft, ChevronRight, MessageSquare } from
 
 export interface PlanViewProps {
   householdCode?: string;
-  nickname?: string;
+  memberName?: string;
   dishRepository?: DishRepository;
   planRepository?: PlanRepository;
   initialDate?: string;
@@ -26,7 +26,7 @@ export interface PlanViewProps {
 
 export const PlanView: React.FC<PlanViewProps> = ({
   householdCode = '',
-  nickname = '',
+  memberName = '',
   dishRepository = defaultDishRepository,
   planRepository = defaultPlanRepository,
   initialDate,
@@ -420,7 +420,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
           dishTag={activeDishDetail.dishTag}
           planItemId={activeDishDetail.planItemId}
           householdCode={householdCode}
-          nickname={nickname}
+          authorName={memberName}
           planRepository={planRepository}
         />
       )}

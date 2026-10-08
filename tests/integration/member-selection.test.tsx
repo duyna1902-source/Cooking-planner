@@ -26,7 +26,7 @@ describe('Explicit Thành viên selection through App', () => {
     expect(screen.getByText('BEP-123')).toBeInTheDocument();
     await userEvent.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
     expect(screen.getByTestId('plan-view')).toBeInTheDocument();
-    expect(screen.getByTestId('nickname-badge')).toHaveTextContent('Mẹ');
+    expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
   });
   it('reloads the confirmed database after saving so a superseded refresh cannot hide a concurrent addition', async () => {
     const repository = new TestMemberRepository([sampleMember()]);
@@ -95,13 +95,13 @@ describe('Explicit Thành viên selection through App', () => {
     const first = render(<App storage={storage} memberRepository={repository} dishRepository={new InMemoryDishRepository()} planRepository={new InMemoryPlanRepository()} />);
     await userEvent.click(await within(first.container).findByRole('button', { name: 'Chọn Mẹ' }));
     const second = render(<App storage={storage} memberRepository={repository} dishRepository={new InMemoryDishRepository()} planRepository={new InMemoryPlanRepository()} />);
-    expect(within(first.container).getByTestId('nickname-badge')).toHaveTextContent('Mẹ');
+    expect(within(first.container).getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
     expect(await within(second.container).findByRole('button', { name: 'Chọn Bố' })).toBeInTheDocument();
     await userEvent.click(within(second.container).getByRole('button', { name: 'Chọn Bố' }));
     await userEvent.click(within(first.container).getByTestId('nav-menu-button'));
     await act(async () => { window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')); });
-    expect(within(first.container).getByTestId('nickname-badge')).toHaveTextContent('Mẹ');
-    expect(within(second.container).getByTestId('nickname-badge')).toHaveTextContent('Bố');
+    expect(within(first.container).getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
+    expect(within(second.container).getByTestId('member-name-badge')).toHaveTextContent('Bố');
     first.unmount(); second.unmount();
     render(<App storage={storage} memberRepository={repository} />);
     expect(await screen.findByRole('button', { name: 'Chọn Mẹ' })).toBeInTheDocument();

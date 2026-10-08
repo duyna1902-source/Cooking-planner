@@ -1,7 +1,7 @@
 # 01: Chọn Thành viên và lưu danh sách theo Gia đình
 
 Type: task
-Status: claimed
+Status: resolved
 
 ## What to build
 
@@ -37,3 +37,11 @@ Bảng public.member đã được tạo và hỗ trợ đọc/thêm cùng Realt
 
 - 2026-10-08: Triển khai theo implement-spec trên nhánh codex/household-users-integration; dùng ranh giới App và repository đã ghi trong spec. Các ticket con vẫn là bản nháp; ticket 01 là phạm vi triển khai đầy đủ.
 - 2026-10-08: Xuất bản theo yêu cầu dùng skill to-spec, cập nhật ticket hiện có thành phạm vi đầy đủ và đặt ready-for-agent. Chưa bắt đầu triển khai frontend hoặc bổ sung quyền xóa database trong bước xuất bản đặc tả.
+
+## Answer
+
+- Đã triển khai màn hình **Bạn là ai?** với danh sách Thành viên theo Gia đình, chọn độc lập theo tab/phiên, thêm tên sau khi database xác nhận, xóa có xác nhận và đồng bộ Realtime.
+- Đã thêm repository Supabase, policy DELETE và replica identity FULL cho `public.member`, đồng thời giữ nguyên Menu, Kế hoạch và bình luận cũ khi xóa Thành viên.
+- Đã nối tên Thành viên đã chọn vào header, Kế hoạch và tác giả bình luận mới; không khôi phục hoặc tự tạo từ Biệt danh cũ.
+- Đã kiểm thử App qua repository được tiêm, kiểm thử database Supabase thật, hai phiên trình duyệt, Realtime và viewport mobile. Chi tiết: [implementation.md](../implementation.md), [live-verification.md](../live-verification.md).
+- Xác nhận: `npm test` — 149 tests / 18 files; `npm run typecheck`; `npm run build`; `git diff --check`.

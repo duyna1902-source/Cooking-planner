@@ -43,4 +43,4 @@ Kiểm tra ứng dụng thật tại `http://127.0.0.1:5188/`, dùng các Gia đ
 
 ![Xác nhận xóa Thành viên](./live-delete-confirm.jpg)
 
-Suite hồi quy và review hai trục sẽ được bổ sung trước khi giải quyết ticket.
+Suite hồi quy và review hai trục đã hoàn tất trước khi giải quyết ticket.

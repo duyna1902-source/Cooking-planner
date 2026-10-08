@@ -68,10 +68,10 @@ export const App: React.FC<AppProps> = ({ storage = defaultHouseholdStorage, dis
     <div data-testid="app-shell" className="w-full max-w-[420px] h-full sm:h-[min(900px,calc(100dvh_-_2rem))] bg-[#FAFBFD] shadow-2xl sm:rounded-[36px] overflow-hidden flex flex-col border-0 sm:border-[6px] sm:border-slate-800 relative">
       {!householdCode || isSwitchingHousehold ? <OnboardingModal onComplete={handleOnboardingComplete} /> : !member ?
         <MemberSelection key={householdCode} householdCode={householdCode} repository={activeMemberRepo} onChoose={(chosen) => { setMember(chosen); setActiveTab('plan'); }} /> : <>
-          <AppHeader householdCode={householdCode} nickname={member.name} activeTab={activeTab} isOnline={activeIsOnline}
+          <AppHeader householdCode={householdCode} memberName={member.name} activeTab={activeTab} isOnline={activeIsOnline}
             onOpenShare={() => setIsShareModalOpen(true)} onChangeHousehold={activeTab === 'plan' ? () => setIsSwitchingHousehold(true) : undefined} />
           <main className="flex-1 min-h-0 flex flex-col">
-            {activeTab === 'plan' ? <PlanView householdCode={householdCode} nickname={member.name} dishRepository={activeDishRepo} planRepository={activePlanRepo} /> :
+            {activeTab === 'plan' ? <PlanView householdCode={householdCode} memberName={member.name} dishRepository={activeDishRepo} planRepository={activePlanRepo} /> :
               <MenuView householdCode={householdCode} dishRepository={activeDishRepo} planRepository={activePlanRepo} />}
           </main>
           <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />

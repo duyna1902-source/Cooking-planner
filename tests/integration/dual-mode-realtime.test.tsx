@@ -29,7 +29,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       render(
         <AppHeader
           householdCode="NHA123"
-          nickname="Mẹ"
+          memberName="Mẹ"
           activeTab="plan"
           isOnline={false}
         />
@@ -45,7 +45,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       render(
         <AppHeader
           householdCode="NHA123"
-          nickname="Mẹ"
+          memberName="Mẹ"
           activeTab="plan"
           isOnline={true}
         />
