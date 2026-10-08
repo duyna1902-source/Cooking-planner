@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Check, Home, Plus, Trash2, Users, UtensilsCrossed, X } from 'lucide-react';
-import { Member, normalizeMemberName, memberNameKey, sortMembers, MAX_MEMBERS_PER_HOUSEHOLD } from '../domain/member';
+import { Member, normalizeMemberName, memberNameKey, sortMembers, MAX_MEMBERS, validateMemberCapacity, MemberError } from '../domain/member';
 import { MemberRepository } from '../services/memberRepository';
 import './MemberSelection.css';
 
@@ -109,10 +109,7 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
     if (busy.current) return;
     const operationSession = session.current;
     try {
-      if (members.length >= MAX_MEMBERS_PER_HOUSEHOLD) {
-        setFormError('Gia đình đã có tối đa 6 Thành viên.');
-        return;
-      }
+      validateMemberCapacity(members.length);
       const clean = normalizeMemberName(name);
       if (members.some(member => memberNameKey(member.name) === memberNameKey(clean))) {
         setFormError('Tên này đã có trong Gia đình. Hãy chọn Thành viên đó.');
@@ -132,7 +129,13 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
       setNotice(`Đã thêm ${added.name}. Chọn một Thành viên để vào Kế hoạch.`);
       reload.current();
     } catch (cause) {
-      if (session.current === operationSession) setFormError(cause instanceof Error ? cause.message : 'Không thể lưu. Hãy thử lại.');
+      if (session.current === operationSession) {
+        if (cause instanceof MemberError) {
+          setFormError(cause.message);
+        } else {
+          setFormError(cause instanceof Error ? cause.message : 'Không thể lưu. Hãy thử lại.');
+        }
+      }
     } finally {
       if (session.current === operationSession) { busy.current = false; setSaving(false); }
     }
@@ -165,7 +168,7 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
   const modalOpen = adding || !!toDelete;
   const listReady = !loading && !error;
   const isCompact = members.length >= 5;
-  const gridColumns = members.length >= 5 ? 3 : 2;
+  const gridColumns = isCompact ? 3 : 2;
 
   return <main className={`member-selection ${isCompact ? 'ms-compact' : ''}`} data-testid="member-selection-root" data-compact={isCompact ? 'true' : undefined}>
     <div className="ms-surface" data-testid="member-selection-surface" aria-hidden={modalOpen || undefined}>
@@ -193,12 +196,11 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
           className={`ms-grid ms-grid-cols-${gridColumns} ${managing ? 'ms-managing' : ''}`}
           data-testid="member-grid"
           data-columns={gridColumns}
-          data-mode={`${gridColumns}-col`}
         >
           {members.map((member, index) => {
             const tone = tones[index % tones.length];
             return <button className="ms-member" key={member.id} disabled={!listReady || modalOpen} aria-label={`${managing ? 'Xóa' : 'Chọn'} ${member.name}`}
-              onClick={() => { if (managing) { setToDelete(member); setFormError(''); } else onChoose(member); }}>
+              onClick={() => { setNotice(''); if (managing) { setToDelete(member); setFormError(''); } else onChoose(member); }}>
               <span className="ms-avatar-wrapper" aria-hidden="true"><span className="ms-avatar" style={{ '--avatar-bg': tone.background, '--avatar-ink': tone.color, '--avatar-accent': tone.accent } as CSSProperties}>
                 <span className="ms-avatar-letter">{Array.from(member.name)[0]?.toLocaleUpperCase('vi')}</span><span className="ms-avatar-dot" />
               </span>{managing && <span className="ms-delete-mark"><Trash2 size={13} /></span>}</span><span className="ms-member-name">{member.name}</span>
@@ -208,7 +210,7 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
       </div>
       {!managing && (
         <div className="ms-add-area" data-testid="ms-add-area">
-          {members.length >= MAX_MEMBERS_PER_HOUSEHOLD ? (
+          {members.length >= MAX_MEMBERS ? (
             <p className="ms-capacity-notice" role="status">
               Đã đạt tối đa 6 Thành viên trong Gia đình
             </p>

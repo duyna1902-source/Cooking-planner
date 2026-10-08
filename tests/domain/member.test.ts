@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
+  MAX_MEMBERS,
   MAX_MEMBERS_PER_HOUSEHOLD,
+  validateMemberCapacity,
   normalizeMemberName,
   memberNameKey,
   sortMembers,
@@ -9,8 +11,22 @@ import {
 } from '../../src/domain/member';
 
 describe('Member domain logic', () => {
-  it('defines MAX_MEMBERS_PER_HOUSEHOLD as 6', () => {
+  it('defines MAX_MEMBERS as 6 and retains MAX_MEMBERS_PER_HOUSEHOLD alias', () => {
+    expect(MAX_MEMBERS).toBe(6);
     expect(MAX_MEMBERS_PER_HOUSEHOLD).toBe(6);
+  });
+
+  it('validates member capacity and throws MemberError when limit is reached', () => {
+    expect(() => validateMemberCapacity(0)).not.toThrow();
+    expect(() => validateMemberCapacity(5)).not.toThrow();
+    expect(() => validateMemberCapacity(6)).toThrow(MemberError);
+    expect(() => validateMemberCapacity(7)).toThrow('Gia đình đã có tối đa 6 Thành viên.');
+    try {
+      validateMemberCapacity(6);
+    } catch (err) {
+      expect(err).toBeInstanceOf(MemberError);
+      expect((err as MemberError).code).toBe('capacity-exceeded');
+    }
   });
 
   it('normalizes member names and trims whitespace', () => {
