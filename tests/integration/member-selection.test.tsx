@@ -250,4 +250,102 @@ describe('Explicit Thành viên selection through App', () => {
     expect(await screen.findByText('Cả nhà bắt đầu từ bạn')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '+ Thêm thành viên' })).toBeInTheDocument();
   });
+
+  describe('Zero-Scroll and Adaptive Grid Layout (Ticket 01)', () => {
+    it('enforces a zero-scroll flex structure and eliminates the scroll container', async () => {
+      const repository = new TestMemberRepository([sampleMember('Mẹ'), sampleMember('Bố')]);
+      render(<App storage={new InMemoryHouseholdStorage('BEP-123')} memberRepository={repository} />);
+
+      expect(await screen.findByRole('heading', { name: 'Bạn là ai?' })).toBeInTheDocument();
+
+      const root = screen.getByTestId('member-selection-root');
+      expect(root).toHaveClass('member-selection');
+      // Ensure no scroll container is present
+      expect(document.querySelector('.ms-scroll')).not.toBeInTheDocument();
+    });
+
+    it('renders a 2-column grid and shows greeting art and footer quote for 1 to 4 members', async () => {
+      const repository = new TestMemberRepository([
+        sampleMember('Mẹ'),
+        sampleMember('Bố'),
+        sampleMember('An'),
+        sampleMember('Linh'),
+      ]);
+      render(<App storage={new InMemoryHouseholdStorage('BEP-123')} memberRepository={repository} />);
+
+      expect(await screen.findByRole('button', { name: 'Chọn Mẹ' })).toBeInTheDocument();
+
+      const root = screen.getByTestId('member-selection-root');
+      expect(root).not.toHaveAttribute('data-compact', 'true');
+
+      const grid = screen.getByTestId('member-grid');
+      expect(grid).toHaveAttribute('data-columns', '2');
+      expect(grid).toHaveClass('ms-grid-cols-2');
+
+      // Artwork, slogan, and footer quote are visible in 1-4 members mode
+      expect(screen.getByTestId('ms-greeting-art')).toBeInTheDocument();
+      expect(screen.getByText('BỮA CƠM NHÀ, CẢ NHÀ CÙNG LO')).toBeInTheDocument();
+      expect(screen.getByText(/Cùng nhau, bữa cơm ngon hơn\./)).toBeInTheDocument();
+    });
+
+    it('switches to a 3-column grid and enables progressive compaction (hiding artwork and footer quote) for 5 to 6 members', async () => {
+      const repository = new TestMemberRepository([
+        sampleMember('Mẹ'),
+        sampleMember('Bố'),
+        sampleMember('An'),
+        sampleMember('Linh'),
+        sampleMember('Bà'),
+      ]);
+      render(<App storage={new InMemoryHouseholdStorage('BEP-123')} memberRepository={repository} />);
+
+      expect(await screen.findByRole('button', { name: 'Chọn Bà' })).toBeInTheDocument();
+
+      const root = screen.getByTestId('member-selection-root');
+      expect(root).toHaveAttribute('data-compact', 'true');
+
+      const grid = screen.getByTestId('member-grid');
+      expect(grid).toHaveAttribute('data-columns', '3');
+      expect(grid).toHaveClass('ms-grid-cols-3');
+
+      // Artwork, slogan, and footer quote are hidden in compact mode
+      expect(screen.queryByTestId('ms-greeting-art')).not.toBeInTheDocument();
+      expect(screen.queryByText('BỮA CƠM NHÀ, CẢ NHÀ CÙNG LO')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Cùng nhau, bữa cơm ngon hơn\./)).not.toBeInTheDocument();
+    });
+
+    it('streamlines the "+ Thêm thành viên" button into a flat pill and removes the secondary caption', async () => {
+      const repository = new TestMemberRepository([sampleMember('Mẹ')]);
+      render(<App storage={new InMemoryHouseholdStorage('BEP-123')} memberRepository={repository} />);
+
+      const addBtn = await screen.findByRole('button', { name: '+ Thêm thành viên' });
+      expect(addBtn).toBeInTheDocument();
+      expect(addBtn).toHaveClass('ms-add');
+
+      // Secondary caption is removed
+      expect(screen.queryByText('Mỗi người một tên. Cùng một căn bếp.')).not.toBeInTheDocument();
+
+      // Clicking add button still opens the add modal
+      await userEvent.click(addBtn);
+      expect(screen.getByRole('dialog')).toHaveAccessibleName('Thêm thành viên');
+      expect(screen.getByRole('textbox', { name: 'Tên Thành viên' })).toBeInTheDocument();
+    });
+
+    it('supports full interactive selection to enter PlanView from both 2-column and 3-column layouts', async () => {
+      const repository = new TestMemberRepository([
+        sampleMember('Mẹ'),
+        sampleMember('Bố'),
+        sampleMember('An'),
+        sampleMember('Linh'),
+        sampleMember('Bà'),
+      ]);
+      render(<App storage={new InMemoryHouseholdStorage('BEP-123')} memberRepository={repository} dishRepository={new InMemoryDishRepository()} planRepository={new InMemoryPlanRepository()} />);
+
+      const memberBtn = await screen.findByRole('button', { name: 'Chọn Bà' });
+      await userEvent.click(memberBtn);
+
+      expect(screen.getByTestId('plan-view')).toBeInTheDocument();
+      expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Bà');
+    });
+  });
 });
+
