@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, act, within } from '@testing-library/react';
+import { render, screen, act, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../../src/App';
 import { InMemoryHouseholdStorage } from '../../src/services/storage';
@@ -403,6 +403,60 @@ describe('Explicit Thành viên selection through App', () => {
       expect(addMemberSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe('Floating Toast and Delete Management Mode Integration (Ticket 03)', () => {
+    it('displays floating toast upon adding member and auto-dismisses after 3 seconds without pushing layout', async () => {
+      vi.useFakeTimers();
+      try {
+        const repository = new TestMemberRepository([sampleMember('Mẹ')]);
+        render(<App storage={new InMemoryHouseholdStorage('BEP-123')} memberRepository={repository} />);
+
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(50);
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: '+ Thêm thành viên' }));
+        fireEvent.change(screen.getByRole('textbox', { name: 'Tên Thành viên' }), { target: { value: 'Bố' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Lưu Thành viên' }));
+
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(50);
+        });
+
+        const toast = screen.getByRole('status');
+        expect(toast).toHaveTextContent('Đã thêm Bố');
+        expect(toast).toHaveClass('ms-toast');
+        expect(toast).toHaveClass('ms-notice');
+
+        // Advance 3000ms
+        act(() => {
+          vi.advanceTimersByTime(3100);
+        });
+
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('hides add action area when delete mode is active and restores it when exiting in App', async () => {
+      const repository = new TestMemberRepository([sampleMember('Mẹ'), sampleMember('Bố')]);
+      render(<App storage={new InMemoryHouseholdStorage('BEP-123')} memberRepository={repository} />);
+
+      expect(await screen.findByRole('button', { name: '+ Thêm thành viên' })).toBeInTheDocument();
+
+      // Enter delete mode
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa' }));
+      expect(screen.queryByRole('button', { name: '+ Thêm thành viên' })).not.toBeInTheDocument();
+      expect(document.querySelector('.ms-add-area')).not.toBeInTheDocument();
+
+      // Exit delete mode
+      await userEvent.click(screen.getByRole('button', { name: 'Xong' }));
+      expect(await screen.findByRole('button', { name: '+ Thêm thành viên' })).toBeInTheDocument();
+      expect(document.querySelector('.ms-add-area')).toBeInTheDocument();
+    });
+  });
 });
+
 
 
