@@ -23,9 +23,11 @@ Tài liệu này hướng dẫn cách kết nối cơ sở dữ liệu Supabase 
 3. Mở file [schema.sql](file:///d:/Project/Cooking/supabase/schema.sql) trong thư mục `supabase/schema.sql`, sao chép toàn bộ nội dung và dán vào ô soạn thảo SQL.
 4. Bấm nút **Run** (hoặc `Ctrl + Enter` / `Cmd + Enter`).
 5. Kết quả báo `Success. No rows returned` là cơ sở dữ liệu đã sẵn sàng với:
-   - 4 bảng: `households`, `dishes`, `plan_items`, `plan_comments`.
+   - 5 bảng: `households`, `dishes`, `plan_items`, `plan_comments`, `member`.
    - Ràng buộc tự động xóa tầng (`ON DELETE CASCADE`).
    - Kênh Supabase Realtime qua WebSockets.
+
+Với project đã có 4 bảng cũ, chạy riêng `supabase/migrations/20261008_create_member.sql` trong SQL Editor để thêm bảng `member`, ràng buộc tên duy nhất theo Mã nhà và Supabase Realtime. Migration không tạo Thành viên mẫu hoặc tự chuyển Biệt danh cũ thành Thành viên.
 
 ---
 
