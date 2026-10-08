@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemberSelection } from '../../src/components/MemberSelection';
 import { TestMemberRepository, sampleMember } from '../support/memberRepository';
@@ -261,5 +261,204 @@ describe('MemberSelection Component (Ticket 01)', () => {
       expect(await screen.findByRole('button', { name: '+ Thêm thành viên' })).toBeInTheDocument();
     });
   });
-});
 
+  describe('Floating Toast and Delete Management Mode (Ticket 03)', () => {
+    it('renders notice as floating toast overlay with role="status" after adding a member', async () => {
+      const repository = new TestMemberRepository([sampleMember('Mẹ')]);
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      const addBtn = await screen.findByRole('button', { name: '+ Thêm thành viên' });
+      await userEvent.click(addBtn);
+
+      const input = screen.getByRole('textbox', { name: 'Tên Thành viên' });
+      await userEvent.type(input, 'Bố');
+      await userEvent.click(screen.getByRole('button', { name: 'Lưu Thành viên' }));
+
+      const toast = await screen.findByRole('status');
+      expect(toast).toHaveTextContent('Đã thêm Bố. Chọn một Thành viên để vào Kế hoạch.');
+      expect(toast).toHaveClass('ms-toast');
+      expect(toast).toHaveClass('ms-notice');
+    });
+
+    it('auto-dismisses the toast notice after 3000ms', async () => {
+      vi.useFakeTimers();
+      try {
+        const repository = new TestMemberRepository([sampleMember('Mẹ')]);
+        render(
+          <MemberSelection
+            householdCode="BEP-123"
+            repository={repository}
+            onChoose={vi.fn()}
+          />
+        );
+
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(50);
+        });
+
+        const addBtn = screen.getByRole('button', { name: '+ Thêm thành viên' });
+        fireEvent.click(addBtn);
+
+        const input = screen.getByRole('textbox', { name: 'Tên Thành viên' });
+        fireEvent.change(input, { target: { value: 'Bố' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Lưu Thành viên' }));
+
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(50);
+        });
+
+        const toast = screen.getByRole('status');
+        expect(toast).toBeInTheDocument();
+        expect(toast).toHaveTextContent('Đã thêm Bố');
+
+        // Advance by 2900ms - should still be visible
+        act(() => {
+          vi.advanceTimersByTime(2900);
+        });
+        expect(screen.getByRole('status')).toBeInTheDocument();
+
+        // Advance past 3000ms - should be dismissed
+        act(() => {
+          vi.advanceTimersByTime(200);
+        });
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('renders toast after deleting a member and auto-dismisses after 3000ms', async () => {
+      vi.useFakeTimers();
+      try {
+        const repository = new TestMemberRepository([sampleMember('Mẹ'), sampleMember('Bố')]);
+        render(
+          <MemberSelection
+            householdCode="BEP-123"
+            repository={repository}
+            onChoose={vi.fn()}
+          />
+        );
+
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(50);
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Xóa' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Xóa Mẹ' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Xóa thành viên', exact: true }));
+
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(50);
+        });
+
+        const toast = screen.getByRole('status');
+        expect(toast).toHaveTextContent('Đã xóa Mẹ khỏi danh sách Thành viên.');
+        expect(toast).toHaveClass('ms-toast');
+
+        // Advance past 3000ms
+        act(() => {
+          vi.advanceTimersByTime(3100);
+        });
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('hides the bottom "+ Thêm thành viên" action area when entering delete mode and restores it when exiting', async () => {
+      const repository = new TestMemberRepository([sampleMember('Mẹ'), sampleMember('Bố')]);
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      expect(await screen.findByRole('button', { name: '+ Thêm thành viên' })).toBeInTheDocument();
+      expect(document.querySelector('.ms-add-area')).toBeInTheDocument();
+
+      // Enter delete mode
+      const manageBtn = screen.getByRole('button', { name: 'Xóa' });
+      await userEvent.click(manageBtn);
+
+      // Bottom add area and button are hidden
+      expect(screen.queryByRole('button', { name: '+ Thêm thành viên' })).not.toBeInTheDocument();
+      expect(document.querySelector('.ms-add-area')).not.toBeInTheDocument();
+
+      // Exit delete mode
+      await userEvent.click(screen.getByRole('button', { name: 'Xong' }));
+
+      // Bottom add area and button reappear
+      expect(await screen.findByRole('button', { name: '+ Thêm thành viên' })).toBeInTheDocument();
+      expect(document.querySelector('.ms-add-area')).toBeInTheDocument();
+    });
+
+    it('hides capacity notice when entering delete mode with 6 members and restores it when exiting', async () => {
+      const repository = new TestMemberRepository([
+        sampleMember('Mẹ'),
+        sampleMember('Bố'),
+        sampleMember('An'),
+        sampleMember('Linh'),
+        sampleMember('Bà'),
+        sampleMember('Ông'),
+      ]);
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      expect(await screen.findByText('Đã đạt tối đa 6 Thành viên trong Gia đình')).toBeInTheDocument();
+      expect(document.querySelector('.ms-add-area')).toBeInTheDocument();
+
+      // Enter delete mode
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa' }));
+
+      // Capacity notice and bottom add area are completely hidden
+      expect(screen.queryByText('Đã đạt tối đa 6 Thành viên trong Gia đình')).not.toBeInTheDocument();
+      expect(document.querySelector('.ms-add-area')).not.toBeInTheDocument();
+
+      // Exit delete mode
+      await userEvent.click(screen.getByRole('button', { name: 'Xong' }));
+
+      // Capacity notice reappears
+      expect(await screen.findByText('Đã đạt tối đa 6 Thành viên trong Gia đình')).toBeInTheDocument();
+      expect(document.querySelector('.ms-add-area')).toBeInTheDocument();
+    });
+
+    it('restores "+ Thêm thành viên" when last member is deleted and delete mode auto-exits', async () => {
+      const repository = new TestMemberRepository([sampleMember('Mẹ')]);
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      expect(await screen.findByRole('button', { name: '+ Thêm thành viên' })).toBeInTheDocument();
+
+      // Enter delete mode
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa' }));
+      expect(screen.queryByRole('button', { name: '+ Thêm thành viên' })).not.toBeInTheDocument();
+
+      // Delete the only member
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa Mẹ' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa thành viên', exact: true }));
+
+      // Empty state reached, delete mode auto-exits, add button restored
+      expect(await screen.findByText('Cả nhà bắt đầu từ bạn')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '+ Thêm thành viên' })).toBeInTheDocument();
+      expect(document.querySelector('.ms-add-area')).toBeInTheDocument();
+    });
+  });
+});

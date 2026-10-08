@@ -96,6 +96,14 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
     return () => { alive = false; session.current++; request.current++; unsubscribe(); };
   }, [householdCode, repository]);
 
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => {
+      setNotice('');
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
   const addMember = async (event: React.FormEvent) => {
     event.preventDefault();
     if (busy.current) return;
@@ -198,18 +206,25 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
           })}
         </div>}
       </div>
-      <div className="ms-add-area">
-        {members.length >= MAX_MEMBERS_PER_HOUSEHOLD ? (
-          <p className="ms-capacity-notice" role="status">
-            Đã đạt tối đa 6 Thành viên trong Gia đình
-          </p>
-        ) : (
-          <button className="ms-add" aria-label="+ Thêm thành viên" disabled={!listReady || modalOpen} onClick={() => {
-            setName(''); setFormError(''); setAdding(true); setManaging(false); setNotice('');
-          }}><Plus size={18} />Thêm thành viên</button>
-        )}
-      </div>
-      {notice && <p className="ms-notice" role="status"><Check size={15} /><span>{notice}</span></p>}
+      {!managing && (
+        <div className="ms-add-area" data-testid="ms-add-area">
+          {members.length >= MAX_MEMBERS_PER_HOUSEHOLD ? (
+            <p className="ms-capacity-notice" role="status">
+              Đã đạt tối đa 6 Thành viên trong Gia đình
+            </p>
+          ) : (
+            <button className="ms-add" aria-label="+ Thêm thành viên" disabled={!listReady || modalOpen} onClick={() => {
+              setName(''); setFormError(''); setAdding(true); setManaging(false); setNotice('');
+            }}><Plus size={18} />Thêm thành viên</button>
+          )}
+        </div>
+      )}
+      {notice && (
+        <p className="ms-notice ms-toast" role="status" data-testid="member-toast" onClick={() => setNotice('')}>
+          <Check size={15} />
+          <span>{notice}</span>
+        </p>
+      )}
       {!isCompact && <footer className="ms-footer" data-testid="ms-footer"><span />Cùng nhau, bữa cơm ngon hơn.<span /></footer>}
     </div>
     {adding && <MemberDialog title="Thêm thành viên" busy={saving} onClose={() => setAdding(false)}>
