@@ -8,6 +8,7 @@ import { MenuView } from '../../src/components/MenuView';
 import { InMemoryDishRepository } from '../../src/services/dishRepository';
 import { InMemoryPlanRepository } from '../../src/services/planRepository';
 import { InMemoryHouseholdStorage } from '../../src/services/storage';
+import { TestMemberRepository, sampleMember } from '../support/memberRepository';
 
 describe('Cascade Delete and Two-Week History Retention Integration (Ticket 05)', () => {
   let dishRepo: InMemoryDishRepository;
@@ -46,12 +47,14 @@ describe('Cascade Delete and Two-Week History Retention Integration (Ticket 05)'
       render(
         <App
           storage={storage}
+          memberRepository={new TestMemberRepository([sampleMember(nickname, householdCode)])}
           dishRepository={dishRepo}
           planRepository={planRepo}
         />
       );
 
       // Select Tuesday 29/09 where dish is scheduled
+      await user.click(await screen.findByRole('button', { name: `Chọn ${nickname}` }));
       await user.click(await screen.findByTestId('day-btn-1'));
 
       // Verify dish is visible in current week's plan

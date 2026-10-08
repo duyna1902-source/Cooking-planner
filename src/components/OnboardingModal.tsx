@@ -3,7 +3,6 @@ import {
   generateHouseholdCode, 
   normalizeHouseholdCode, 
   isValidHouseholdCode, 
-  isValidNickname, 
   createShareUrl 
 } from '../domain/household';
 import { Home, Users, ArrowRight, Copy, Check, Sparkles } from 'lucide-react';
@@ -11,7 +10,7 @@ import { useClipboardCopy } from '../hooks/useClipboardCopy';
 
 interface OnboardingModalProps {
   initialCode?: string | null;
-  onComplete: (householdCode: string, nickname: string) => void;
+  onComplete: (householdCode: string) => void;
 }
 
 type OnboardingStep = 'choose' | 'create' | 'join' | 'created_success';
@@ -26,7 +25,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   const [generatedCode, setGeneratedCode] = useState<string>(() => generateHouseholdCode());
   const [inputCode, setInputCode] = useState<string>(initialCode || '');
-  const [nickname, setNickname] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const { copied, copy } = useClipboardCopy(2500);
 
@@ -43,16 +41,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   const handleConfirmCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValidNickname(nickname)) {
-      setError('Vui lòng nhập biệt danh của bạn (tối đa 30 ký tự)');
-      return;
-    }
     setError(null);
     setStep('created_success');
   };
 
   const handleFinishCreate = () => {
-    onComplete(generatedCode, nickname.trim());
+    onComplete(generatedCode);
   };
 
   const handleConfirmJoin = (e: React.FormEvent) => {
@@ -62,12 +56,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       setError('Mã nhà không hợp lệ (ít nhất 3 ký tự)');
       return;
     }
-    if (!isValidNickname(nickname)) {
-      setError('Vui lòng nhập biệt danh của bạn (tối đa 30 ký tự)');
-      return;
-    }
     setError(null);
-    onComplete(cleanCode, nickname.trim());
+    onComplete(cleanCode);
   };
 
   const handleCopyLink = () => {
@@ -120,7 +110,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           </div>
         )}
 
-        {/* Step 2: Create Household - enter nickname */}
+        {/* Step 2: Create Gia đình */}
         {step === 'create' && (
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -148,24 +138,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             <form onSubmit={handleConfirmCreate} className="space-y-4">
-              <div>
-                <label htmlFor="create-nickname-input" className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Biệt danh của bạn trong nhà:
-                </label>
-                <input
-                  id="create-nickname-input"
-                  data-testid="nickname-input"
-                  type="text"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="Ví dụ: Mẹ, Bố, An..."
-                  autoFocus
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] focus:bg-white transition"
-                />
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  Biệt danh giúp cả nhà nhận biết ai đã lên kế hoạch hoặc dặn dò.
-                </span>
-              </div>
+              <p className="text-xs text-slate-500">Sau khi tạo Gia đình, hãy thêm và chọn Thành viên để vào Kế hoạch.</p>
 
               {error && (
                 <div data-testid="error-message" className="text-xs text-rose-600 font-medium bg-rose-50 p-2.5 rounded-xl border border-rose-100">
@@ -274,7 +247,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               {!initialCode && (
                 <div>
                   <label htmlFor="join-code-input" className="block text-xs font-semibold text-slate-700 mb-1">
-                    Mã nhà (Household Code):
+                    Mã nhà:
                   </label>
                   <input
                     id="join-code-input"
@@ -289,21 +262,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 </div>
               )}
 
-              <div>
-                <label htmlFor="join-nickname-input" className="block text-xs font-semibold text-slate-700 mb-1">
-                  Biệt danh của bạn:
-                </label>
-                <input
-                  id="join-nickname-input"
-                  data-testid="nickname-input"
-                  type="text"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="Ví dụ: Mẹ, Bố, An..."
-                  autoFocus={Boolean(initialCode)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#5B7C99] focus:bg-white transition"
-                />
-              </div>
+              <p className="text-xs text-slate-500">Tiếp theo, chọn Thành viên của Gia đình này.</p>
 
               {error && (
                 <div data-testid="error-message" className="text-xs text-rose-600 font-medium bg-rose-50 p-2.5 rounded-xl border border-rose-100">

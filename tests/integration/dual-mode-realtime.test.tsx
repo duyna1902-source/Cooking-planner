@@ -7,6 +7,7 @@ import { formatDateToISO } from '../../src/domain/plan';
 import { InMemoryHouseholdStorage } from '../../src/services/storage';
 import { InMemoryDishRepository } from '../../src/services/dishRepository';
 import { InMemoryPlanRepository } from '../../src/services/planRepository';
+import { TestMemberRepository, sampleMember } from '../support/memberRepository';
 import {
   setSupabaseClientForTesting,
 } from '../../src/services/supabaseClient';
@@ -65,7 +66,8 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       import.meta.env.VITE_SUPABASE_ANON_KEY = '';
 
       const storage = new InMemoryHouseholdStorage('NHA123', 'Mẹ');
-      render(<App storage={storage} />);
+      render(<App storage={storage} memberRepository={new TestMemberRepository([sampleMember('Mẹ', 'NHA123')])} />);
+      await userEvent.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
 
       await waitFor(() => {
         const badge = screen.getByTestId('sync-status-badge');
@@ -78,7 +80,8 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       setSupabaseClientForTesting(mockClient);
 
       const storage = new InMemoryHouseholdStorage('NHA123', 'Mẹ');
-      render(<App storage={storage} isOnline={true} />);
+      render(<App storage={storage} isOnline={true} memberRepository={new TestMemberRepository([sampleMember('Mẹ', 'NHA123')])} />);
+      await userEvent.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
 
       await waitFor(() => {
         const badge = screen.getByTestId('sync-status-badge');
@@ -112,6 +115,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       render(
         <App
           storage={storage}
+          memberRepository={new TestMemberRepository([sampleMember('Mẹ', 'NHA123')])}
           dishRepository={dishRepo}
           planRepository={planRepo}
           isOnline={true}
@@ -119,6 +123,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       );
 
       // Verify initial empty state
+      await userEvent.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
       await waitFor(() => {
         expect(screen.getByText(/Chưa có Món ăn nào cho Bữa Tối/i)).toBeInTheDocument();
       });
@@ -157,6 +162,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       render(
         <App
           storage={storage}
+          memberRepository={new TestMemberRepository([sampleMember('Mẹ', 'NHA123')])}
           dishRepository={dishRepo}
           planRepository={planRepo}
           isOnline={true}
@@ -164,6 +170,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       );
 
       // Switch to Menu tab
+      await user.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
       const menuTabButton = screen.getByRole('button', { name: /Menu/i });
       await user.click(menuTabButton);
 
@@ -214,6 +221,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       render(
         <App
           storage={storage}
+          memberRepository={new TestMemberRepository([sampleMember('Mẹ', 'NHA123')])}
           dishRepository={dishRepo}
           planRepository={planRepo}
           isOnline={true}
@@ -221,6 +229,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       );
 
       // Open DishDetailDrawer by clicking the dish card
+      await user.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
       await waitFor(() => {
         expect(screen.getByText('Canh chua cá lóc')).toBeInTheDocument();
       });

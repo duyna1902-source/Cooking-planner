@@ -90,10 +90,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <button
             onClick={onChangeHousehold}
             data-testid="switch-household-button"
-            title="Đổi hoặc rời Nhà"
+            title="Đổi gia đình"
             className="text-[11px] text-slate-400 hover:text-slate-600 px-1 py-1"
           >
-            Đổi
+            Đổi gia đình
           </button>
         )}
       </div>

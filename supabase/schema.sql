@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS plan_comments (
 
 CREATE INDEX IF NOT EXISTS idx_plan_comments_item ON plan_comments(household_code, plan_item_id);
 
--- 5. BẢNG MEMBER (Thành viên chung theo Gia đình, chỉ đọc/thêm trong bản đầu)
+-- 5. BẢNG MEMBER (Thành viên chung theo Gia đình)
 CREATE TABLE IF NOT EXISTS public.member (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   household_code TEXT NOT NULL
@@ -109,10 +109,17 @@ BEGIN
     CREATE POLICY "Add household members" ON public.member
       FOR INSERT TO anon WITH CHECK (true);
   END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'member'
+      AND policyname = 'Delete household members'
+  ) THEN
+    CREATE POLICY "Delete household members" ON public.member
+      FOR DELETE TO anon USING (true);
+  END IF;
 END;
 $member_policies$;
 
-GRANT SELECT, INSERT ON public.member TO anon;
+GRANT SELECT, INSERT, DELETE ON public.member TO anon;
 
 -- ==============================================================================
 -- SUPABASE REALTIME REPLICATION
@@ -123,6 +130,7 @@ GRANT SELECT, INSERT ON public.member TO anon;
 ALTER TABLE dishes REPLICA IDENTITY FULL;
 ALTER TABLE plan_items REPLICA IDENTITY FULL;
 ALTER TABLE plan_comments REPLICA IDENTITY FULL;
+ALTER TABLE public.member REPLICA IDENTITY FULL;
 
 -- Thêm các bảng vào publication realtime
 DO $$

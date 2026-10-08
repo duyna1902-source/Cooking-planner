@@ -5,3 +5,5 @@ export * from './supabaseClient';
 export * from './supabaseDishRepository';
 export * from './supabasePlanRepository';
 export * from './repositoryFactory';
+export * from './memberRepository';
+export * from './supabaseMemberRepository';
