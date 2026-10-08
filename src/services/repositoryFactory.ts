@@ -4,6 +4,13 @@ import { DishRepository, LocalStorageDishRepository } from './dishRepository';
 import { PlanRepository, LocalStoragePlanRepository } from './planRepository';
 import { SupabaseDishRepository } from './supabaseDishRepository';
 import { SupabasePlanRepository } from './supabasePlanRepository';
+import { MemberRepository, UnavailableMemberRepository } from './memberRepository';
+import { SupabaseMemberRepository } from './supabaseMemberRepository';
+
+export function createMemberRepository(client?: SupabaseClient | null): MemberRepository {
+  const sbClient = client !== undefined ? client : getSupabaseClient();
+  return sbClient ? new SupabaseMemberRepository(sbClient) : new UnavailableMemberRepository();
+}
 
 export function createPlanRepository(client?: SupabaseClient | null): PlanRepository {
   const sbClient = client !== undefined ? client : getSupabaseClient();
@@ -27,6 +34,7 @@ export function createDishRepository(
 export interface ResolvedRepositories {
   dishRepository: DishRepository;
   planRepository: PlanRepository;
+  memberRepository: MemberRepository;
   isOnline: boolean;
 }
 
@@ -40,6 +48,7 @@ export function resolveRepositories(client?: SupabaseClient | null): ResolvedRep
   return {
     dishRepository,
     planRepository,
+    memberRepository: createMemberRepository(sbClient),
     isOnline: online,
   };
 }
