@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Check, Home, Plus, Trash2, Users, UtensilsCrossed, X } from 'lucide-react';
-import { Member, normalizeMemberName, memberNameKey, sortMembers } from '../domain/member';
+import { Member, normalizeMemberName, memberNameKey, sortMembers, MAX_MEMBERS_PER_HOUSEHOLD } from '../domain/member';
 import { MemberRepository } from '../services/memberRepository';
 import './MemberSelection.css';
 
@@ -101,6 +101,10 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
     if (busy.current) return;
     const operationSession = session.current;
     try {
+      if (members.length >= MAX_MEMBERS_PER_HOUSEHOLD) {
+        setFormError('Gia đình đã có tối đa 6 Thành viên.');
+        return;
+      }
       const clean = normalizeMemberName(name);
       if (members.some(member => memberNameKey(member.name) === memberNameKey(clean))) {
         setFormError('Tên này đã có trong Gia đình. Hãy chọn Thành viên đó.');
@@ -195,9 +199,15 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
         </div>}
       </div>
       <div className="ms-add-area">
-        <button className="ms-add" aria-label="+ Thêm thành viên" disabled={!listReady || modalOpen} onClick={() => {
-          setName(''); setFormError(''); setAdding(true); setManaging(false); setNotice('');
-        }}><Plus size={18} />Thêm thành viên</button>
+        {members.length >= MAX_MEMBERS_PER_HOUSEHOLD ? (
+          <p className="ms-capacity-notice" role="status">
+            Đã đạt tối đa 6 Thành viên trong Gia đình
+          </p>
+        ) : (
+          <button className="ms-add" aria-label="+ Thêm thành viên" disabled={!listReady || modalOpen} onClick={() => {
+            setName(''); setFormError(''); setAdding(true); setManaging(false); setNotice('');
+          }}><Plus size={18} />Thêm thành viên</button>
+        )}
       </div>
       {notice && <p className="ms-notice" role="status"><Check size={15} /><span>{notice}</span></p>}
       {!isCompact && <footer className="ms-footer" data-testid="ms-footer"><span />Cùng nhau, bữa cơm ngon hơn.<span /></footer>}
