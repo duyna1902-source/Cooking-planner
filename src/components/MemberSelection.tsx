@@ -152,25 +152,37 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
 
   const modalOpen = adding || !!toDelete;
   const listReady = !loading && !error;
-  return <main className="member-selection">
-    <div className="ms-surface" aria-hidden={modalOpen || undefined}>
+  const isCompact = members.length >= 5;
+  const gridColumns = members.length >= 5 ? 3 : 2;
+
+  return <main className={`member-selection ${isCompact ? 'ms-compact' : ''}`} data-testid="member-selection-root" data-compact={isCompact ? 'true' : undefined}>
+    <div className="ms-surface" data-testid="member-selection-surface" aria-hidden={modalOpen || undefined}>
       <header className="ms-brand-header">
         <span className="ms-brand"><UtensilsCrossed size={17} /><span>Bếp Gia Đình</span></span>
         <button className={`ms-manage ${managing ? 'active' : ''}`} disabled={!listReady || !members.length || modalOpen} aria-pressed={managing}
           onClick={() => { setManaging(!managing); setNotice(''); }}>{managing ? <Check size={14} /> : <Trash2 size={14} />}<span>{managing ? 'Xong' : 'Xóa'}</span></button>
       </header>
-      <div className="ms-scroll">
-        <div className="ms-greeting">
-          <div className="ms-greeting-art" aria-hidden="true"><span className="ms-art-sun" /><UtensilsCrossed size={29} strokeWidth={1.5} /><span className="ms-art-dot" /></div>
-          <p className="ms-eyebrow">BỮA CƠM NHÀ, CẢ NHÀ CÙNG LO</p>
-          <h1>Bạn là ai?</h1><p>{managing ? 'Chọn Thành viên bạn muốn xóa.' : 'Chọn Thành viên để vào Kế hoạch.'}</p>
-          <span className="ms-household"><Home size={11} />{householdCode}</span>
-        </div>
+      <div className="ms-greeting">
+        {!isCompact && (
+          <div className="ms-greeting-art" data-testid="ms-greeting-art" aria-hidden="true">
+            <span className="ms-art-sun" /><UtensilsCrossed size={29} strokeWidth={1.5} /><span className="ms-art-dot" />
+          </div>
+        )}
+        {!isCompact && <p className="ms-eyebrow" data-testid="ms-eyebrow">BỮA CƠM NHÀ, CẢ NHÀ CÙNG LO</p>}
+        <h1>Bạn là ai?</h1><p>{managing ? 'Chọn Thành viên bạn muốn xóa.' : 'Chọn Thành viên để vào Kế hoạch.'}</p>
+        <span className="ms-household"><Home size={11} />{householdCode}</span>
+      </div>
+      <div className="ms-member-container" data-testid="ms-member-container">
         {loading && !hasLoaded.current ? <p className="ms-feedback" role="status">Đang tải Thành viên…</p> : error ? <div className="ms-feedback">
           <p className="ms-error" role="alert">{error}</p><button className="ms-retry" onClick={() => reload.current()}>Thử lại</button>
         </div> : members.length === 0 ? <div className="ms-empty">
           <div className="ms-empty-art" aria-hidden="true"><Users size={33} strokeWidth={1.4} /></div><h2>Cả nhà bắt đầu từ bạn</h2><p>Thêm Thành viên đầu tiên<br />để cùng lên Kế hoạch bữa ăn.</p>
-        </div> : <div className={`ms-grid ${managing ? 'ms-managing' : ''}`}>
+        </div> : <div
+          className={`ms-grid ms-grid-cols-${gridColumns} ${managing ? 'ms-managing' : ''}`}
+          data-testid="member-grid"
+          data-columns={gridColumns}
+          data-mode={`${gridColumns}-col`}
+        >
           {members.map((member, index) => {
             const tone = tones[index % tones.length];
             return <button className="ms-member" key={member.id} disabled={!listReady || modalOpen} aria-label={`${managing ? 'Xóa' : 'Chọn'} ${member.name}`}
@@ -181,12 +193,14 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
             </button>;
           })}
         </div>}
-        <div className="ms-add-area"><button className="ms-add" aria-label="+ Thêm thành viên" disabled={!listReady || modalOpen} onClick={() => {
-          setName(''); setFormError(''); setAdding(true); setManaging(false); setNotice('');
-        }}><Plus size={18} />Thêm thành viên</button><p>Mỗi người một tên. Cùng một căn bếp.</p></div>
-        {notice && <p className="ms-notice" role="status"><Check size={15} /><span>{notice}</span></p>}
       </div>
-      <footer className="ms-footer"><span />Cùng nhau, bữa cơm ngon hơn.<span /></footer>
+      <div className="ms-add-area">
+        <button className="ms-add" aria-label="+ Thêm thành viên" disabled={!listReady || modalOpen} onClick={() => {
+          setName(''); setFormError(''); setAdding(true); setManaging(false); setNotice('');
+        }}><Plus size={18} />Thêm thành viên</button>
+      </div>
+      {notice && <p className="ms-notice" role="status"><Check size={15} /><span>{notice}</span></p>}
+      {!isCompact && <footer className="ms-footer" data-testid="ms-footer"><span />Cùng nhau, bữa cơm ngon hơn.<span /></footer>}
     </div>
     {adding && <MemberDialog title="Thêm thành viên" busy={saving} onClose={() => setAdding(false)}>
       <p>Tên giúp cả nhà nhận ra người viết bình luận.</p>
