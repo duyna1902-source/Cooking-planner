@@ -347,5 +347,62 @@ describe('Explicit Thành viên selection through App', () => {
       expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Bà');
     });
   });
+
+  describe('Six-Member Capacity Limit Enforcement (Ticket 02)', () => {
+    it('enforces 6-member limit by replacing add button with capacity notice and restoring it after deletion', async () => {
+      const repository = new TestMemberRepository([
+        sampleMember('Mẹ'),
+        sampleMember('Bố'),
+        sampleMember('An'),
+        sampleMember('Linh'),
+        sampleMember('Bà'),
+        sampleMember('Ông'),
+      ]);
+      render(<App storage={new InMemoryHouseholdStorage('BEP-123')} memberRepository={repository} />);
+
+      expect(await screen.findByRole('button', { name: 'Chọn Ông' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '+ Thêm thành viên' })).not.toBeInTheDocument();
+      expect(screen.getByText('Đã đạt tối đa 6 Thành viên trong Gia đình')).toBeInTheDocument();
+
+      // Delete one member to bring count to 5
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa Ông' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa thành viên', exact: true }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Xong' }));
+
+      // Button reappears automatically
+      expect(screen.queryByText('Đã đạt tối đa 6 Thành viên trong Gia đình')).not.toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: '+ Thêm thành viên' })).toBeInTheDocument();
+    });
+
+    it('guards against concurrent submission exceeding 6 members through App', async () => {
+      const repository = new TestMemberRepository([
+        sampleMember('Mẹ'),
+        sampleMember('Bố'),
+        sampleMember('An'),
+        sampleMember('Linh'),
+        sampleMember('Bà'),
+      ]);
+      const addMemberSpy = vi.spyOn(repository, 'addMember');
+      render(<App storage={new InMemoryHouseholdStorage('BEP-123')} memberRepository={repository} />);
+
+      const addBtn = await screen.findByRole('button', { name: '+ Thêm thành viên' });
+      await userEvent.click(addBtn);
+
+      await userEvent.type(screen.getByRole('textbox', { name: 'Tên Thành viên' }), 'Cháu');
+
+      // Concurrent race condition: 6th member added in background
+      await act(async () => {
+        await repository.addMember('BEP-123', 'Ông');
+      });
+      addMemberSpy.mockClear();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Lưu Thành viên' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Gia đình đã có tối đa 6 Thành viên.');
+      expect(addMemberSpy).not.toHaveBeenCalled();
+    });
+  });
 });
+
 

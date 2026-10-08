@@ -7,6 +7,8 @@ export interface Member {
 
 export type MemberErrorCode = 'duplicate-name' | 'invalid-name' | 'invalid-household' | 'unavailable';
 
+export const MAX_MEMBERS_PER_HOUSEHOLD = 6;
+
 export class MemberError extends Error {
   constructor(public readonly code: MemberErrorCode, message: string) { super(message); this.name = 'MemberError'; }
 }
