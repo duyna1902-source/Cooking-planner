@@ -89,23 +89,55 @@ describe('Explicit Thành viên selection through App', () => {
     expect(screen.getByRole('button', { name: 'Chọn An' })).toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
-  it('requires selection after reopening, preserves a running session, and keeps two tabs independent', async () => {
+  it('remembers member after reopening, preserves a running session, and keeps two tabs independent', async () => {
     const storage = new InMemoryHouseholdStorage('BEP-123', 'Legacy');
-    const repository = new TestMemberRepository([sampleMember('Mẹ'), sampleMember('Bố')]);
-    const first = render(<App storage={storage} memberRepository={repository} dishRepository={new InMemoryDishRepository()} planRepository={new InMemoryPlanRepository()} />);
+    const memberMe = sampleMember('Mẹ', 'BEP-123');
+    const memberBo = sampleMember('Bố', 'BEP-123');
+    const repository = new TestMemberRepository([memberMe, memberBo]);
+    const first = render(
+      <App
+        storage={storage}
+        memberRepository={repository}
+        dishRepository={new InMemoryDishRepository()}
+        planRepository={new InMemoryPlanRepository()}
+      />
+    );
     await userEvent.click(await within(first.container).findByRole('button', { name: 'Chọn Mẹ' }));
-    const second = render(<App storage={storage} memberRepository={repository} dishRepository={new InMemoryDishRepository()} planRepository={new InMemoryPlanRepository()} />);
     expect(within(first.container).getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
-    expect(await within(second.container).findByRole('button', { name: 'Chọn Bố' })).toBeInTheDocument();
-    await userEvent.click(within(second.container).getByRole('button', { name: 'Chọn Bố' }));
+
+    const second = render(
+      <App
+        storage={storage}
+        memberRepository={repository}
+        dishRepository={new InMemoryDishRepository()}
+        planRepository={new InMemoryPlanRepository()}
+      />
+    );
+    expect(await within(second.container).findByTestId('plan-view')).toBeInTheDocument();
+    expect(within(second.container).getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
+    await userEvent.click(within(second.container).getByRole('button', { name: /Đổi thành viên/i }));
+    await userEvent.click(await within(second.container).findByRole('button', { name: 'Chọn Bố' }));
+
     await userEvent.click(within(first.container).getByTestId('nav-menu-button'));
-    await act(async () => { window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')); });
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
     expect(within(first.container).getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
     expect(within(second.container).getByTestId('member-name-badge')).toHaveTextContent('Bố');
-    first.unmount(); second.unmount();
-    render(<App storage={storage} memberRepository={repository} />);
-    expect(await screen.findByRole('button', { name: 'Chọn Mẹ' })).toBeInTheDocument();
-    expect(screen.queryByTestId('plan-view')).not.toBeInTheDocument();
+
+    first.unmount();
+    second.unmount();
+    render(
+      <App
+        storage={storage}
+        memberRepository={repository}
+        dishRepository={new InMemoryDishRepository()}
+        planRepository={new InMemoryPlanRepository()}
+      />
+    );
+    expect(await screen.findByTestId('plan-view')).toBeInTheDocument();
+    expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Bố');
     expect(storage.getNickname()).toBe('Legacy');
   });
   it('keeps the database step blocked when Supabase is unavailable instead of restoring local identity', async () => {
