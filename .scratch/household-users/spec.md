@@ -1,5 +1,7 @@
 Status: completed
 
+> Cập nhật thiết kế 2026-10-10: [đặc tả điều hướng Gia đình](../household-navigation-ux/spec.md) và [ADR-0008](../../docs/adr/0008-remember-member-and-explicit-household-switch.md) thay các yêu cầu bên dưới về luôn chọn lại khi mở, cấm đổi Thành viên và cấm đổi Gia đình từ màn chọn. Bản tổng hợp mới đã được xác nhận và xuất bản với trạng thái ready-for-agent; nội dung cũ được giữ như lịch sử của phần đã triển khai.
+
 # Chọn Thành viên trước khi vào Kế hoạch
 
 ## Problem Statement

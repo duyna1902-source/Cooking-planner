@@ -4,6 +4,8 @@ status: accepted
 
 # Thành viên chung theo Gia đình và chọn lại mỗi lần mở
 
+**Cập nhật 2026-10-10:** [ADR-0008](./0008-remember-member-and-explicit-household-switch.md) thay thế các quyết định bên dưới về chọn lại mỗi lần mở, cấm đổi Thành viên và cấm về chọn Gia đình từ màn chọn Thành viên. Các quy tắc khác về Thành viên chung, database và bình luận vẫn áp dụng. Nội dung bên dưới được giữ để giải thích quyết định cũ.
+
 Thành viên là người có tên trong danh sách chung của một Gia đình, không có mật khẩu hoặc PIN; danh sách này được lưu trong database để dùng lại giữa các lần mở và các thiết bị. Quyết định này thay thế phần Biệt danh cục bộ trong ADR-0001: thiết bị vẫn nhớ Gia đình, nhưng luôn yêu cầu chọn Thành viên trước khi mở Kế hoạch ở mỗi lần tải trang, mở tab mới hoặc khởi động lại PWA, thay vì tự khôi phục danh tính từ lần trước. Menu và Kế hoạch tiếp tục dùng chung theo Gia đình; việc quay lại tab/PWA vẫn đang chạy từ nền giữ Thành viên đã chọn, và mỗi tab chọn độc lập.
 
 Thành viên mới chỉ xuất hiện sau khi database xác nhận đã lưu; mỗi tên là duy nhất trong Gia đình khi bỏ qua hoa/thường và khoảng trắng đầu/cuối, và danh sách đồng bộ ngay giữa các thiết bị. Khi tải, thêm hoặc xóa thất bại, giữ trạng thái phù hợp để thử lại; bản đầu không đồng bộ thay đổi Thành viên offline và không tự tạo Thành viên từ Biệt danh cục bộ cũ. Đây là ngoại lệ cho phần fallback local của ADR-0005: thao tác Thành viên yêu cầu database, không dùng local để vượt qua lỗi cloud; kiến trúc repository của Menu/Kế hoạch không thay đổi.

@@ -2,6 +2,8 @@
 
 Status: completed
 
+> Bổ sung thiết kế 2026-10-10: [đặc tả điều hướng Gia đình](../household-navigation-ux/spec.md) thêm nút về chọn Gia đình, cho phép cuộn trong hộp thoại khi thiếu chỗ, bảo đảm giới hạn 6 khi thêm đồng thời và phân trang dữ liệu cũ hơn 6 người. Bản tổng hợp mới đã được xác nhận và xuất bản với trạng thái ready-for-agent; những bổ sung này chưa được triển khai trong phiên thiết kế.
+
 ## Problem Statement
 
 Hiện tại, khi một Gia đình có từ 5 Thành viên trở lên hoặc người dùng mở ứng dụng trên các thiết bị di động có chiều cao màn hình hạn chế (như iPhone SE, hoặc khi thanh công cụ của trình duyệt chiếm diện tích), màn hình chọn Thành viên bị tràn dọc và buộc người dùng phải kéo vuốt lên xuống để tìm tên mình hoặc bấm nút thêm thành viên. Điều này làm giảm trải nghiệm trực quan ("bước vào bếp nhanh chóng"), dễ che khuất nút hành động "+ Thêm thành viên", và khiến giao diện có cảm giác cồng kềnh, thiếu tính tối ưu cho thiết bị di động.

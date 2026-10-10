@@ -12,6 +12,10 @@ _Avoid_: Household, Nhóm người dùng
 Mã dùng để nhận diện một Gia đình và tham gia không gian Menu, Kế hoạch của Gia đình đó.
 _Avoid_: Household Code, Mã tài khoản
 
+**Gia đình đã lưu**:
+Gia đình người dùng từng tạo hoặc tham gia, được ghi nhớ trong danh sách để chọn lại bằng Mã nhà.
+_Avoid_: Gia đình yêu thích, Tài khoản Gia đình
+
 **Thành viên**:
 Một người trong Gia đình, được nhận diện bằng tên và thuộc danh sách Thành viên chung của Gia đình đó.
 _Avoid_: User, Tài khoản cá nhân, Biệt danh cục bộ
