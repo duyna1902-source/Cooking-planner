@@ -559,4 +559,181 @@ describe('MemberSelection Component (Ticket 01)', () => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
   });
+
+  describe('Legacy Pagination for > 6 Members and Zero-Scroll Layout (Ticket 06)', () => {
+    const makeMembers = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({
+        id: `mem-${i + 1}`,
+        householdCode: 'BEP-123',
+        name: `Người ${i + 1}`,
+        createdAt: `2026-10-08T00:00:0${i}Z`,
+      }));
+
+    it('does not display pagination controls when Gia đình has <= 6 members', async () => {
+      const repository = new TestMemberRepository(makeMembers(6));
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      expect(await screen.findByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+      expect(screen.queryByTestId('ms-pagination')).not.toBeInTheDocument();
+      expect(screen.queryByRole('navigation', { name: 'Phân trang Thành viên' })).not.toBeInTheDocument();
+      expect(screen.queryByText(/Trang \d+\/\d+/)).not.toBeInTheDocument();
+    });
+
+    it('displays 6 members on page 1 with pagination bar "Trang 1/2" for 7 members', async () => {
+      const repository = new TestMemberRepository(makeMembers(7));
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      expect(await screen.findByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Chọn Người 6' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Chọn Người 7' })).not.toBeInTheDocument();
+
+      const pagination = screen.getByTestId('ms-pagination');
+      expect(pagination).toBeInTheDocument();
+      expect(screen.getByText('Trang 1/2')).toBeInTheDocument();
+
+      const prevBtn = screen.getByRole('button', { name: 'Trang trước' });
+      const nextBtn = screen.getByRole('button', { name: 'Trang sau' });
+      expect(prevBtn).toBeDisabled();
+      expect(nextBtn).not.toBeDisabled();
+    });
+
+    it('navigates to page 2 when clicking "Sau", allowing selecting member from page 2', async () => {
+      const onChoose = vi.fn();
+      const members = makeMembers(7);
+      const repository = new TestMemberRepository(members);
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={onChoose}
+        />
+      );
+
+      expect(await screen.findByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+      const nextBtn = screen.getByRole('button', { name: 'Trang sau' });
+      await userEvent.click(nextBtn);
+
+      expect(screen.getByText('Trang 2/2')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Trang trước' })).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Trang sau' })).toBeDisabled();
+
+      // Page 2 shows Người 7, and Người 1-6 are no longer displayed
+      expect(screen.getByRole('button', { name: 'Chọn Người 7' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Chọn Người 1' })).not.toBeInTheDocument();
+
+      // Selecting member from page 2
+      await userEvent.click(screen.getByRole('button', { name: 'Chọn Người 7' }));
+      expect(onChoose).toHaveBeenCalledTimes(1);
+      expect(onChoose).toHaveBeenCalledWith(expect.objectContaining({ id: 'mem-7', name: 'Người 7' }));
+    });
+
+    it('deletes member on page 2 and auto-falls back to page 1 when page 2 becomes empty', async () => {
+      const repository = new TestMemberRepository(makeMembers(7));
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      expect(await screen.findByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+
+      // Go to page 2
+      await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }));
+      expect(screen.getByText('Trang 2/2')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Chọn Người 7' })).toBeInTheDocument();
+
+      // Enter delete mode on page 2
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa' }));
+      expect(screen.getByRole('button', { name: 'Xóa Người 7' })).toBeInTheDocument();
+
+      // Delete Người 7
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa Người 7' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa thành viên', exact: true }));
+
+      // Now 6 members left. Page 2 was emptied, so fallback to page 1
+      expect(await screen.findByRole('button', { name: 'Xóa Người 1' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Xóa Người 6' })).toBeInTheDocument();
+
+      // Exit delete mode
+      await userEvent.click(screen.getByRole('button', { name: 'Xong' }));
+
+      // Now household has 6 members, pagination is removed
+      expect(screen.queryByTestId('ms-pagination')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Chọn Người 6' })).toBeInTheDocument();
+    });
+
+    it('remains on page 2 if deleted member leaves page 2 non-empty', async () => {
+      const repository = new TestMemberRepository(makeMembers(8));
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      expect(await screen.findByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+
+      // Go to page 2 (has Người 7 and Người 8)
+      await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }));
+      expect(screen.getByText('Trang 2/2')).toBeInTheDocument();
+
+      // Enter delete mode
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa' }));
+
+      // Delete Người 8
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa Người 8' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa thành viên', exact: true }));
+
+      // Still on page 2, Người 7 is still there
+      expect(await screen.findByRole('button', { name: 'Xóa Người 7' })).toBeInTheDocument();
+      expect(screen.getByText('Trang 2/2')).toBeInTheDocument();
+    });
+
+    it('hides add member button and shows capacity notice for > 6 members', async () => {
+      const repository = new TestMemberRepository(makeMembers(7));
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      expect(await screen.findByText('Trang 1/2')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '+ Thêm thành viên' })).not.toBeInTheDocument();
+      expect(screen.getByText('Đã đạt tối đa 6 Thành viên trong Gia đình')).toBeInTheDocument();
+    });
+
+    it('modal dialog has scrollable container with max-height and overflow-y: auto', async () => {
+      const repository = new TestMemberRepository(makeMembers(1));
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      await userEvent.click(await screen.findByRole('button', { name: '+ Thêm thành viên' }));
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveClass('ms-dialog');
+    });
+  });
 });

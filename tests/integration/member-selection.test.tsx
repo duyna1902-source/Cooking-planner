@@ -521,4 +521,94 @@ describe('Explicit Thành viên selection through App', () => {
       expect(document.querySelector('.ms-add-area')).toBeInTheDocument();
     });
   });
+
+  describe('Legacy Pagination for > 6 Members Integration (Ticket 06)', () => {
+    const makeMembers = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({
+        id: `mem-${i + 1}`,
+        householdCode: 'BEP-123',
+        name: `Người ${i + 1}`,
+        createdAt: `2026-10-08T00:00:0${i}Z`,
+      }));
+
+    it('allows navigating to page 2 and selecting a member to enter PlanView', async () => {
+      const repository = new TestMemberRepository(makeMembers(7));
+      render(
+        <App
+          storage={new InMemoryHouseholdStorage('BEP-123')}
+          memberRepository={repository}
+          dishRepository={new InMemoryDishRepository()}
+          planRepository={new InMemoryPlanRepository()}
+        />
+      );
+
+      expect(await screen.findByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+      expect(screen.getByText('Trang 1/2')).toBeInTheDocument();
+
+      // Navigate to page 2
+      await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }));
+      expect(screen.getByText('Trang 2/2')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Chọn Người 7' })).toBeInTheDocument();
+
+      // Select Người 7 on page 2 to enter PlanView
+      await userEvent.click(screen.getByRole('button', { name: 'Chọn Người 7' }));
+      expect(await screen.findByTestId('plan-view')).toBeInTheDocument();
+      expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Người 7');
+    });
+
+    it('falls back to page 1 when deleting the last member on page 2 in App', async () => {
+      const repository = new TestMemberRepository(makeMembers(7));
+      render(
+        <App
+          storage={new InMemoryHouseholdStorage('BEP-123')}
+          memberRepository={repository}
+        />
+      );
+
+      expect(await screen.findByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+
+      // Navigate to page 2
+      await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }));
+      expect(screen.getByText('Trang 2/2')).toBeInTheDocument();
+
+      // Delete Người 7
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa Người 7' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Xóa thành viên', exact: true }));
+
+      // Fallback to page 1
+      expect(await screen.findByRole('button', { name: 'Xóa Người 1' })).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Xong' }));
+
+      // Now household has 6 members, no pagination controls
+      expect(screen.queryByTestId('ms-pagination')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+    });
+
+    it('realtime removal from another device safely adjusts page if current page exceeds total pages', async () => {
+      const repository = new TestMemberRepository(makeMembers(7));
+      render(
+        <App
+          storage={new InMemoryHouseholdStorage('BEP-123')}
+          memberRepository={repository}
+        />
+      );
+
+      expect(await screen.findByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+
+      // Navigate to page 2
+      await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }));
+      expect(screen.getByText('Trang 2/2')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Chọn Người 7' })).toBeInTheDocument();
+
+      // Another device deletes member 7
+      await act(async () => {
+        await repository.deleteMember('BEP-123', 'mem-7');
+      });
+
+      // UI safely falls back to page 1 and shows members 1-6
+      expect(await screen.findByRole('button', { name: 'Chọn Người 1' })).toBeInTheDocument();
+      expect(screen.queryByTestId('ms-pagination')).not.toBeInTheDocument();
+    });
+  });
 });

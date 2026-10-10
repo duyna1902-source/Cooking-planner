@@ -4,6 +4,8 @@ import { Member, normalizeMemberName, memberNameKey, sortMembers, MAX_MEMBERS, v
 import { MemberRepository } from '../services/memberRepository';
 import './MemberSelection.css';
 
+const PAGE_SIZE = 6;
+
 const tones = [
   { background: '#dce7ef', color: '#46637d', accent: '#bfd1df' },
   { background: '#f9efcc', color: '#897443', accent: '#efdfa7' },
@@ -51,6 +53,7 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
   onChoose: (member: Member) => void;
 }) {
   const [members, setMembers] = useState<Member[]>([]);
+  const [page, setPage] = useState(1);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -68,6 +71,12 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
   const inputId = useId();
   const nameHelpId = useId();
   const formErrorId = useId();
+
+  const totalPages = Math.max(1, Math.ceil(members.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  if (page !== safePage) {
+    setPage(safePage);
+  }
 
   useEffect(() => {
     let alive = true;
@@ -171,7 +180,10 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
   const modalOpen = adding || !!toDelete;
   const listReady = !loading && !error;
   const isCompact = members.length >= 5;
-  const gridColumns = isCompact ? 3 : 2;
+  const displayedMembers = totalPages > 1
+    ? members.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+    : members;
+  const gridColumns = displayedMembers.length >= 5 ? 3 : 2;
 
   return <main className={`member-selection ${isCompact ? 'ms-compact' : ''}`} data-testid="member-selection-root" data-compact={isCompact ? 'true' : undefined}>
     <div className="ms-surface" data-testid="member-selection-surface" aria-hidden={modalOpen || undefined}>
@@ -200,8 +212,9 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
           data-testid="member-grid"
           data-columns={gridColumns}
         >
-          {members.map((member, index) => {
-            const tone = tones[index % tones.length];
+          {displayedMembers.map((member, index) => {
+            const globalIndex = members.findIndex(m => m.id === member.id);
+            const tone = tones[(globalIndex >= 0 ? globalIndex : index) % tones.length];
             return <button className="ms-member" key={member.id} disabled={!listReady || modalOpen} aria-label={`${managing ? 'Xóa' : 'Chọn'} ${member.name}`}
               onClick={() => { setNotice(''); if (managing) { setToDelete(member); setFormError(''); } else onChoose(member); }}>
               <span className="ms-avatar-wrapper" aria-hidden="true"><span className="ms-avatar" style={{ '--avatar-bg': tone.background, '--avatar-ink': tone.color, '--avatar-accent': tone.accent } as CSSProperties}>
@@ -211,6 +224,33 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
           })}
         </div>}
       </div>
+      {totalPages > 1 && (
+        <nav className="ms-pagination" data-testid="ms-pagination" aria-label="Phân trang Thành viên">
+          <button
+            type="button"
+            className="ms-page-btn ms-page-prev"
+            data-testid="page-prev-btn"
+            aria-label="Trang trước"
+            disabled={safePage <= 1}
+            onClick={() => { setNotice(''); setPage(p => Math.max(1, p - 1)); }}
+          >
+            Trước
+          </button>
+          <span className="ms-page-info" data-testid="page-info" role="status" aria-live="polite">
+            Trang {safePage}/{totalPages}
+          </span>
+          <button
+            type="button"
+            className="ms-page-btn ms-page-next"
+            data-testid="page-next-btn"
+            aria-label="Trang sau"
+            disabled={safePage >= totalPages}
+            onClick={() => { setNotice(''); setPage(p => Math.min(totalPages, p + 1)); }}
+          >
+            Sau
+          </button>
+        </nav>
+      )}
       {!managing && (
         <div className="ms-add-area" data-testid="ms-add-area">
           {members.length >= MAX_MEMBERS ? (
