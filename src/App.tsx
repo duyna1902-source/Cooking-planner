@@ -307,6 +307,7 @@ export const App: React.FC<AppProps> = ({
                 householdCode={householdCode}
                 repository={activeMemberRepo}
                 onChoose={handleChooseMember}
+                onBackToHousehold={handleSwitchHousehold}
               />
             </div>
           </div>

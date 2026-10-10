@@ -115,7 +115,8 @@ describe('Explicit Thành viên selection through App', () => {
     );
     expect(await within(second.container).findByTestId('plan-view')).toBeInTheDocument();
     expect(within(second.container).getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
-    await userEvent.click(within(second.container).getByRole('button', { name: /Đổi thành viên/i }));
+    await userEvent.click(within(second.container).getByTestId('member-name-badge'));
+    await userEvent.click(within(second.container).getByRole('menuitem', { name: /Đổi thành viên/i }));
     await userEvent.click(await within(second.container).findByRole('button', { name: 'Chọn Bố' }));
 
     await userEvent.click(within(first.container).getByTestId('nav-menu-button'));
@@ -258,6 +259,7 @@ describe('Explicit Thành viên selection through App', () => {
     render(<App storage={new InMemoryHouseholdStorage('BEP-123', 'Legacy')} memberRepository={repository} />);
     await userEvent.click(await screen.findByRole('button', { name: '+ Thêm thành viên' }));
     const input = screen.getByRole('textbox', { name: 'Tên Thành viên' });
+    expect(input).toHaveValue('');
     expect(input).toHaveValue('');
     await userEvent.type(input, '  Bố  ');
     await userEvent.click(screen.getByRole('button', { name: 'Lưu Thành viên' }));

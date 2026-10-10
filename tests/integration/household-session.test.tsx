@@ -92,7 +92,7 @@ describe('Household Navigation & Session UX (Ticket 02)', () => {
 
     // Clears remembered member in storage, transitions to choosing_member
     expect(await screen.findByRole('heading', { name: 'Bạn là ai?' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Chọn Bố' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Chọn Bố' })).toBeInTheDocument();
     expect(storage.getNavigationState()).toEqual({
       status: 'choosing_member',
       householdCode: 'BEP-123',
@@ -263,8 +263,9 @@ describe('Household Navigation & Session UX (Ticket 02)', () => {
 
     expect(await screen.findByTestId('plan-view')).toBeInTheDocument();
 
-    // Click "Đổi thành viên"
-    await user.click(screen.getByRole('button', { name: /Đổi thành viên/i }));
+    // Click member button to open menu, then select "Đổi thành viên"
+    await user.click(screen.getByTestId('member-name-badge'));
+    await user.click(screen.getByRole('menuitem', { name: /Đổi thành viên/i }));
     expect(screen.getByRole('heading', { name: 'Bạn là ai?' })).toBeInTheDocument();
     expect(storage.getNavigationState()).toEqual({
       status: 'choosing_member',
@@ -289,10 +290,55 @@ describe('Household Navigation & Session UX (Ticket 02)', () => {
     expect(await screen.findByTestId('plan-view')).toBeInTheDocument();
     expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Bố');
 
-    // Click "Đổi gia đình"
-    await user.click(screen.getByRole('button', { name: /Đổi gia đình/i }));
+    // Click member button to open menu, then select "Đổi gia đình"
+    await user.click(screen.getByTestId('member-name-badge'));
+    await user.click(screen.getByRole('menuitem', { name: /Đổi gia đình/i }));
     expect(storage.getNavigationState()).toEqual({ status: 'choosing_household' });
     expect(screen.getByTestId('create-household-button')).toBeInTheDocument();
+  });
+
+  it('supports back button on MemberSelection to switch household immediately and persists across F5', async () => {
+    const user = userEvent.setup();
+    const storage = new InMemoryHouseholdStorage();
+    storage.setNavigationState({
+      status: 'choosing_member',
+      householdCode: 'BEP-123',
+    });
+
+    const memberRepo = new TestMemberRepository([sampleMember('Mẹ', 'BEP-123')]);
+
+    const { unmount } = render(
+      <App
+        storage={storage}
+        memberRepository={memberRepo}
+        dishRepository={new InMemoryDishRepository()}
+        planRepository={new InMemoryPlanRepository()}
+      />
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Bạn là ai?' })).toBeInTheDocument();
+    const backBtn = screen.getByTestId('back-to-household-button');
+    expect(backBtn).toHaveAccessibleName('Đổi gia đình');
+
+    await user.click(backBtn);
+
+    // Transitions to choosing_household immediately
+    expect(storage.getNavigationState()).toEqual({ status: 'choosing_household' });
+    expect(screen.getByTestId('create-household-button')).toBeInTheDocument();
+
+    // Reloading retains choosing_household state
+    unmount();
+    render(
+      <App
+        storage={storage}
+        memberRepository={memberRepo}
+        dishRepository={new InMemoryDishRepository()}
+        planRepository={new InMemoryPlanRepository()}
+      />
+    );
+
+    expect(screen.getByTestId('create-household-button')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Bạn là ai?' })).not.toBeInTheDocument();
   });
 
   it('backwards compatibility: legacy storage with only household code transitions to choosing_member without selecting nickname', async () => {
@@ -354,7 +400,8 @@ describe('Household Navigation & Session UX (Ticket 02)', () => {
       />
     );
     expect(await tabB.findByTestId('member-name-badge')).toHaveTextContent('Tôm');
-    await user.click(within(tabB.container).getByRole('button', { name: /Đổi thành viên/i }));
+    await user.click(within(tabB.container).getByTestId('member-name-badge'));
+    await user.click(within(tabB.container).getByRole('menuitem', { name: /Đổi thành viên/i }));
     await user.click(within(tabB.container).getByRole('button', { name: 'Chọn Mẹ' }));
     expect(within(tabB.container).getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
     expect(storage.getNavigationState()).toEqual({
