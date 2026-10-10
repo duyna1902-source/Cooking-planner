@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   generateHouseholdCode, 
   normalizeHouseholdCode, 
   isValidHouseholdCode, 
   createShareUrl 
 } from '../domain/household';
-import { Home, Users, ArrowRight, Copy, Check, Sparkles } from 'lucide-react';
+import { Home, Users, ArrowRight, Copy, Check, Sparkles, MoreVertical, Trash2 } from 'lucide-react';
 import { useClipboardCopy } from '../hooks/useClipboardCopy';
 
 interface OnboardingModalProps {
@@ -13,6 +13,7 @@ interface OnboardingModalProps {
   savedHouseholds?: string[];
   onHouseholdCreated?: (householdCode: string) => void;
   onSelectSaved?: (householdCode: string) => void;
+  onForgetHousehold?: (householdCode: string) => void;
   onComplete: (householdCode: string) => void;
 }
 
@@ -23,11 +24,34 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   savedHouseholds = [],
   onHouseholdCreated,
   onSelectSaved,
+  onForgetHousehold,
   onComplete
 }) => {
   const [step, setStep] = useState<OnboardingStep>(() => {
     return initialCode ? 'join' : 'choose';
   });
+
+  const [savedList, setSavedList] = useState<string[]>(savedHouseholds);
+  const [activeMenuCode, setActiveMenuCode] = useState<string | null>(null);
+  const [confirmForgetCode, setConfirmForgetCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSavedList(savedHouseholds);
+  }, [savedHouseholds]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (confirmForgetCode) {
+          setConfirmForgetCode(null);
+        } else if (activeMenuCode) {
+          setActiveMenuCode(null);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [confirmForgetCode, activeMenuCode]);
 
   const [generatedCode, setGeneratedCode] = useState<string>(() => generateHouseholdCode());
   const [inputCode, setInputCode] = useState<string>(initialCode || '');
@@ -75,6 +99,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     }
   };
 
+  const handleConfirmForget = (code: string) => {
+    onForgetHousehold?.(code);
+    setSavedList((prev) => prev.filter((c) => c !== code));
+    setConfirmForgetCode(null);
+    setActiveMenuCode(null);
+  };
+
   const handleCopyLink = () => {
     const url = createShareUrl(generatedCode);
     copy(url);
@@ -87,7 +118,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       aria-labelledby="onboarding-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
     >
-      <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col justify-center">
+      <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col justify-center relative">
         
         {/* Step 1: Choose between Saved, Create and Join */}
         {step === 'choose' && (
@@ -103,7 +134,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               Lập Kế hoạch ăn uống và quản lý Menu món ăn mỗi ngày cùng gia đình bạn
             </p>
 
-            {savedHouseholds.length > 0 && (
+            {savedList.length > 0 && (
               <div className="w-full mb-4 text-left">
                 <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
                   Gia đình đã lưu
@@ -112,21 +143,71 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   data-testid="saved-households-grid"
                   className="grid grid-cols-2 gap-2.5 max-h-48 overflow-y-auto pr-1"
                 >
-                  {savedHouseholds.map((code) => (
-                    <button
+                  {savedList.map((code) => (
+                    <div
                       key={code}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       data-testid={`saved-household-card-${code}`}
                       onClick={() => handleSelectSavedHousehold(code)}
-                      className="aspect-square flex flex-col items-center justify-center p-3 rounded-2xl bg-[#FEF7DC]/50 hover:bg-[#FEF7DC] border border-[#EFE4B5] transition active:scale-95 text-center group cursor-pointer shadow-xs"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelectSavedHousehold(code);
+                        }
+                      }}
+                      className="relative aspect-square flex flex-col items-center justify-center p-3 rounded-2xl bg-[#FEF7DC]/50 hover:bg-[#FEF7DC] border border-[#EFE4B5] transition active:scale-95 text-center group cursor-pointer shadow-xs select-none"
                     >
+                      <button
+                        type="button"
+                        aria-label={`Tùy chọn cho Gia đình ${code}`}
+                        data-testid={`household-menu-btn-${code}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuCode(activeMenuCode === code ? null : code);
+                        }}
+                        className="absolute top-1.5 right-1.5 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-black/5 transition cursor-pointer"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
                       <div className="w-10 h-10 rounded-full bg-[#FEF7DC] border border-[#EFE4B5] flex items-center justify-center mb-1.5 group-hover:scale-105 transition">
                         <Home className="w-5 h-5 text-[#5B7C99]" />
                       </div>
                       <span className="text-xs font-bold text-[#334E68] tracking-wider truncate w-full px-1">
                         {code}
                       </span>
-                    </button>
+
+                      {activeMenuCode === code && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-20 cursor-default"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuCode(null);
+                            }}
+                          />
+                          <div
+                            className="absolute top-8 right-1.5 z-30 bg-white rounded-xl shadow-lg border border-slate-200 py-1 min-w-[130px] text-left animate-in fade-in zoom-in-95 duration-100"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              data-testid={`forget-household-btn-${code}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMenuCode(null);
+                                setConfirmForgetCode(code);
+                              }}
+                              className="w-full px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-1.5 transition text-left cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Bỏ khỏi danh sách</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -323,6 +404,62 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
+          </div>
+        )}
+
+        {/* Confirmation Modal for Forgetting a Household */}
+        {confirmForgetCode && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="forget-modal-title"
+            data-testid="forget-confirmation-dialog"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmForgetCode(null);
+            }}
+          >
+            <div
+              className="w-full max-w-xs bg-white rounded-2xl p-5 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-11 h-11 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center mb-3 text-rose-500">
+                <Trash2 className="w-5 h-5" />
+              </div>
+
+              <h3 id="forget-modal-title" className="text-base font-bold text-[#334E68] mb-1">
+                Bỏ Gia đình khỏi thiết bị?
+              </h3>
+
+              <div className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md mb-2 tracking-wider">
+                {confirmForgetCode}
+              </div>
+
+              <p className="text-xs text-slate-500 mb-4 leading-relaxed text-left">
+                Thao tác này chỉ gỡ Gia đình <span className="font-semibold text-slate-700">{confirmForgetCode}</span> khỏi danh sách trên thiết bị này. Dữ liệu chung (thành viên, món ăn, kế hoạch, bình luận) vẫn được bảo toàn nguyên vẹn trên cơ sở dữ liệu và có thể vào lại bất kỳ lúc nào bằng mã hoặc liên kết.
+              </p>
+
+              <div className="flex flex-col gap-2 w-full">
+                <button
+                  type="button"
+                  data-testid="confirm-forget-button"
+                  onClick={() => handleConfirmForget(confirmForgetCode)}
+                  className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition active:scale-98 shadow-sm cursor-pointer"
+                >
+                  Bỏ khỏi danh sách
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="cancel-forget-button"
+                  onClick={() => setConfirmForgetCode(null)}
+                  className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition active:scale-98 cursor-pointer"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

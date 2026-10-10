@@ -190,4 +190,243 @@ describe('Household Setup and PWA Shell Integration', () => {
       expect(storage.getSavedHouseholds()).toEqual(['BEP-JOINED']);
     });
   });
+
+  describe('Forgetting a Saved Household (Ticket 05)', () => {
+    it('clicking 3-dots button opens menu without selecting household card; canceling retains card', async () => {
+      const user = userEvent.setup();
+      storage.saveHousehold('BEP-111');
+      storage.saveHousehold('BEP-222');
+      storage.setNavigationState({ status: 'choosing_household' });
+
+      renderApp();
+
+      expect(screen.getByTestId('saved-household-card-BEP-111')).toBeInTheDocument();
+      expect(screen.getByTestId('saved-household-card-BEP-222')).toBeInTheDocument();
+
+      // Click 3-dots button on BEP-111
+      const menuBtn = screen.getByTestId('household-menu-btn-BEP-111');
+      await user.click(menuBtn);
+
+      // Verify card was NOT selected (we are still in OnboardingModal, not MemberSelection)
+      expect(screen.queryByTestId('member-selection-root')).not.toBeInTheDocument();
+      expect(screen.getByTestId('forget-household-btn-BEP-111')).toBeInTheDocument();
+
+      // Click "Bỏ khỏi danh sách"
+      await user.click(screen.getByTestId('forget-household-btn-BEP-111'));
+
+      // Confirmation dialog is displayed with household code and explanation
+      const dialog = screen.getByTestId('forget-confirmation-dialog');
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveTextContent('BEP-111');
+      expect(dialog).toHaveTextContent(/chỉ gỡ.*khỏi danh sách trên thiết bị này/i);
+
+      // Click "Hủy"
+      await user.click(screen.getByTestId('cancel-forget-button'));
+
+      // Dialog is closed, both cards remain visible and storage is unchanged
+      expect(screen.queryByTestId('forget-confirmation-dialog')).not.toBeInTheDocument();
+      expect(screen.getByTestId('saved-household-card-BEP-111')).toBeInTheDocument();
+      expect(screen.getByTestId('saved-household-card-BEP-222')).toBeInTheDocument();
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-222', 'BEP-111']);
+    });
+
+    it('confirming forget removes card immediately, updates storage, and persists across reload (F5)', async () => {
+      const user = userEvent.setup();
+      storage.saveHousehold('BEP-111');
+      storage.saveHousehold('BEP-222');
+      storage.setNavigationState({ status: 'choosing_household' });
+
+      const { unmount } = renderApp();
+
+      // Open menu and confirm forget for BEP-111
+      await user.click(screen.getByTestId('household-menu-btn-BEP-111'));
+      await user.click(screen.getByTestId('forget-household-btn-BEP-111'));
+      await user.click(screen.getByTestId('confirm-forget-button'));
+
+      // Immediately removed from UI
+      expect(screen.queryByTestId('saved-household-card-BEP-111')).not.toBeInTheDocument();
+      expect(screen.getByTestId('saved-household-card-BEP-222')).toBeInTheDocument();
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-222']);
+
+      // Simulate F5 / reload
+      unmount();
+      renderApp();
+
+      expect(screen.queryByTestId('saved-household-card-BEP-111')).not.toBeInTheDocument();
+      expect(screen.getByTestId('saved-household-card-BEP-222')).toBeInTheDocument();
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-222']);
+    });
+
+    it('preserves shared database data (members, dishes, plans) intact after device forgets household', async () => {
+      const user = userEvent.setup();
+      storage.saveHousehold('BEP-111');
+      storage.setNavigationState({ status: 'choosing_household' });
+
+      const member = sampleMember('Bố', 'BEP-111');
+      const memberRepo = new TestMemberRepository([member]);
+      const dishRepo = new InMemoryDishRepository();
+      const addedDish = await dishRepo.addDish('BEP-111', { name: 'Phở bò' });
+      const planRepo = new InMemoryPlanRepository();
+      await planRepo.addDishesToMeal('BEP-111', '2026-10-05', 'lunch', [addedDish.id]);
+
+      render(
+        <App
+          storage={storage}
+          memberRepository={memberRepo}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+        />
+      );
+
+      // Forget BEP-111
+      await user.click(screen.getByTestId('household-menu-btn-BEP-111'));
+      await user.click(screen.getByTestId('forget-household-btn-BEP-111'));
+      await user.click(screen.getByTestId('confirm-forget-button'));
+
+      // Device removed the card
+      expect(screen.queryByTestId('saved-household-card-BEP-111')).not.toBeInTheDocument();
+      expect(storage.getSavedHouseholds()).toEqual([]);
+
+      // Shared database items remain completely intact
+      const members = await memberRepo.getMembers('BEP-111');
+      expect(members).toHaveLength(1);
+      expect(members[0].name).toBe('Bố');
+
+      const dishes = await dishRepo.getDishes('BEP-111');
+      expect(dishes).toHaveLength(1);
+      expect(dishes[0].name).toBe('Phở bò');
+
+      const planItems = await planRepo.getPlanItems('BEP-111');
+      expect(planItems).toHaveLength(1);
+      expect(planItems[0].dishId).toBe(addedDish.id);
+    });
+
+    it('forgetting the last saved household hides saved section while keeping create and join actions fully usable', async () => {
+      const user = userEvent.setup();
+      storage.saveHousehold('BEP-ONLY');
+      storage.setNavigationState({ status: 'choosing_household' });
+
+      renderApp();
+
+      expect(screen.getByTestId('saved-household-card-BEP-ONLY')).toBeInTheDocument();
+
+      // Forget the only saved household
+      await user.click(screen.getByTestId('household-menu-btn-BEP-ONLY'));
+      await user.click(screen.getByTestId('forget-household-btn-BEP-ONLY'));
+      await user.click(screen.getByTestId('confirm-forget-button'));
+
+      // Saved grid is hidden
+      expect(screen.queryByTestId('saved-households-grid')).not.toBeInTheDocument();
+      expect(storage.getSavedHouseholds()).toEqual([]);
+
+      // Both primary actions remain fully visible and clickable
+      const createBtn = screen.getByTestId('create-household-button');
+      const joinBtn = screen.getByTestId('join-household-button');
+      expect(createBtn).toBeInTheDocument();
+      expect(joinBtn).toBeInTheDocument();
+
+      // Clicking Join opens the join modal normally
+      await user.click(joinBtn);
+      expect(screen.getByTestId('household-code-input')).toBeInTheDocument();
+    });
+
+    it('re-entering code or join link re-adds the forgotten household and requires explicit member selection', async () => {
+      const user = userEvent.setup();
+      storage.saveHousehold('BEP-REJOIN');
+      storage.setNavigationState({ status: 'choosing_household' });
+
+      const member = sampleMember('Chị', 'BEP-REJOIN');
+      const memberRepo = new TestMemberRepository([member]);
+
+      const { unmount } = renderApp(undefined, memberRepo);
+
+      // Forget BEP-REJOIN
+      await user.click(screen.getByTestId('household-menu-btn-BEP-REJOIN'));
+      await user.click(screen.getByTestId('forget-household-btn-BEP-REJOIN'));
+      await user.click(screen.getByTestId('confirm-forget-button'));
+      expect(storage.getSavedHouseholds()).toEqual([]);
+
+      // User actively joins again with code
+      await user.click(screen.getByTestId('join-household-button'));
+      await user.type(screen.getByTestId('household-code-input'), 'bep-rejoin');
+      await user.click(screen.getByTestId('confirm-join-button'));
+
+      // Added back to saved households (normalized)
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-REJOIN']);
+
+      // Transitions to choosing_member (does NOT auto-select member)
+      expect(await screen.findByRole('heading', { name: 'Bạn là ai?' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Chọn Chị' })).toBeInTheDocument();
+      expect(storage.getNavigationState()).toEqual({
+        status: 'choosing_member',
+        householdCode: 'BEP-REJOIN',
+      });
+
+      // Now join again via join link to test link path
+      unmount();
+      renderApp('?join=BEP-REJOIN', memberRepo);
+
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-REJOIN']);
+      expect(await screen.findByRole('heading', { name: 'Bạn là ai?' })).toBeInTheDocument();
+    });
+
+    it('multi-tab independence: Tab A forgetting household does not disrupt running session in Tab B, and Tab B does not resurrect forgotten card in Tab A storage', async () => {
+      const user = userEvent.setup();
+      const member = sampleMember('Mẹ', 'BEP-SHARE');
+      const memberRepo = new TestMemberRepository([member]);
+      const dishRepo = new InMemoryDishRepository();
+      const planRepo = new InMemoryPlanRepository();
+
+      storage.saveHousehold('BEP-SHARE');
+      storage.setNavigationState({
+        status: 'selected',
+        householdCode: 'BEP-SHARE',
+        memberId: member.id,
+      });
+
+      // Tab B is already running an active session
+      const tabB = render(
+        <App
+          storage={storage}
+          memberRepository={memberRepo}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+        />
+      );
+      expect(await tabB.findByTestId('plan-view')).toBeInTheDocument();
+      expect(tabB.getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
+
+      // Tab A opens to switch/manage households
+      storage.setNavigationState({ status: 'choosing_household' });
+      const tabA = render(
+        <App
+          storage={storage}
+          memberRepository={memberRepo}
+          dishRepository={dishRepo}
+          planRepository={planRepo}
+        />
+      );
+      expect(await tabA.findByTestId('saved-household-card-BEP-SHARE')).toBeInTheDocument();
+
+      // Tab A forgets BEP-SHARE
+      await user.click(tabA.getByTestId('household-menu-btn-BEP-SHARE'));
+      await user.click(tabA.getByTestId('forget-household-btn-BEP-SHARE'));
+      await user.click(tabA.getByTestId('confirm-forget-button'));
+
+      expect(tabA.queryByTestId('saved-household-card-BEP-SHARE')).not.toBeInTheDocument();
+      expect(storage.getSavedHouseholds()).toEqual([]);
+
+      // Tab B's in-memory session is completely undisturbed
+      expect(tabB.getByTestId('plan-view')).toBeInTheDocument();
+      expect(tabB.getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
+
+      // Passive events in Tab B (focus / visibilitychange) do not re-add BEP-SHARE to savedHouseholds
+      window.dispatchEvent(new Event('focus'));
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(storage.getSavedHouseholds()).toEqual([]);
+
+      tabA.unmount();
+      tabB.unmount();
+    });
+  });
 });
