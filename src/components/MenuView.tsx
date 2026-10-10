@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Dish, DishInput, filterDishes, hasExactDishMatch } from '../domain/dish';
 import { DishRepository, defaultDishRepository } from '../services/dishRepository';
 import { PlanRepository, defaultPlanRepository } from '../services/planRepository';
 import { DishModal } from './DishModal';
-import { BookOpen, Plus, Search, Trash2, Edit3, X, Utensils } from 'lucide-react';
+import { BookOpen, Plus, Search, Trash2, Edit3, X, Utensils, AlertCircle } from 'lucide-react';
 
 interface MenuViewProps {
   householdCode?: string;
@@ -22,21 +22,57 @@ export const MenuView: React.FC<MenuViewProps> = ({
   const [editingDish, setEditingDish] = useState<Dish | null>(null);
   const [modalInitialName, setModalInitialName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+
+  const latestHouseholdRef = useRef(householdCode);
+  const hasLoadedRef = useRef(false);
+  const reqIdRef = useRef(0);
+
+  useEffect(() => {
+    latestHouseholdRef.current = householdCode;
+    hasLoadedRef.current = false;
+    setHasLoadedOnce(false);
+    setLoadError(null);
+    setDishes([]);
+  }, [householdCode]);
 
   const loadDishes = useCallback(async () => {
-    if (!householdCode) {
-      setDishes([]);
-      setIsLoading(false);
+    const currentHousehold = householdCode;
+    const currentReqId = ++reqIdRef.current;
+
+    if (!currentHousehold) {
+      if (latestHouseholdRef.current === currentHousehold && reqIdRef.current === currentReqId) {
+        setDishes([]);
+        setIsLoading(false);
+        setLoadError(null);
+        hasLoadedRef.current = true;
+        setHasLoadedOnce(true);
+      }
       return;
     }
+
     try {
       setIsLoading(true);
-      const data = await dishRepository.getDishes(householdCode);
-      setDishes(data);
+      const data = await dishRepository.getDishes(currentHousehold);
+      if (latestHouseholdRef.current === currentHousehold && reqIdRef.current === currentReqId) {
+        setDishes(data);
+        setLoadError(null);
+        hasLoadedRef.current = true;
+        setHasLoadedOnce(true);
+      }
     } catch {
-      // Ignored
+      if (latestHouseholdRef.current === currentHousehold && reqIdRef.current === currentReqId) {
+        if (hasLoadedRef.current) {
+          setLoadError('Không thể cập nhật danh sách Món ăn');
+        } else {
+          setLoadError('Không thể tải danh sách Món ăn');
+        }
+      }
     } finally {
-      setIsLoading(false);
+      if (latestHouseholdRef.current === currentHousehold && reqIdRef.current === currentReqId) {
+        setIsLoading(false);
+      }
     }
   }, [householdCode, dishRepository]);
 
@@ -146,10 +182,51 @@ export const MenuView: React.FC<MenuViewProps> = ({
         </button>
       </div>
 
-      {/* Content: List or Empty States */}
-      {isLoading ? (
+      {/* Refresh Error Banner */}
+      {loadError && hasLoadedOnce && (
+        <div
+          data-testid="menu-refresh-error"
+          className="mb-3 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-between text-xs gap-2 flex-shrink-0 animate-in fade-in"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+            <span className="truncate">{loadError}</span>
+          </div>
+          <button
+            onClick={() => loadDishes()}
+            data-testid="menu-refresh-retry-btn"
+            className="px-3 py-1 rounded-full bg-white hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 transition shadow-xs flex-shrink-0"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
+      {/* Content: Loading, Error, Empty, or List States */}
+      {isLoading && !hasLoadedOnce ? (
         <div className="flex-1 flex items-center justify-center text-xs text-slate-400">
           Đang tải Menu...
+        </div>
+      ) : loadError && !hasLoadedOnce ? (
+        /* Initial Load Error State */
+        <div
+          data-testid="menu-load-error"
+          className="flex-1 flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-rose-200 rounded-3xl bg-rose-50/50 my-4"
+        >
+          <div className="w-14 h-14 rounded-full bg-rose-100 border border-rose-200 flex items-center justify-center mb-3 text-rose-600">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-bold text-rose-800">Không thể tải danh sách Món ăn</h3>
+          <p className="text-xs text-rose-600/80 mt-1 max-w-[260px]">
+            Đã xảy ra lỗi khi tải danh sách Món ăn của gia đình. Vui lòng bấm Thử lại.
+          </p>
+          <button
+            onClick={() => loadDishes()}
+            data-testid="menu-retry-btn"
+            className="mt-4 px-4 py-2 rounded-full bg-[#5B7C99] hover:bg-[#46637D] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+          >
+            <span>Thử lại</span>
+          </button>
         </div>
       ) : dishes.length === 0 ? (
         /* Empty State */
@@ -289,30 +366,30 @@ export const MenuView: React.FC<MenuViewProps> = ({
               <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mb-3">
                 <Trash2 className="w-5 h-5" />
               </div>
-              <h3 id="delete-dialog-title" className="text-sm font-bold text-[#334E68] mb-1">
+              <h3 id="delete-dialog-title" className="text-sm font-bold text-slate-800">
                 Xóa Món ăn
               </h3>
-              <p className="text-xs text-slate-500 mb-4">
-                Bạn có chắc chắn muốn xóa "<strong>{dishToDelete.name}</strong>" khỏi Menu không?
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                Bạn có chắc chắn muốn xóa "<strong>{dishToDelete.name}</strong>"? Món ăn này cũng sẽ bị xóa khỏi toàn bộ Kế hoạch tuần đã lên.
               </p>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setDishToDelete(null)}
-                className="flex-1 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                data-testid="confirm-delete-dish-btn"
-                className="flex-1 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/30 transition active:scale-98"
-              >
-                Xóa
-              </button>
+              <div className="flex items-center gap-2.5 w-full mt-4">
+                <button
+                  type="button"
+                  onClick={() => setDishToDelete(null)}
+                  className="flex-1 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  data-testid="confirm-delete-dish-btn"
+                  onClick={handleConfirmDelete}
+                  className="flex-1 py-2 rounded-xl bg-rose-600 text-xs font-bold text-white hover:bg-rose-700 transition shadow-sm shadow-rose-200"
+                >
+                  Xóa
+                </button>
+              </div>
             </div>
           </div>
         </div>

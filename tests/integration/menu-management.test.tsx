@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MenuView } from '../../src/components/MenuView';
 import { InMemoryDishRepository } from '../../src/services/dishRepository';
@@ -284,6 +284,129 @@ describe('Menu / Dish Management Integration', () => {
 
       expect(screen.getByText('Thịt kho tiêu')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /\+ Thêm Món ăn mới:/i })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Load Errors, Retry, and Empty State (Ticket 08)', () => {
+    it('initial load failure displays error state and "Thử lại" button, and does NOT display empty state', async () => {
+      vi.spyOn(dishRepo, 'getDishes').mockRejectedValueOnce(new Error('Network error'));
+
+      render(<MenuView householdCode={householdCode} dishRepository={dishRepo} />);
+
+      // Should show error state with retry button
+      await waitFor(() => {
+        expect(screen.getByText(/không thể tải/i)).toBeInTheDocument();
+      });
+      expect(screen.getByRole('button', { name: /thử lại/i })).toBeInTheDocument();
+
+      // Must NOT display fake empty state
+      expect(screen.queryByText('Menu gia đình đang trống')).not.toBeInTheDocument();
+    });
+
+    it('clicking "Thử lại" after initial failure re-invokes repository and restores view on success', async () => {
+      const user = userEvent.setup();
+      const getDishesSpy = vi.spyOn(dishRepo, 'getDishes')
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValueOnce([{ id: 'd1', householdCode, name: 'Bún chả' }]);
+
+      render(<MenuView householdCode={householdCode} dishRepository={dishRepo} />);
+
+      const retryBtn = await screen.findByRole('button', { name: /thử lại/i });
+      await user.click(retryBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Bún chả')).toBeInTheDocument();
+      });
+      expect(screen.queryByText(/không thể tải/i)).not.toBeInTheDocument();
+      expect(getDishesSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('real empty data displays standard empty message only when request succeeds', async () => {
+      render(<MenuView householdCode={householdCode} dishRepository={dishRepo} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Menu gia đình đang trống')).toBeInTheDocument();
+      });
+      expect(screen.queryByText(/không thể tải/i)).not.toBeInTheDocument();
+    });
+
+    it('refresh failure preserves existing items and displays error notice with retry', async () => {
+      const user = userEvent.setup();
+      await dishRepo.addDish(householdCode, { name: 'Phở bò', tag: 'Món nước' });
+
+      let triggerSubscriber: (() => void) | undefined;
+      dishRepo.subscribe = vi.fn((_code, cb) => {
+        triggerSubscriber = cb;
+        return () => {};
+      });
+
+      render(<MenuView householdCode={householdCode} dishRepository={dishRepo} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Phở bò')).toBeInTheDocument();
+      });
+
+      // Now mock a failure for subsequent getDishes calls
+      vi.spyOn(dishRepo, 'getDishes').mockRejectedValueOnce(new Error('Refresh failed'));
+
+      // Trigger refresh via subscription
+      await act(async () => {
+        triggerSubscriber?.();
+      });
+
+      // Existing dish should still be displayed!
+      await waitFor(() => {
+        expect(screen.getByText(/không thể (làm mới|cập nhật)/i)).toBeInTheDocument();
+      });
+      expect(screen.getByText('Phở bò')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /thử lại/i })).toBeInTheDocument();
+
+      // Clicking "Thử lại" restores normal state when re-fetch succeeds
+      vi.spyOn(dishRepo, 'getDishes').mockResolvedValueOnce([
+        { id: 'd1', householdCode, name: 'Phở bò', tag: 'Món nước' },
+        { id: 'd2', householdCode, name: 'Bún bò Huế', tag: 'Món nước' },
+      ]);
+
+      const retryBtn = screen.getByRole('button', { name: /thử lại/i });
+      await user.click(retryBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Bún bò Huế')).toBeInTheDocument();
+      });
+      expect(screen.queryByText(/không thể (làm mới|cập nhật)/i)).not.toBeInTheDocument();
+    });
+
+    it('delayed response from an old householdCode does not overwrite current household', async () => {
+      let resolveFirstReq: (dishes: any[]) => void;
+      const firstReqPromise = new Promise<any[]>((resolve) => {
+        resolveFirstReq = resolve;
+      });
+
+      vi.spyOn(dishRepo, 'getDishes').mockImplementation(async (code) => {
+        if (code === 'BEP-OLD') {
+          return firstReqPromise;
+        }
+        return [{ id: 'd2', householdCode: 'BEP-NEW', name: 'Cơm tấm Sài Gòn' }];
+      });
+
+      const { rerender } = render(<MenuView householdCode="BEP-OLD" dishRepository={dishRepo} />);
+
+      // Switch to BEP-NEW before BEP-OLD completes
+      rerender(<MenuView householdCode="BEP-NEW" dishRepository={dishRepo} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Cơm tấm Sài Gòn')).toBeInTheDocument();
+      });
+
+      // Now late resolve the old request
+      await act(async () => {
+        resolveFirstReq!([{ id: 'd1', householdCode: 'BEP-OLD', name: 'Bánh xèo miền Tây' }]);
+      });
+
+      // Ensure old dish does NOT overwrite new household
+      await new Promise((r) => setTimeout(r, 50));
+      expect(screen.queryByText('Bánh xèo miền Tây')).not.toBeInTheDocument();
+      expect(screen.getByText('Cơm tấm Sài Gòn')).toBeInTheDocument();
     });
   });
 });

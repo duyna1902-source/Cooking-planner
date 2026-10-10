@@ -14,7 +14,7 @@ import { DishRepository, defaultDishRepository } from '../services/dishRepositor
 import { PlanRepository, defaultPlanRepository } from '../services/planRepository';
 import { DishPickerDrawer } from './DishPickerDrawer';
 import { DishDetailDrawer } from './DishDetailDrawer';
-import { Plus, Trash2, Utensils, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { Plus, Trash2, Utensils, ChevronLeft, ChevronRight, MessageSquare, AlertCircle } from 'lucide-react';
 
 export interface PlanViewProps {
   householdCode?: string;
@@ -47,7 +47,22 @@ export const PlanView: React.FC<PlanViewProps> = ({
     dishTag?: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState<boolean>(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const latestHouseholdRef = useRef(householdCode);
+  const hasLoadedRef = useRef(false);
+  const reqIdRef = useRef(0);
+
+  useEffect(() => {
+    latestHouseholdRef.current = householdCode;
+    hasLoadedRef.current = false;
+    setHasLoadedOnce(false);
+    setLoadError(null);
+    setPlanItems([]);
+    setDishes([]);
+  }, [householdCode]);
 
   // Changing day, meal or week shows a different list: start it from the top
   useEffect(() => {
@@ -60,26 +75,47 @@ export const PlanView: React.FC<PlanViewProps> = ({
   }, [activeDate, today]);
 
   const loadData = useCallback(async () => {
-    if (!householdCode) {
-      setDishes([]);
-      setPlanItems([]);
-      setIsLoading(false);
+    const currentHousehold = householdCode;
+    const currentReqId = ++reqIdRef.current;
+
+    if (!currentHousehold) {
+      if (latestHouseholdRef.current === currentHousehold && reqIdRef.current === currentReqId) {
+        setDishes([]);
+        setPlanItems([]);
+        setIsLoading(false);
+        setLoadError(null);
+        hasLoadedRef.current = true;
+        setHasLoadedOnce(true);
+      }
       return;
     }
 
     try {
       setIsLoading(true);
-      await planRepository.pruneOldHistory(householdCode, initialIso);
+      await planRepository.pruneOldHistory(currentHousehold, initialIso);
       const [fetchedDishes, fetchedPlans] = await Promise.all([
-        dishRepository.getDishes(householdCode),
-        planRepository.getPlanItems(householdCode),
+        dishRepository.getDishes(currentHousehold),
+        planRepository.getPlanItems(currentHousehold),
       ]);
-      setDishes(fetchedDishes);
-      setPlanItems(fetchedPlans);
+      if (latestHouseholdRef.current === currentHousehold && reqIdRef.current === currentReqId) {
+        setDishes(fetchedDishes);
+        setPlanItems(fetchedPlans);
+        setLoadError(null);
+        hasLoadedRef.current = true;
+        setHasLoadedOnce(true);
+      }
     } catch {
-      // Ignored
+      if (latestHouseholdRef.current === currentHousehold && reqIdRef.current === currentReqId) {
+        if (hasLoadedRef.current) {
+          setLoadError('Không thể cập nhật kế hoạch');
+        } else {
+          setLoadError('Không thể tải kế hoạch');
+        }
+      }
     } finally {
-      setIsLoading(false);
+      if (latestHouseholdRef.current === currentHousehold && reqIdRef.current === currentReqId) {
+        setIsLoading(false);
+      }
     }
   }, [householdCode, initialIso, dishRepository, planRepository]);
 
@@ -306,15 +342,57 @@ export const PlanView: React.FC<PlanViewProps> = ({
         </div>
       </div>
 
+      {/* Refresh Error Banner */}
+      {loadError && hasLoadedOnce && (
+        <div
+          data-testid="plan-refresh-error"
+          className="mx-4 mb-2 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-between text-xs gap-2 flex-shrink-0 animate-in fade-in"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+            <span className="truncate">{loadError}</span>
+          </div>
+          <button
+            onClick={() => loadData()}
+            data-testid="plan-refresh-retry-btn"
+            className="px-3 py-1 rounded-full bg-white hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 transition shadow-xs flex-shrink-0"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
       {/* Dishes List, Loading or Empty State — the only scrolling region */}
       <div
         ref={listRef}
         data-testid="plan-dish-list"
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-4 flex flex-col"
       >
-          {isLoading ? (
+          {isLoading && !hasLoadedOnce ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <div className="w-8 h-8 rounded-full border-2 border-[#5B7C99] border-t-transparent animate-spin" />
+            </div>
+          ) : loadError && !hasLoadedOnce ? (
+            <div
+              data-testid="plan-load-error"
+              className="flex-1 flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-rose-200 rounded-3xl bg-rose-50/50 my-2"
+            >
+              <div className="w-12 h-12 rounded-full bg-rose-100 border border-rose-200 flex items-center justify-center mb-2 text-rose-600">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <p className="text-xs font-bold text-rose-800">
+                Không thể tải kế hoạch bữa ăn
+              </p>
+              <p className="text-[11px] text-rose-600/80 mt-1 max-w-[220px]">
+                Đã xảy ra lỗi khi tải dữ liệu Kế hoạch. Vui lòng bấm Thử lại.
+              </p>
+              <button
+                onClick={() => loadData()}
+                data-testid="plan-retry-btn"
+                className="mt-3 px-4 py-1.5 rounded-full bg-[#5B7C99] text-white text-xs font-bold hover:bg-[#4a6b88] transition shadow-sm"
+              >
+                Thử lại
+              </button>
             </div>
           ) : currentMealItems.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-white/60 my-2">
