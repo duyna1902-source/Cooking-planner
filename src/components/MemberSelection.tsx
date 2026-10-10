@@ -132,6 +132,9 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
       if (session.current === operationSession) {
         if (cause instanceof MemberError) {
           setFormError(cause.message);
+          if (cause.code === 'capacity-exceeded') {
+            reload.current();
+          }
         } else {
           setFormError(cause instanceof Error ? cause.message : 'Không thể lưu. Hãy thử lại.');
         }
