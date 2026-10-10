@@ -74,11 +74,12 @@ describe('Household Setup and PWA Shell Integration', () => {
     expect(screen.getByText('Kế hoạch tuần này')).toBeInTheDocument();
     await user.click(screen.getByTestId('quick-share-button'));
     expect(await navigator.clipboard.readText()).toContain('?join=BEP-892');
-    expect(screen.queryByRole('button', { name: /Đổi thành viên/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Đổi thành viên/i })).toBeInTheDocument();
     await user.click(screen.getByTestId('nav-menu-button'));
     expect(screen.getByTestId('menu-view')).toBeInTheDocument();
     expect(screen.getByText('Menu gia đình')).toBeInTheDocument();
     expect(screen.queryByTestId('switch-household-button')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('switch-member-button')).not.toBeInTheDocument();
     expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
     await user.click(screen.getByTestId('nav-plan-button'));
     expect(screen.getByTestId('plan-view')).toBeInTheDocument();

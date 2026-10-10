@@ -10,6 +10,7 @@ export interface AppHeaderProps {
   isOnline?: boolean;
   onOpenShare?: () => void;
   onChangeHousehold?: () => void;
+  onChangeMember?: () => void;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -18,7 +19,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   activeTab,
   isOnline = false,
   onOpenShare,
-  onChangeHousehold
+  onChangeHousehold,
+  onChangeMember,
 }) => {
   const { copied, copy } = useClipboardCopy();
 
@@ -85,6 +87,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </>
           )}
         </button>
+
+        {onChangeMember && (
+          <button
+            onClick={onChangeMember}
+            data-testid="switch-member-button"
+            title="Đổi thành viên"
+            className="text-[11px] text-slate-400 hover:text-slate-600 px-1 py-1"
+          >
+            Đổi thành viên
+          </button>
+        )}
 
         {onChangeHousehold && (
           <button
