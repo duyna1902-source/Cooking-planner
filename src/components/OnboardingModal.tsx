@@ -10,6 +10,9 @@ import { useClipboardCopy } from '../hooks/useClipboardCopy';
 
 interface OnboardingModalProps {
   initialCode?: string | null;
+  savedHouseholds?: string[];
+  onHouseholdCreated?: (householdCode: string) => void;
+  onSelectSaved?: (householdCode: string) => void;
   onComplete: (householdCode: string) => void;
 }
 
@@ -17,6 +20,9 @@ type OnboardingStep = 'choose' | 'create' | 'join' | 'created_success';
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   initialCode,
+  savedHouseholds = [],
+  onHouseholdCreated,
+  onSelectSaved,
   onComplete
 }) => {
   const [step, setStep] = useState<OnboardingStep>(() => {
@@ -42,6 +48,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const handleConfirmCreate = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    onHouseholdCreated?.(generatedCode);
     setStep('created_success');
   };
 
@@ -60,6 +67,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     onComplete(cleanCode);
   };
 
+  const handleSelectSavedHousehold = (code: string) => {
+    if (onSelectSaved) {
+      onSelectSaved(code);
+    } else {
+      onComplete(code);
+    }
+  };
+
   const handleCopyLink = () => {
     const url = createShareUrl(generatedCode);
     copy(url);
@@ -72,23 +87,52 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       aria-labelledby="onboarding-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
     >
-      <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col justify-center">
         
-        {/* Step 1: Choose between Create and Join */}
+        {/* Step 1: Choose between Saved, Create and Join */}
         {step === 'choose' && (
           <div className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-[#FEF7DC] border-2 border-[#EFE4B5] flex items-center justify-center mb-4 shadow-sm">
-              <Home className="w-8 h-8 text-[#5B7C99]" />
+            <div className="w-14 h-14 rounded-full bg-[#FEF7DC] border-2 border-[#EFE4B5] flex items-center justify-center mb-3 shadow-sm">
+              <Home className="w-7 h-7 text-[#5B7C99]" />
             </div>
 
             <h2 id="onboarding-title" className="text-xl font-bold text-[#334E68] mb-1">
               Bếp Gia Đình
             </h2>
-            <p className="text-xs text-slate-500 mb-6 leading-relaxed max-w-[260px]">
+            <p className="text-xs text-slate-500 mb-4 leading-relaxed max-w-[260px]">
               Lập Kế hoạch ăn uống và quản lý Menu món ăn mỗi ngày cùng gia đình bạn
             </p>
 
-            <div className="w-full space-y-3">
+            {savedHouseholds.length > 0 && (
+              <div className="w-full mb-4 text-left">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Gia đình đã lưu
+                </div>
+                <div
+                  data-testid="saved-households-grid"
+                  className="grid grid-cols-2 gap-2.5 max-h-48 overflow-y-auto pr-1"
+                >
+                  {savedHouseholds.map((code) => (
+                    <button
+                      key={code}
+                      type="button"
+                      data-testid={`saved-household-card-${code}`}
+                      onClick={() => handleSelectSavedHousehold(code)}
+                      className="aspect-square flex flex-col items-center justify-center p-3 rounded-2xl bg-[#FEF7DC]/50 hover:bg-[#FEF7DC] border border-[#EFE4B5] transition active:scale-95 text-center group cursor-pointer shadow-xs"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[#FEF7DC] border border-[#EFE4B5] flex items-center justify-center mb-1.5 group-hover:scale-105 transition">
+                        <Home className="w-5 h-5 text-[#5B7C99]" />
+                      </div>
+                      <span className="text-xs font-bold text-[#334E68] tracking-wider truncate w-full px-1">
+                        {code}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="w-full space-y-2.5">
               <button
                 onClick={handleStartCreate}
                 data-testid="create-household-button"

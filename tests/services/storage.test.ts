@@ -62,6 +62,38 @@ describe('HouseholdStorage navigation state contract', () => {
       expect(storage.getNavigationState()).toEqual({ status: 'choosing_household' });
       expect(storage.getHouseholdCode()).toBeNull();
     });
+
+    it('manages saved households with LRU order, deduplication, and normalization', () => {
+      const storage = new InMemoryHouseholdStorage();
+      expect(storage.getSavedHouseholds()).toEqual([]);
+
+      storage.saveHousehold('bep-101');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-101']);
+
+      storage.saveHousehold('BEP-202');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-202', 'BEP-101']);
+
+      // Re-saving existing household moves it to the front without duplicates
+      storage.saveHousehold('bep-101');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-101', 'BEP-202']);
+
+      // Invalid code is ignored
+      storage.saveHousehold('!invalid');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-101', 'BEP-202']);
+
+      // Removing a saved household
+      storage.removeSavedHousehold('BEP-101');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-202']);
+    });
+
+    it('backwards compatibility: includes initial legacy householdCode in getSavedHouseholds', () => {
+      const storage = new InMemoryHouseholdStorage('bep-999');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-999']);
+
+      // Saving another code puts it at the front
+      storage.saveHousehold('BEP-111');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-111', 'BEP-999']);
+    });
   });
 
   describe('LocalStorageHouseholdStorage', () => {
@@ -127,6 +159,46 @@ describe('HouseholdStorage navigation state contract', () => {
         status: 'choosing_member',
         householdCode: 'BEP-CORRUPT',
       });
+    });
+
+    it('persists saved households in localStorage with LRU order and deduplication', () => {
+      const storage = new LocalStorageHouseholdStorage();
+      expect(storage.getSavedHouseholds()).toEqual([]);
+
+      storage.saveHousehold('bep-100');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-100']);
+      expect(JSON.parse(localStorage.getItem('cooking_plan_saved_households')!)).toEqual(['BEP-100']);
+
+      storage.saveHousehold('BEP-200');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-200', 'BEP-100']);
+
+      // Re-saving bep-100 moves to front
+      storage.saveHousehold('BEP-100');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-100', 'BEP-200']);
+
+      // Removing a household
+      storage.removeSavedHousehold('BEP-200');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-100']);
+      expect(JSON.parse(localStorage.getItem('cooking_plan_saved_households')!)).toEqual(['BEP-100']);
+    });
+
+    it('backwards compatibility: includes legacy cooking_plan_household_code in getSavedHouseholds if saved key is missing', () => {
+      localStorage.setItem('cooking_plan_household_code', 'BEP-LEGACY');
+
+      const storage = new LocalStorageHouseholdStorage();
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-LEGACY']);
+
+      // Once explicit save happens, it saves to cooking_plan_saved_households
+      storage.saveHousehold('BEP-NEW');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-NEW', 'BEP-LEGACY']);
+    });
+
+    it('does not resurrect legacy code once cooking_plan_saved_households is explicitly set or emptied', () => {
+      localStorage.setItem('cooking_plan_household_code', 'BEP-LEGACY');
+      localStorage.setItem('cooking_plan_saved_households', JSON.stringify([]));
+
+      const storage = new LocalStorageHouseholdStorage();
+      expect(storage.getSavedHouseholds()).toEqual([]);
     });
   });
 });

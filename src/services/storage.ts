@@ -1,3 +1,8 @@
+import {
+  normalizeHouseholdCode,
+  isValidHouseholdCode,
+} from '../domain/household';
+
 export type HouseholdNavigationState =
   | { status: 'choosing_household' }
   | { status: 'choosing_member'; householdCode: string }
@@ -10,12 +15,16 @@ export interface HouseholdStorage {
   setNickname(nickname: string): void;
   getNavigationState(): HouseholdNavigationState;
   setNavigationState(state: HouseholdNavigationState): void;
+  getSavedHouseholds(): string[];
+  saveHousehold(code: string): void;
+  removeSavedHousehold(code: string): void;
   clearSession(): void;
 }
 
 const HOUSEHOLD_CODE_KEY = 'cooking_plan_household_code';
 const NICKNAME_KEY = 'cooking_plan_nickname';
 const NAVIGATION_STATE_KEY = 'cooking_plan_navigation_state';
+const SAVED_HOUSEHOLDS_KEY = 'cooking_plan_saved_households';
 
 export class LocalStorageHouseholdStorage implements HouseholdStorage {
   getHouseholdCode(): string | null {
@@ -108,6 +117,53 @@ export class LocalStorageHouseholdStorage implements HouseholdStorage {
     }
   }
 
+  getSavedHouseholds(): string[] {
+    try {
+      const raw = localStorage.getItem(SAVED_HOUSEHOLDS_KEY);
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .filter((item): item is string => typeof item === 'string' && isValidHouseholdCode(item))
+            .map(normalizeHouseholdCode);
+        }
+      }
+    } catch {
+      // Ignored on parse error or localStorage error
+    }
+
+    // Backwards compatibility: check legacy code if saved list key was never initialized
+    const legacyCode = this.getHouseholdCode();
+    if (legacyCode && isValidHouseholdCode(legacyCode)) {
+      return [normalizeHouseholdCode(legacyCode)];
+    }
+
+    return [];
+  }
+
+  saveHousehold(code: string): void {
+    const normalized = normalizeHouseholdCode(code);
+    if (!isValidHouseholdCode(normalized)) return;
+
+    try {
+      const current = this.getSavedHouseholds().filter((c) => c !== normalized);
+      const updated = [normalized, ...current];
+      localStorage.setItem(SAVED_HOUSEHOLDS_KEY, JSON.stringify(updated));
+    } catch {
+      // Ignored in restricted environments
+    }
+  }
+
+  removeSavedHousehold(code: string): void {
+    const normalized = normalizeHouseholdCode(code);
+    try {
+      const current = this.getSavedHouseholds().filter((c) => c !== normalized);
+      localStorage.setItem(SAVED_HOUSEHOLDS_KEY, JSON.stringify(current));
+    } catch {
+      // Ignored
+    }
+  }
+
   clearSession(): void {
     try {
       localStorage.removeItem(HOUSEHOLD_CODE_KEY);
@@ -123,14 +179,19 @@ export class InMemoryHouseholdStorage implements HouseholdStorage {
   private householdCode: string | null = null;
   private nickname: string | null = null;
   private navigationState: HouseholdNavigationState | null = null;
+  private savedHouseholds: string[] | null = null;
 
   constructor(
     initialHouseholdCode?: string,
     initialNickname?: string,
-    initialNavigationState?: HouseholdNavigationState
+    initialNavigationState?: HouseholdNavigationState,
+    initialSavedHouseholds?: string[]
   ) {
     if (initialHouseholdCode) this.householdCode = initialHouseholdCode;
     if (initialNickname) this.nickname = initialNickname;
+    if (initialSavedHouseholds) {
+      this.savedHouseholds = [...initialSavedHouseholds];
+    }
     if (initialNavigationState) {
       this.setNavigationState(initialNavigationState);
     } else if (initialHouseholdCode && initialHouseholdCode.trim()) {
@@ -181,6 +242,30 @@ export class InMemoryHouseholdStorage implements HouseholdStorage {
     } else {
       this.householdCode = state.householdCode;
     }
+  }
+
+  getSavedHouseholds(): string[] {
+    if (this.savedHouseholds !== null) {
+      return [...this.savedHouseholds];
+    }
+    if (this.householdCode && isValidHouseholdCode(this.householdCode)) {
+      return [normalizeHouseholdCode(this.householdCode)];
+    }
+    return [];
+  }
+
+  saveHousehold(code: string): void {
+    const normalized = normalizeHouseholdCode(code);
+    if (!isValidHouseholdCode(normalized)) return;
+
+    const current = this.getSavedHouseholds().filter((c) => c !== normalized);
+    this.savedHouseholds = [normalized, ...current];
+  }
+
+  removeSavedHousehold(code: string): void {
+    const normalized = normalizeHouseholdCode(code);
+    const current = this.getSavedHouseholds().filter((c) => c !== normalized);
+    this.savedHouseholds = current;
   }
 
   clearSession(): void {
