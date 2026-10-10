@@ -6,7 +6,7 @@ import { InMemoryHouseholdStorage } from '../../src/services/storage';
 import { InMemoryDishRepository } from '../../src/services/dishRepository';
 import { InMemoryPlanRepository } from '../../src/services/planRepository';
 import { TestMemberRepository, sampleMember, deferred } from '../support/memberRepository';
-import { Member } from '../../src/domain/member';
+import { Member, MemberError } from '../../src/domain/member';
 import { createMemberRepository } from '../../src/services/repositoryFactory';
 import { formatDateToISO } from '../../src/domain/plan';
 
@@ -147,6 +147,7 @@ describe('Explicit Thành viên selection through App', () => {
     expect(await screen.findByRole('button', { name: 'Chọn An' })).toBeInTheDocument();
     await act(async () => { old.resolve([sampleMember('Mẹ')]); oldEvent(); });
     expect(screen.queryByRole('button', { name: 'Chọn Mẹ' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Chọn An' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Chọn An' })).toBeInTheDocument();
     repository.getMembers = vi.fn().mockReturnValueOnce(stale.promise).mockResolvedValue([sampleMember('Bố', 'BEP-999')]);
     await act(async () => { currentEvent(); currentEvent(); });
@@ -402,6 +403,38 @@ describe('Explicit Thành viên selection through App', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent('Gia đình đã có tối đa 6 Thành viên.');
       expect(addMemberSpy).not.toHaveBeenCalled();
     });
+
+    it('handles server-side capacity-exceeded rejection during concurrent addition, showing error and reloading members', async () => {
+      const repository = new TestMemberRepository([
+        sampleMember('Mẹ'),
+        sampleMember('Bố'),
+        sampleMember('An'),
+        sampleMember('Linh'),
+        sampleMember('Bà'),
+      ]);
+      const getMembersSpy = vi.spyOn(repository, 'getMembers');
+      render(<App storage={new InMemoryHouseholdStorage('BEP-123')} memberRepository={repository} />);
+
+      const addBtn = await screen.findByRole('button', { name: '+ Thêm thành viên' });
+      await userEvent.click(addBtn);
+
+      await userEvent.type(screen.getByRole('textbox', { name: 'Tên Thành viên' }), 'Cháu');
+
+      // Server rejects due to atomic 6-member limit reached concurrently
+      vi.spyOn(repository, 'addMember').mockRejectedValueOnce(
+        new MemberError('capacity-exceeded', 'Gia đình đã có tối đa 6 Thành viên.')
+      );
+      getMembersSpy.mockClear();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Lưu Thành viên' }));
+
+      // Inline error is shown on form
+      expect(await screen.findByRole('alert')).toHaveTextContent('Gia đình đã có tối đa 6 Thành viên.');
+      // Does not navigate to PlanView
+      expect(screen.queryByTestId('plan-view')).not.toBeInTheDocument();
+      // Reload is triggered to fetch confirmed members
+      expect(getMembersSpy).toHaveBeenCalled();
+    });
   });
 
   describe('Floating Toast and Delete Management Mode Integration (Ticket 03)', () => {
@@ -457,6 +490,3 @@ describe('Explicit Thành viên selection through App', () => {
     });
   });
 });
-
-
-

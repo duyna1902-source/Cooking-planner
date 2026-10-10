@@ -4,6 +4,7 @@ import { render, screen, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemberSelection } from '../../src/components/MemberSelection';
 import { TestMemberRepository, sampleMember } from '../support/memberRepository';
+import { MemberError } from '../../src/domain/member';
 
 describe('MemberSelection Component (Ticket 01)', () => {
   it('renders zero-scroll layout with empty state when Gia đình has 0 members', async () => {
@@ -221,6 +222,47 @@ describe('MemberSelection Component (Ticket 01)', () => {
       // Form displays inline error and repository.addMember is NOT called
       expect(await screen.findByRole('alert')).toHaveTextContent('Gia đình đã có tối đa 6 Thành viên.');
       expect(addMemberSpy).not.toHaveBeenCalled();
+    });
+
+    it('catches capacity-exceeded from repository.addMember, displays message, and reloads confirmed members', async () => {
+      const repository = new TestMemberRepository([
+        sampleMember('Mẹ'),
+        sampleMember('Bố'),
+        sampleMember('An'),
+        sampleMember('Linh'),
+        sampleMember('Bà'),
+      ]);
+      const getMembersSpy = vi.spyOn(repository, 'getMembers');
+
+      render(
+        <MemberSelection
+          householdCode="BEP-123"
+          repository={repository}
+          onChoose={vi.fn()}
+        />
+      );
+
+      const addBtn = await screen.findByRole('button', { name: '+ Thêm thành viên' });
+      await userEvent.click(addBtn);
+
+      const input = screen.getByRole('textbox', { name: 'Tên Thành viên' });
+      await userEvent.type(input, 'Bé Út');
+
+      // Mock repository.addMember to simulate server rejection due to concurrent limit reached
+      vi.spyOn(repository, 'addMember').mockRejectedValueOnce(
+        new MemberError('capacity-exceeded', 'Gia đình đã có tối đa 6 Thành viên.')
+      );
+      getMembersSpy.mockClear();
+
+      const submitBtn = screen.getByRole('button', { name: 'Lưu Thành viên' });
+      await userEvent.click(submitBtn);
+
+      // Displays exact capacity error message on form
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent('Gia đình đã có tối đa 6 Thành viên.');
+
+      // Triggers reload to fetch actual confirmed members from database
+      expect(getMembersSpy).toHaveBeenCalled();
     });
 
     it('restores "+ Thêm thành viên" button when a member is deleted so count drops to 5 or fewer', async () => {

@@ -65,6 +65,34 @@ CREATE TABLE IF NOT EXISTS public.member (
 CREATE UNIQUE INDEX IF NOT EXISTS member_household_name_unique
   ON public.member (household_code, lower(btrim(name)));
 
+-- Giới hạn tối đa 6 Thành viên mỗi Gia đình (Ticket 07: Atomic 6-member limit under concurrency)
+CREATE OR REPLACE FUNCTION public.check_household_member_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  member_count INTEGER;
+BEGIN
+  -- Khóa giao dịch độc quyền theo household_code để tuần tự hóa các yêu cầu thêm đồng thời
+  PERFORM pg_advisory_xact_lock(hashtext(NEW.household_code));
+
+  SELECT count(*)
+  INTO member_count
+  FROM public.member
+  WHERE household_code = NEW.household_code;
+
+  IF member_count >= 6 THEN
+    RAISE EXCEPTION 'household_member_limit_reached' USING ERRCODE = 'P0001';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_member_limit ON public.member;
+CREATE TRIGGER trg_member_limit
+  BEFORE INSERT ON public.member
+  FOR EACH ROW
+  EXECUTE FUNCTION public.check_household_member_limit();
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- Zero-credential shared access: Truy cập theo Household Code

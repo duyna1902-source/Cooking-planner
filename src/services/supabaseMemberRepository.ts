@@ -15,6 +15,13 @@ function member(row: MemberRow): Member {
 }
 
 function failure(error: { code?: string; message: string }): MemberError {
+  if (
+    error.code === 'P0001' ||
+    error.message?.includes('household_member_limit_reached') ||
+    error.message?.includes('capacity-exceeded')
+  ) {
+    return new MemberError('capacity-exceeded', 'Gia đình đã có tối đa 6 Thành viên.');
+  }
   if (error.code === '23505') return new MemberError('duplicate-name', 'Tên này đã có trong Gia đình. Hãy chọn Thành viên đó.');
   if (error.code === '23514') return new MemberError('invalid-name', 'Tên hoặc Mã nhà không hợp lệ. Nhập tên từ 1 đến 30 ký tự.');
   return new MemberError('unavailable', `Không thể kết nối database hoặc thiếu quyền. Hãy thử lại. (${error.message})`);
