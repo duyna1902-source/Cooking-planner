@@ -72,19 +72,36 @@ describe('Household Setup and PWA Shell Integration', () => {
     await user.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
     expect(screen.getByTestId('plan-view')).toBeInTheDocument();
     expect(screen.getByText('Kế hoạch tuần này')).toBeInTheDocument();
-    await user.click(screen.getByTestId('quick-share-button'));
-    expect(await navigator.clipboard.readText()).toContain('?join=BEP-892');
-    expect(screen.getByRole('button', { name: /Đổi thành viên/i })).toBeInTheDocument();
+
+    // Clicking household code button opens Share modal (Ticket 03)
+    await user.click(screen.getByTestId('household-code-badge'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Chia sẻ Nhà cho gia đình')).toBeInTheDocument();
+    await user.click(screen.getAllByRole('button', { name: 'Đóng' })[0]);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    // In Plan tab, clicking member button opens dropdown menu
+    await user.click(screen.getByTestId('member-name-badge'));
+    expect(screen.getByRole('menuitem', { name: 'Đổi thành viên' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Đổi gia đình' })).toBeInTheDocument();
+
+    // In Menu tab, member badge is display-only, no switch controls
     await user.click(screen.getByTestId('nav-menu-button'));
     expect(screen.getByTestId('menu-view')).toBeInTheDocument();
     expect(screen.getByText('Menu gia đình')).toBeInTheDocument();
     expect(screen.queryByTestId('switch-household-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('switch-member-button')).not.toBeInTheDocument();
     expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Mẹ');
+    expect(screen.getByTestId('member-name-badge').tagName).toBe('SPAN');
+
+    // Return to Plan tab and switch household through member dropdown
     await user.click(screen.getByTestId('nav-plan-button'));
     expect(screen.getByTestId('plan-view')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Đổi gia đình' }));
+    await user.click(screen.getByTestId('member-name-badge'));
+    await user.click(screen.getByRole('menuitem', { name: 'Đổi gia đình' }));
     expect(screen.queryByTestId('plan-view')).not.toBeInTheDocument();
+
+    // Enter BEP-321
     await user.click(screen.getByTestId('join-household-button'));
     await user.type(screen.getByTestId('household-code-input'), 'BEP-321');
     await user.click(screen.getByTestId('confirm-join-button'));

@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Check, Home, Plus, Trash2, Users, UtensilsCrossed, X } from 'lucide-react';
+import { Check, ChevronLeft, Home, Plus, Trash2, Users, UtensilsCrossed, X } from 'lucide-react';
 import { Member, normalizeMemberName, memberNameKey, sortMembers, MAX_MEMBERS, validateMemberCapacity, MemberError } from '../domain/member';
 import { MemberRepository } from '../services/memberRepository';
 import './MemberSelection.css';
@@ -45,10 +45,11 @@ function MemberDialog({ title, danger, busy, onClose, children }: {
   </div>;
 }
 
-export function MemberSelection({ householdCode, repository, onChoose }: {
+export function MemberSelection({ householdCode, repository, onChoose, onBackToHousehold }: {
   householdCode: string;
   repository: MemberRepository;
   onChoose: (member: Member) => void;
+  onBackToHousehold?: () => void;
 }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [error, setError] = useState('');
@@ -173,7 +174,20 @@ export function MemberSelection({ householdCode, repository, onChoose }: {
   return <main className={`member-selection ${isCompact ? 'ms-compact' : ''}`} data-testid="member-selection-root" data-compact={isCompact ? 'true' : undefined}>
     <div className="ms-surface" data-testid="member-selection-surface" aria-hidden={modalOpen || undefined}>
       <header className="ms-brand-header">
-        <span className="ms-brand"><UtensilsCrossed size={17} /><span>Bếp Gia Đình</span></span>
+        {onBackToHousehold ? (
+          <button
+            type="button"
+            className="ms-back-household"
+            onClick={onBackToHousehold}
+            aria-label="Đổi gia đình"
+            data-testid="back-to-household-button"
+          >
+            <ChevronLeft size={16} />
+            <span>Đổi gia đình</span>
+          </button>
+        ) : (
+          <span className="ms-brand"><UtensilsCrossed size={17} /><span>Bếp Gia Đình</span></span>
+        )}
         <button className={`ms-manage ${managing ? 'active' : ''}`} disabled={!listReady || !members.length || modalOpen} aria-pressed={managing}
           onClick={() => { setManaging(!managing); setNotice(''); }}>{managing ? <Check size={14} /> : <Trash2 size={14} />}<span>{managing ? 'Xong' : 'Xóa'}</span></button>
       </header>

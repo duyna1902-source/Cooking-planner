@@ -24,9 +24,9 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
     setSupabaseClientForTesting(null);
   });
 
-  describe('AppHeader Connection Status Indicator', () => {
-    it('displays 🟡 Chế độ máy when isOnline is false', () => {
-      render(
+  describe('AppHeader Connection Status Indicator (Ticket 03)', () => {
+    it('does not display persistent sync-status-badge in header when offline or online', () => {
+      const { rerender } = render(
         <AppHeader
           householdCode="NHA123"
           memberName="Mẹ"
@@ -35,14 +35,9 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
         />
       );
 
-      const badge = screen.getByTestId('sync-status-badge');
-      expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent('🟡 Chế độ máy');
-      expect(badge).toHaveAttribute('title', 'Chế độ máy Local');
-    });
+      expect(screen.queryByTestId('sync-status-badge')).not.toBeInTheDocument();
 
-    it('displays 🟢 Online when isOnline is true', () => {
-      render(
+      rerender(
         <AppHeader
           householdCode="NHA123"
           memberName="Mẹ"
@@ -51,15 +46,12 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
         />
       );
 
-      const badge = screen.getByTestId('sync-status-badge');
-      expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent('🟢 Online');
-      expect(badge).toHaveAttribute('title', 'Đang đồng bộ Online');
+      expect(screen.queryByTestId('sync-status-badge')).not.toBeInTheDocument();
     });
   });
 
-  describe('App Dual Mode Resolution', () => {
-    it('defaults to Local Mode when Supabase is not configured', async () => {
+  describe('App Dual Mode Resolution (Ticket 03)', () => {
+    it('defaults to Local Mode when Supabase is not configured and header remains compact', async () => {
       // @ts-expect-error test override
       import.meta.env.VITE_SUPABASE_URL = '';
       // @ts-expect-error test override
@@ -70,12 +62,12 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       await userEvent.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
 
       await waitFor(() => {
-        const badge = screen.getByTestId('sync-status-badge');
-        expect(badge).toHaveTextContent('🟡 Chế độ máy');
+        expect(screen.getByTestId('plan-view')).toBeInTheDocument();
+        expect(screen.queryByTestId('sync-status-badge')).not.toBeInTheDocument();
       });
     });
 
-    it('activates Online Mode when Supabase client is configured', async () => {
+    it('activates Online Mode when Supabase client is configured and header remains compact', async () => {
       const mockClient = { from: vi.fn(), channel: vi.fn() } as any;
       setSupabaseClientForTesting(mockClient);
 
@@ -84,8 +76,8 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       await userEvent.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
 
       await waitFor(() => {
-        const badge = screen.getByTestId('sync-status-badge');
-        expect(badge).toHaveTextContent('🟢 Online');
+        expect(screen.getByTestId('plan-view')).toBeInTheDocument();
+        expect(screen.queryByTestId('sync-status-badge')).not.toBeInTheDocument();
       });
     });
   });
@@ -229,7 +221,7 @@ describe('Dual Mode and Realtime Sync Integration (Ticket 06)', () => {
       );
 
       // Open DishDetailDrawer by clicking the dish card
-      await user.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Chọn Mẹ' }));
       await waitFor(() => {
         expect(screen.getByText('Canh chua cá lóc')).toBeInTheDocument();
       });

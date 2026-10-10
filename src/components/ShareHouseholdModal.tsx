@@ -83,7 +83,7 @@ export const ShareHouseholdModal: React.FC<ShareHouseholdModalProps> = ({
             </div>
           </div>
           <p className="text-[11px] text-slate-400">
-            Người thân chỉ cần mở link này trên điện thoại và nhập biệt danh để vào cùng Nhà.
+            Người thân chỉ cần mở link này trên điện thoại và chọn Thành viên để vào cùng Nhà.
           </p>
         </div>
 
