@@ -40,6 +40,7 @@ export const App: React.FC<AppProps> = ({
 
   const verificationVersionRef = useRef(0);
   const [householdCode, setHouseholdCode] = useState<string | null>(null);
+  const [savedHouseholds, setSavedHouseholds] = useState<string[]>(() => storage.getSavedHouseholds());
   const [member, setMember] = useState<Member | null>(null);
   const [activeTab, setActiveTab] = useState<NavigationTab>('plan');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -134,6 +135,7 @@ export const App: React.FC<AppProps> = ({
     if (detectedJoin) {
       removeJoinFromWindowUrl();
       storage.saveHousehold(detectedJoin);
+      setSavedHouseholds(storage.getSavedHouseholds());
       if (!targetCode || detectedJoin !== targetCode) {
         storage.setNavigationState({ status: 'choosing_member', householdCode: detectedJoin });
         setHouseholdCode(detectedJoin);
@@ -185,6 +187,7 @@ export const App: React.FC<AppProps> = ({
   const handleSwitchHousehold = () => {
     verificationVersionRef.current++;
     storage.setNavigationState({ status: 'choosing_household' });
+    setSavedHouseholds(storage.getSavedHouseholds());
     setHouseholdCode(null);
     setMember(null);
     setRestorationStatus('idle');
@@ -221,9 +224,15 @@ export const App: React.FC<AppProps> = ({
     setPendingVerification(null);
   };
 
+  const handleForgetHousehold = (code: string) => {
+    storage.removeSavedHousehold(code);
+    setSavedHouseholds(storage.getSavedHouseholds());
+  };
+
   const handleOnboardingComplete = (code: string) => {
     verificationVersionRef.current++;
     storage.saveHousehold(code);
+    setSavedHouseholds(storage.getSavedHouseholds());
     storage.setNavigationState({ status: 'choosing_member', householdCode: code });
     setHouseholdCode(code);
     setMember(null);
@@ -278,9 +287,13 @@ export const App: React.FC<AppProps> = ({
           </div>
         ) : !householdCode || isSwitchingHousehold ? (
           <OnboardingModal
-            savedHouseholds={storage.getSavedHouseholds()}
-            onHouseholdCreated={(code) => storage.saveHousehold(code)}
+            savedHouseholds={savedHouseholds}
+            onHouseholdCreated={(code) => {
+              storage.saveHousehold(code);
+              setSavedHouseholds(storage.getSavedHouseholds());
+            }}
             onSelectSaved={handleOnboardingComplete}
+            onForgetHousehold={handleForgetHousehold}
             onComplete={handleOnboardingComplete}
           />
         ) : !member ? (

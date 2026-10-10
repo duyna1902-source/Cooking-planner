@@ -159,6 +159,13 @@ export class LocalStorageHouseholdStorage implements HouseholdStorage {
     try {
       const current = this.getSavedHouseholds().filter((c) => c !== normalized);
       localStorage.setItem(SAVED_HOUSEHOLDS_KEY, JSON.stringify(current));
+      const navState = this.getNavigationState();
+      if (
+        (navState.status === 'choosing_member' || navState.status === 'selected') &&
+        navState.householdCode === normalized
+      ) {
+        this.setNavigationState({ status: 'choosing_household' });
+      }
     } catch {
       // Ignored
     }
@@ -266,6 +273,13 @@ export class InMemoryHouseholdStorage implements HouseholdStorage {
     const normalized = normalizeHouseholdCode(code);
     const current = this.getSavedHouseholds().filter((c) => c !== normalized);
     this.savedHouseholds = current;
+    const navState = this.getNavigationState();
+    if (
+      (navState.status === 'choosing_member' || navState.status === 'selected') &&
+      navState.householdCode === normalized
+    ) {
+      this.setNavigationState({ status: 'choosing_household' });
+    }
   }
 
   clearSession(): void {

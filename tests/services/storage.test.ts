@@ -86,6 +86,29 @@ describe('HouseholdStorage navigation state contract', () => {
       expect(storage.getSavedHouseholds()).toEqual(['BEP-202']);
     });
 
+    it('resets navigation state to choosing_household if removing the active household', () => {
+      const storage = new InMemoryHouseholdStorage();
+      storage.saveHousehold('BEP-101');
+      storage.setNavigationState({ status: 'choosing_member', householdCode: 'BEP-101' });
+
+      storage.removeSavedHousehold('BEP-101');
+      expect(storage.getNavigationState()).toEqual({ status: 'choosing_household' });
+      expect(storage.getHouseholdCode()).toBeNull();
+    });
+
+    it('does not alter navigation state if removing a household other than the active one', () => {
+      const storage = new InMemoryHouseholdStorage();
+      storage.saveHousehold('BEP-101');
+      storage.saveHousehold('BEP-202');
+      storage.setNavigationState({ status: 'choosing_member', householdCode: 'BEP-202' });
+
+      storage.removeSavedHousehold('BEP-101');
+      expect(storage.getNavigationState()).toEqual({
+        status: 'choosing_member',
+        householdCode: 'BEP-202',
+      });
+    });
+
     it('backwards compatibility: includes initial legacy householdCode in getSavedHouseholds', () => {
       const storage = new InMemoryHouseholdStorage('bep-999');
       expect(storage.getSavedHouseholds()).toEqual(['BEP-999']);
@@ -180,6 +203,16 @@ describe('HouseholdStorage navigation state contract', () => {
       storage.removeSavedHousehold('BEP-200');
       expect(storage.getSavedHouseholds()).toEqual(['BEP-100']);
       expect(JSON.parse(localStorage.getItem('cooking_plan_saved_households')!)).toEqual(['BEP-100']);
+    });
+
+    it('resets navigation state to choosing_household if removing the active household in LocalStorage', () => {
+      const storage = new LocalStorageHouseholdStorage();
+      storage.saveHousehold('BEP-300');
+      storage.setNavigationState({ status: 'selected', householdCode: 'BEP-300', memberId: 'm-1' });
+
+      storage.removeSavedHousehold('BEP-300');
+      expect(storage.getNavigationState()).toEqual({ status: 'choosing_household' });
+      expect(storage.getHouseholdCode()).toBeNull();
     });
 
     it('backwards compatibility: includes legacy cooking_plan_household_code in getSavedHouseholds if saved key is missing', () => {
