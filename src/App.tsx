@@ -133,6 +133,7 @@ export const App: React.FC<AppProps> = ({
 
     if (detectedJoin) {
       removeJoinFromWindowUrl();
+      storage.saveHousehold(detectedJoin);
       if (!targetCode || detectedJoin !== targetCode) {
         storage.setNavigationState({ status: 'choosing_member', householdCode: detectedJoin });
         setHouseholdCode(detectedJoin);
@@ -222,6 +223,7 @@ export const App: React.FC<AppProps> = ({
 
   const handleOnboardingComplete = (code: string) => {
     verificationVersionRef.current++;
+    storage.saveHousehold(code);
     storage.setNavigationState({ status: 'choosing_member', householdCode: code });
     setHouseholdCode(code);
     setMember(null);
@@ -275,7 +277,12 @@ export const App: React.FC<AppProps> = ({
             </div>
           </div>
         ) : !householdCode || isSwitchingHousehold ? (
-          <OnboardingModal onComplete={handleOnboardingComplete} />
+          <OnboardingModal
+            savedHouseholds={storage.getSavedHouseholds()}
+            onHouseholdCreated={(code) => storage.saveHousehold(code)}
+            onSelectSaved={handleOnboardingComplete}
+            onComplete={handleOnboardingComplete}
+          />
         ) : !member ? (
           <div className="flex-1 flex flex-col min-h-0 relative">
             {deletedNotice && (

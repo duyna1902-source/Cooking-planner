@@ -95,4 +95,99 @@ describe('Household Setup and PWA Shell Integration', () => {
     await user.click(screen.getByRole('button', { name: 'Chọn Bố' }));
     await waitFor(() => expect(screen.getByTestId('member-name-badge')).toHaveTextContent('Bố'));
   });
+
+  describe('Saved Household Picker (Ticket 04)', () => {
+    it('displays saved households as 2-column square cards and keeps primary action buttons visible', async () => {
+      storage.saveHousehold('BEP-111');
+      storage.saveHousehold('BEP-222');
+      renderApp();
+
+      const grid = screen.getByTestId('saved-households-grid');
+      expect(grid).toBeInTheDocument();
+      expect(grid.className).toContain('grid-cols-2');
+
+      const card222 = screen.getByTestId('saved-household-card-BEP-222');
+      const card111 = screen.getByTestId('saved-household-card-BEP-111');
+      expect(card222).toBeInTheDocument();
+      expect(card111).toBeInTheDocument();
+      expect(card222.className).toContain('aspect-square');
+
+      // Primary buttons remain accessible
+      expect(screen.getByTestId('create-household-button')).toBeInTheDocument();
+      expect(screen.getByTestId('join-household-button')).toBeInTheDocument();
+    });
+
+    it('clicking a saved household card navigates immediately to member selection without auto-selecting member, and survives F5', async () => {
+      storage.saveHousehold('BEP-333');
+      const memberRepo = new TestMemberRepository([sampleMember('Chi', 'BEP-333')]);
+      const user = userEvent.setup();
+      renderApp(undefined, memberRepo);
+
+      await user.click(screen.getByTestId('saved-household-card-BEP-333'));
+
+      // Transitions to choosing_member
+      expect(await screen.findByRole('button', { name: 'Chọn Chi' })).toBeInTheDocument();
+      expect(screen.queryByTestId('plan-view')).not.toBeInTheDocument();
+      expect(storage.getNavigationState()).toEqual({
+        status: 'choosing_member',
+        householdCode: 'BEP-333',
+      });
+
+      // Simulating F5 reload with the same storage
+      const reloaded = render(
+        <App storage={storage} memberRepository={memberRepo}
+          dishRepository={new InMemoryDishRepository()} planRepository={new InMemoryPlanRepository()} />
+      );
+      expect(await reloaded.findByRole('button', { name: 'Chọn Chi' })).toBeInTheDocument();
+      expect(reloaded.queryByTestId('plan-view')).not.toBeInTheDocument();
+    });
+
+    it('clicking a saved household card re-orders it to the front of saved list', async () => {
+      storage.saveHousehold('BEP-AAA');
+      storage.saveHousehold('BEP-BBB');
+      // Current order: BEP-BBB, BEP-AAA
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-BBB', 'BEP-AAA']);
+
+      const user = userEvent.setup();
+      renderApp(undefined, new TestMemberRepository());
+
+      await user.click(screen.getByTestId('saved-household-card-BEP-AAA'));
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-AAA', 'BEP-BBB']);
+    });
+
+    it('saves newly created household immediately upon creation confirmation', async () => {
+      const user = userEvent.setup();
+      renderApp();
+
+      await user.click(screen.getByTestId('create-household-button'));
+      const code = screen.getByTestId('generated-code-display').textContent!.trim();
+      await user.click(screen.getByTestId('confirm-create-button'));
+
+      // Should be immediately in saved households
+      expect(storage.getSavedHouseholds()).toContain(code);
+    });
+
+    it('saves newly joined household when code is valid, and rejects invalid code without saving', async () => {
+      const user = userEvent.setup();
+      renderApp();
+
+      await user.click(screen.getByTestId('join-household-button'));
+      await user.type(screen.getByTestId('household-code-input'), '!!');
+      await user.click(screen.getByTestId('confirm-join-button'));
+
+      expect(screen.getByTestId('error-message')).toBeInTheDocument();
+      expect(storage.getSavedHouseholds()).toEqual([]);
+
+      await user.clear(screen.getByTestId('household-code-input'));
+      await user.type(screen.getByTestId('household-code-input'), 'BEP-888');
+      await user.click(screen.getByTestId('confirm-join-button'));
+
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-888']);
+    });
+
+    it('join link saves the household immediately to saved households', async () => {
+      renderApp('?join=BEP-JOINED');
+      expect(storage.getSavedHouseholds()).toEqual(['BEP-JOINED']);
+    });
+  });
 });
