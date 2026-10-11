@@ -54,64 +54,219 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 6px 16px 2px;
+  gap: 16px;
+  padding: 6px 20px;
   flex-shrink: 0;
-}
-.ms-page-info {
-  font-size: 11px;
-  font-weight: 700;
-  color: #627b8d;
-  letter-spacing: .02em;
 }
 .ms-page-btn {
   min-height: 44px;
-  min-width: 44px;
+  min-width: 64px;
+  padding: 8px 14px;
+  border: 1px solid #d4e2ec;
+  border-radius: 99px;
+  background: #f0f4f8;
+  color: #3b5771;
+  font-size: 12px;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 12px;
-  border-radius: 99px;
+  transition: background .15s, border-color .15s;
+  cursor: pointer;
+}
+.ms-page-btn:hover:not(:disabled) {
+  background: #e4edf3;
+  border-color: #bccedc;
+}
+.ms-page-btn:disabled {
+  opacity: .4;
+  cursor: default;
+}
+.ms-page-info {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5b7c99;
+  min-width: 76px;
+  text-align: center;
+}
+
+/* Add member area and capacity notice */
+.ms-add-area {
+  padding: 10px 24px 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+.ms-add {
+  min-height: 44px;
+  width: 100%;
+  max-width: 300px;
   border: 1px solid #d4e2ec;
-  background: #fff;
-  color: #46637d;
-  font-size: 11px;
+  border-radius: 99px;
+  background: #f0f4f8;
+  color: #3b5771;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: background .15s, border-color .15s;
 }
-.ms-page-btn:hover:not(:disabled) {
-  background: #ebf1f6;
-  border-color: #c5d6e3;
+.ms-add:hover:not(:disabled) {
+  background: #e4edf3;
+  border-color: #bccedc;
 }
-.ms-page-btn:disabled {
-  opacity: .35;
-  cursor: default;
+.ms-capacity-notice {
+  min-height: 44px;
+  width: 100%;
+  max-width: 320px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 650;
+  color: #627b8d;
+  background: #f0f4f8;
+  border: 1px dashed #cddae5;
+  border-radius: 99px;
+  padding: 8px 16px;
+  text-align: center;
+  box-sizing: border-box;
 }
 
-.ms-dock { padding: 8px 24px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; position: relative; }
-.ms-add { width: 100%; max-width: 320px; min-height: 44px; padding: 13px 20px; border-radius: 18px; border: 1.5px dashed #b8ccdb; background: #fff; color: #46637d; font-size: 13px; font-weight: 750; display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; transition: transform .15s, border-color .15s; }
-.ms-add:hover { border-color: #7a9cb6; transform: translateY(-1px); }
-.ms-capacity { width: 100%; max-width: 320px; padding: 10px 16px; border-radius: 14px; background: #f0f4f8; color: #627b8d; font-size: 11px; font-weight: 650; text-align: center; }
-.ms-toast { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: #243b53; color: #fff; font-size: 11px; font-weight: 650; padding: 8px 16px; border-radius: 99px; white-space: nowrap; pointer-events: none; z-index: 50; box-shadow: 0 4px 14px rgba(16, 42, 67, .25); animation: ms-fade-in .2s ease-out; }
+/* Footer motto */
+.ms-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 20px 14px;
+  font-size: 9px;
+  color: #788c9a;
+  flex-shrink: 0;
+}
+.ms-footer span {
+  width: 20px;
+  height: 1px;
+  background: #e2e8ed;
+}
+
+/* Floating toast notifications */
+.ms-notice,
+.ms-toast {
+  position: absolute;
+  bottom: 96px;
+  left: 24px;
+  right: 24px;
+  max-width: 360px;
+  margin: 0 auto;
+  z-index: 20;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #3b5a43;
+  background: #eef6ee;
+  border: 1px solid #cce3cd;
+  box-shadow: 0 4px 14px rgba(50, 78, 104, 0.12);
+  padding: 10px 14px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  pointer-events: auto;
+  animation: ms-toast-in 0.2s ease-out, ms-toast-out 0.25s ease-in 2.75s forwards;
+}
+.ms-notice svg,
+.ms-toast svg {
+  flex-shrink: 0;
+}
+
+@keyframes ms-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ms-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Empty & feedback states */
+.ms-empty { text-align: center; padding: 18px 20px 8px; }
+.ms-empty-art { display: flex; align-items: center; justify-content: center; width: 78px; height: 78px; border-radius: 24px; background: #fef7dc; color: #a89256; margin: 0 auto 14px; }
+.ms-empty h2 { font-size: 17px; font-weight: 750; margin: 0 0 8px; }
+.ms-empty p { font-size: 12px; color: #708595; line-height: 1.7; margin: 0; }
+.ms-feedback { text-align: center; font-size: 12px; line-height: 1.8; padding: 18px 24px; color: #627b8d; }
+.ms-retry { min-height: 44px; padding: 8px 20px; background: #ebf1f6; color: #46637d; border-radius: 99px; font-weight: 700; margin-top: 12px; cursor: pointer; }
+
+/* Modal dialogs */
+.ms-backdrop { position: absolute; inset: 0; z-index: 30; background: #23364855; backdrop-filter: blur(3px); display: flex; align-items: flex-end; }
+.ms-dialog { position: relative; width: 100%; max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border-radius: 28px 28px 0 0; background: #fff; padding: 12px 24px 27px; box-shadow: 0 -12px 40px #23364815; }
+.ms-handle { width: 32px; height: 4px; border-radius: 9px; background: #dde5eb; margin: 0 auto 24px; }
+.ms-close { position: absolute; right: 16px; top: 25px; min-width: 44px; min-height: 44px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: #f4f7f9; display: flex; align-items: center; justify-content: center; color: #617b8d; cursor: pointer; }
+.ms-dialog-art { width: 48px; height: 48px; background: #fef7dc; color: #9a8349; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+.ms-danger-art { background: #fff0f0; color: #af6265; }
+.ms-dialog h2 { font-size: 22px; font-weight: 800; letter-spacing: -.6px; margin: 0 0 9px; overflow-wrap: anywhere; }
+.ms-dialog > p { font-size: 12px; color: #627b8d; line-height: 1.8; margin: 0 0 24px; }
+.ms-dialog label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+.ms-dialog input { width: 100%; border: 1px solid #dfe7ed; border-radius: 14px; background: #fafbfd; padding: 14px; font-size: 16px; color: #334e68; outline: none; }
+.ms-dialog input:focus { border-color: #9fbbd0; box-shadow: 0 0 0 3px #ebf1f6; }
+.ms-dialog input::placeholder { color: #8296a5; }
+.ms-input-meta { display: flex; justify-content: space-between; gap: 10px; font-size: 10px; color: #627b8d; margin: 9px 0 21px; }
+.ms-input-meta span:last-child { white-space: nowrap; }
+.ms-primary { background: #5b7c99; border-radius: 99px; padding: 14px 18px; color: #fff; width: 100%; min-height: 46px; font-size: 12px; font-weight: 750; margin-top: 20px; cursor: pointer; }
+.ms-error { font-size: 12px; color: #9a3441; line-height: 1.6; background: #fff3f4; padding: 10px 12px; border-radius: 10px; margin: 10px 0; overflow-wrap: anywhere; }
+.ms-delete-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+.ms-cancel, .ms-confirm-delete { border-radius: 99px; padding: 14px 12px; font-size: 12px; font-weight: 700; min-height: 46px; cursor: pointer; }
+.ms-cancel { border: 1px solid #dfe7ed; background: #f4f7f9; color: #46637d; }
+.ms-confirm-delete { border: 1px solid #b7676a; background: #b7676a; color: #fff; }
+.ms-add-cancel { width: 100%; margin-top: 10px; }
+
+/* Progressive compaction rules (applied when members >= 5 on any viewport) */
+.ms-compact .ms-greeting-art,
+.ms-compact .ms-eyebrow,
+.ms-compact .ms-footer { display: none !important; }
+.ms-compact .ms-brand-header { padding-top: 12px; padding-bottom: 6px; }
+.ms-compact .ms-greeting { padding-top: 4px; padding-bottom: 8px; }
+.ms-compact .ms-greeting h1 { font-size: 25px; margin-bottom: 4px; }
+.ms-compact .ms-pagination { padding-top: 4px; padding-bottom: 4px; }
+.ms-compact .ms-add-area { padding-top: 6px; padding-bottom: 4px; }
+.ms-compact .ms-toast { bottom: 68px; }
+
+@media (max-width: 360px) {
+  .ms-grid-cols-2 { padding-left: 12px; padding-right: 12px; gap: 14px 12px; }
+  .ms-brand-header { padding-left: 16px; padding-right: 16px; }
+}
 
 /* Responsive adjustments for short viewports */
 @media (max-height: 680px) {
-  .ms-brand-header { padding: 10px 20px 4px; }
-  .ms-greeting { padding: 4px 16px 8px; }
-  .ms-greeting-art { width: 48px; height: 38px; margin-bottom: 6px; }
-  .ms-greeting-art:before { width: 36px; height: 36px; border-radius: 12px; }
-  .ms-art-sun { width: 15px; height: 15px; border-width: 2px; }
-  .ms-greeting h1 { font-size: 22px; margin-bottom: 2px; }
-  .ms-greeting > p:not(.ms-eyebrow) { display: none; }
-  .ms-household { margin-top: 4px; padding: 2px 6px; font-size: 9px; }
-  .ms-dock { padding: 4px 20px 12px; }
-  .ms-add { padding: 9px 16px; min-height: 44px; }
-  .ms-pagination { padding: 2px 16px 0; }
-  .ms-grid-cols-2 { gap: 10px 16px; }
-  .ms-grid-cols-2 .ms-avatar { width: 62px; height: 62px; border-radius: 20px; }
-  .ms-grid-cols-3 { gap: 8px 8px; }
-  .ms-grid-cols-3 .ms-avatar { width: 50px; height: 50px; border-radius: 16px; }
+  .ms-greeting-art,
+  .ms-eyebrow,
+  .ms-footer { display: none !important; }
+  .ms-brand-header { padding-top: 10px; padding-bottom: 6px; }
+  .ms-greeting { padding-top: 4px; padding-bottom: 8px; }
+  .ms-greeting h1 { font-size: 25px; margin-bottom: 4px; }
+  .ms-pagination { padding-top: 4px; padding-bottom: 4px; }
+  .ms-add-area { padding-top: 6px; padding-bottom: 4px; }
+  .ms-toast { bottom: 68px; }
 }
 
-@keyframes ms-fade-in { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (prefers-reduced-motion: reduce) {
+  .member-selection * { transition: none !important; animation: none !important; }
+}

@@ -1,4 +1,6 @@
 import React from 'react';
+import fs from 'fs';
+import path from 'path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -734,6 +736,52 @@ describe('MemberSelection Component (Ticket 01)', () => {
       const dialog = screen.getByRole('dialog');
       expect(dialog).toBeInTheDocument();
       expect(dialog).toHaveClass('ms-dialog');
+    });
+  });
+
+  describe('MemberSelection Stylesheet Conformance (Issue 01)', () => {
+    it('contains all required rules for add area, capacity notice, footer, modal, and compaction', () => {
+      const cssPath = path.resolve(__dirname, '../../src/components/MemberSelection.css');
+      const css = fs.readFileSync(cssPath, 'utf-8');
+
+      // Add area flexbox centering
+      expect(css).toContain('.ms-add-area');
+      expect(css).toMatch(/\.ms-add-area\s*\{[^}]*display:\s*flex/);
+      expect(css).toMatch(/\.ms-add-area\s*\{[^}]*justify-content:\s*center/);
+      expect(css).toMatch(/\.ms-add-area\s*\{[^}]*align-items:\s*center/);
+
+      // Centered add button
+      expect(css).toMatch(/\.ms-add\s*\{[^}]*max-width:\s*300px/);
+      expect(css).toMatch(/\.ms-add\s*\{[^}]*min-height:\s*44px/);
+
+      // Capacity notice
+      expect(css).toContain('.ms-capacity-notice');
+      expect(css).toMatch(/\.ms-capacity-notice\s*\{[^}]*max-width:\s*320px/);
+      expect(css).toMatch(/\.ms-capacity-notice\s*\{[^}]*border:\s*1px dashed/);
+
+      // Footer styling & accent lines
+      expect(css).toContain('.ms-footer');
+      expect(css).toMatch(/\.ms-footer\s*\{[^}]*display:\s*flex/);
+      expect(css).toMatch(/\.ms-footer span\s*\{[^}]*width:\s*20px/);
+      expect(css).toMatch(/\.ms-footer span\s*\{[^}]*height:\s*1px/);
+
+      // Zero-scroll compaction
+      expect(css).toMatch(/\.ms-compact \.ms-footer\s*\{[^}]*display:\s*none !important/);
+      expect(css).toMatch(/@media\s*\(max-height:\s*680px\)\s*\{[^}]*\.ms-footer\s*\{[^}]*display:\s*none !important/);
+
+      // Modal dialog scrollability and accessibility
+      expect(css).toMatch(/\.ms-dialog\s*\{[^}]*max-height:\s*85vh/);
+      expect(css).toMatch(/\.ms-dialog\s*\{[^}]*overflow-y:\s*auto/);
+      expect(css).toMatch(/\.ms-close\s*\{[^}]*min-width:\s*44px/);
+      expect(css).toMatch(/\.ms-close\s*\{[^}]*min-height:\s*44px/);
+
+      // Orphaned classes should be removed
+      expect(css).not.toMatch(/\.ms-dock\b/);
+      expect(css).not.toMatch(/\.ms-capacity\s*\{/);
+
+      // Minimum touch targets for navigation buttons
+      expect(css).toMatch(/\.ms-back-household\s*\{[^}]*min-height:\s*44px/);
+      expect(css).toMatch(/\.ms-page-btn\s*\{[^}]*min-height:\s*44px/);
     });
   });
 });
