@@ -1,18 +1,14 @@
-import {
-  normalizeHouseholdCode,
-  isValidHouseholdCode,
-} from '../domain/household';
-
-export type HouseholdNavigationState =
-  | { status: 'choosing_household' }
-  | { status: 'choosing_member'; householdCode: string }
-  | { status: 'selected'; householdCode: string; memberId: string };
+export interface HouseholdNavigationState {
+  status: 'choosing_household' | 'choosing_member' | 'selected';
+  householdCode?: string;
+  memberId?: string;
+}
 
 export interface HouseholdStorage {
   getHouseholdCode(): string | null;
-  setHouseholdCode(code: string): void;
+  setHouseholdCode(code: string | null): void;
   getNickname(): string | null;
-  setNickname(nickname: string): void;
+  setNickname(nickname: string | null): void;
   getNavigationState(): HouseholdNavigationState;
   setNavigationState(state: HouseholdNavigationState): void;
   getSavedHouseholds(): string[];
@@ -26,19 +22,28 @@ const NICKNAME_KEY = 'cooking_plan_nickname';
 const NAVIGATION_STATE_KEY = 'cooking_plan_navigation_state';
 const SAVED_HOUSEHOLDS_KEY = 'cooking_plan_saved_households';
 
+import { normalizeHouseholdCode, isValidHouseholdCode } from '../domain/household';
+
 export class LocalStorageHouseholdStorage implements HouseholdStorage {
   getHouseholdCode(): string | null {
     try {
+      const state = this.getNavigationState();
+      if (state.householdCode) {
+        return state.householdCode;
+      }
       return localStorage.getItem(HOUSEHOLD_CODE_KEY);
     } catch {
       return null;
     }
   }
 
-  setHouseholdCode(code: string): void {
+  setHouseholdCode(code: string | null): void {
     try {
-      localStorage.setItem(HOUSEHOLD_CODE_KEY, code);
-      this.setNavigationState({ status: 'choosing_member', householdCode: code });
+      if (code) {
+        localStorage.setItem(HOUSEHOLD_CODE_KEY, code);
+      } else {
+        localStorage.removeItem(HOUSEHOLD_CODE_KEY);
+      }
     } catch {
       // Ignored in restricted environments
     }
@@ -52,9 +57,13 @@ export class LocalStorageHouseholdStorage implements HouseholdStorage {
     }
   }
 
-  setNickname(nickname: string): void {
+  setNickname(nickname: string | null): void {
     try {
-      localStorage.setItem(NICKNAME_KEY, nickname);
+      if (nickname) {
+        localStorage.setItem(NICKNAME_KEY, nickname);
+      } else {
+        localStorage.removeItem(NICKNAME_KEY);
+      }
     } catch {
       // Ignored in restricted environments
     }
@@ -65,16 +74,18 @@ export class LocalStorageHouseholdStorage implements HouseholdStorage {
       const raw = localStorage.getItem(NAVIGATION_STATE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === 'object') {
-          if (parsed.status === 'choosing_household') {
-            return { status: 'choosing_household' };
-          }
-          if (
-            parsed.status === 'choosing_member' &&
-            typeof parsed.householdCode === 'string' &&
-            parsed.householdCode.trim()
-          ) {
-            return { status: 'choosing_member', householdCode: parsed.householdCode.trim() };
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          (parsed.status === 'choosing_household' ||
+            parsed.status === 'choosing_member' ||
+            parsed.status === 'selected')
+        ) {
+          if (parsed.status === 'choosing_member' && typeof parsed.householdCode === 'string' && parsed.householdCode.trim()) {
+            return {
+              status: 'choosing_member',
+              householdCode: parsed.householdCode.trim(),
+            };
           }
           if (
             parsed.status === 'selected' &&
@@ -89,16 +100,26 @@ export class LocalStorageHouseholdStorage implements HouseholdStorage {
               memberId: parsed.memberId.trim(),
             };
           }
+          if (parsed.status === 'choosing_household') {
+            return { status: 'choosing_household' };
+          }
         }
       }
     } catch {
-      // Ignored on parse error or localStorage error
+      // Fallback on JSON parse error or localStorage access error
     }
 
-    // Backwards compatibility: if storage contains only the old cooking_plan_household_code
-    const legacyCode = this.getHouseholdCode();
-    if (legacyCode && legacyCode.trim()) {
-      return { status: 'choosing_member', householdCode: legacyCode.trim() };
+    // Backwards compatibility: check legacy household code
+    try {
+      const legacyCode = localStorage.getItem(HOUSEHOLD_CODE_KEY);
+      if (legacyCode && legacyCode.trim()) {
+        return {
+          status: 'choosing_member',
+          householdCode: legacyCode.trim(),
+        };
+      }
+    } catch {
+      // Ignored
     }
 
     return { status: 'choosing_household' };
@@ -109,7 +130,7 @@ export class LocalStorageHouseholdStorage implements HouseholdStorage {
       localStorage.setItem(NAVIGATION_STATE_KEY, JSON.stringify(state));
       if (state.status === 'choosing_household') {
         localStorage.removeItem(HOUSEHOLD_CODE_KEY);
-      } else {
+      } else if (state.householdCode) {
         localStorage.setItem(HOUSEHOLD_CODE_KEY, state.householdCode);
       }
     } catch {
@@ -159,13 +180,6 @@ export class LocalStorageHouseholdStorage implements HouseholdStorage {
     try {
       const current = this.getSavedHouseholds().filter((c) => c !== normalized);
       localStorage.setItem(SAVED_HOUSEHOLDS_KEY, JSON.stringify(current));
-      const navState = this.getNavigationState();
-      if (
-        (navState.status === 'choosing_member' || navState.status === 'selected') &&
-        navState.householdCode === normalized
-      ) {
-        this.setNavigationState({ status: 'choosing_household' });
-      }
     } catch {
       // Ignored
     }
@@ -210,25 +224,21 @@ export class InMemoryHouseholdStorage implements HouseholdStorage {
   }
 
   getHouseholdCode(): string | null {
-    if (this.navigationState) {
-      if (this.navigationState.status === 'choosing_household') {
-        return null;
-      }
+    if (this.navigationState && this.navigationState.householdCode) {
       return this.navigationState.householdCode;
     }
     return this.householdCode;
   }
 
-  setHouseholdCode(code: string): void {
+  setHouseholdCode(code: string | null): void {
     this.householdCode = code;
-    this.navigationState = { status: 'choosing_member', householdCode: code };
   }
 
   getNickname(): string | null {
     return this.nickname;
   }
 
-  setNickname(nickname: string): void {
+  setNickname(nickname: string | null): void {
     this.nickname = nickname;
   }
 
@@ -237,7 +247,10 @@ export class InMemoryHouseholdStorage implements HouseholdStorage {
       return this.navigationState;
     }
     if (this.householdCode && this.householdCode.trim()) {
-      return { status: 'choosing_member', householdCode: this.householdCode.trim() };
+      return {
+        status: 'choosing_member',
+        householdCode: this.householdCode.trim(),
+      };
     }
     return { status: 'choosing_household' };
   }
@@ -246,7 +259,7 @@ export class InMemoryHouseholdStorage implements HouseholdStorage {
     this.navigationState = state;
     if (state.status === 'choosing_household') {
       this.householdCode = null;
-    } else {
+    } else if (state.householdCode) {
       this.householdCode = state.householdCode;
     }
   }
@@ -255,9 +268,12 @@ export class InMemoryHouseholdStorage implements HouseholdStorage {
     if (this.savedHouseholds !== null) {
       return [...this.savedHouseholds];
     }
-    if (this.householdCode && isValidHouseholdCode(this.householdCode)) {
-      return [normalizeHouseholdCode(this.householdCode)];
+
+    const legacyCode = this.getHouseholdCode();
+    if (legacyCode && isValidHouseholdCode(legacyCode)) {
+      return [normalizeHouseholdCode(legacyCode)];
     }
+
     return [];
   }
 
@@ -273,13 +289,6 @@ export class InMemoryHouseholdStorage implements HouseholdStorage {
     const normalized = normalizeHouseholdCode(code);
     const current = this.getSavedHouseholds().filter((c) => c !== normalized);
     this.savedHouseholds = current;
-    const navState = this.getNavigationState();
-    if (
-      (navState.status === 'choosing_member' || navState.status === 'selected') &&
-      navState.householdCode === normalized
-    ) {
-      this.setNavigationState({ status: 'choosing_household' });
-    }
   }
 
   clearSession(): void {

@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Home, ChevronDown } from 'lucide-react';
+import { Home } from 'lucide-react';
 
 export interface AppHeaderProps {
   householdCode: string;
   memberName: string;
   activeTab: 'plan' | 'menu';
-  isOnline?: boolean;
   onOpenShare?: () => void;
   onChangeHousehold?: () => void;
   onChangeMember?: () => void;
@@ -79,12 +78,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((prev) => !prev)}
               title={memberName}
-              className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full transition active:scale-95 max-w-[160px] min-w-0"
+              className="inline-flex items-center text-xs font-medium text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full transition active:scale-95 max-w-[160px] min-w-0"
             >
               <span data-testid="member-name-badge" className="truncate">{memberName}</span>
-              <ChevronDown
-                className={`w-3 h-3 text-slate-400 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`}
-              />
             </button>
 
             {isMenuOpen && (

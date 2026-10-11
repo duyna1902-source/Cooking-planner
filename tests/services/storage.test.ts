@@ -86,14 +86,18 @@ describe('HouseholdStorage navigation state contract', () => {
       expect(storage.getSavedHouseholds()).toEqual(['BEP-202']);
     });
 
-    it('resets navigation state to choosing_household if removing the active household', () => {
+    it('does not alter navigation state when removing a saved household (decoupled storage)', () => {
       const storage = new InMemoryHouseholdStorage();
       storage.saveHousehold('BEP-101');
       storage.setNavigationState({ status: 'choosing_member', householdCode: 'BEP-101' });
 
       storage.removeSavedHousehold('BEP-101');
-      expect(storage.getNavigationState()).toEqual({ status: 'choosing_household' });
-      expect(storage.getHouseholdCode()).toBeNull();
+      expect(storage.getSavedHouseholds()).toEqual([]);
+      expect(storage.getNavigationState()).toEqual({
+        status: 'choosing_member',
+        householdCode: 'BEP-101',
+      });
+      expect(storage.getHouseholdCode()).toBe('BEP-101');
     });
 
     it('does not alter navigation state if removing a household other than the active one', () => {
@@ -205,14 +209,19 @@ describe('HouseholdStorage navigation state contract', () => {
       expect(JSON.parse(localStorage.getItem('cooking_plan_saved_households')!)).toEqual(['BEP-100']);
     });
 
-    it('resets navigation state to choosing_household if removing the active household in LocalStorage', () => {
+    it('does not reset active navigation state when removing a saved household (decoupled storage)', () => {
       const storage = new LocalStorageHouseholdStorage();
       storage.saveHousehold('BEP-300');
       storage.setNavigationState({ status: 'selected', householdCode: 'BEP-300', memberId: 'm-1' });
 
       storage.removeSavedHousehold('BEP-300');
-      expect(storage.getNavigationState()).toEqual({ status: 'choosing_household' });
-      expect(storage.getHouseholdCode()).toBeNull();
+      expect(storage.getSavedHouseholds()).not.toContain('BEP-300');
+      expect(storage.getNavigationState()).toEqual({
+        status: 'selected',
+        householdCode: 'BEP-300',
+        memberId: 'm-1',
+      });
+      expect(storage.getHouseholdCode()).toBe('BEP-300');
     });
 
     it('backwards compatibility: includes legacy cooking_plan_household_code in getSavedHouseholds if saved key is missing', () => {

@@ -29,14 +29,11 @@ export const App: React.FC<AppProps> = ({
   planRepository,
   memberRepository,
   initialUrl,
-  isOnline,
 }) => {
   const resolved = useMemo(() => resolveRepositories(), []);
   const activeDishRepo = dishRepository || resolved.dishRepository;
   const activePlanRepo = planRepository || resolved.planRepository;
   const activeMemberRepo = memberRepository || resolved.memberRepository;
-  const activeIsOnline =
-    isOnline ?? activeDishRepo.isOnline ?? activePlanRepo.isOnline ?? resolved.isOnline;
 
   const verificationVersionRef = useRef(0);
   const [householdCode, setHouseholdCode] = useState<string | null>(null);
@@ -44,7 +41,6 @@ export const App: React.FC<AppProps> = ({
   const [member, setMember] = useState<Member | null>(null);
   const [activeTab, setActiveTab] = useState<NavigationTab>('plan');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isSwitchingHousehold, setIsSwitchingHousehold] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   const [restorationStatus, setRestorationStatus] = useState<'idle' | 'verifying' | 'error'>('idle');
@@ -128,7 +124,10 @@ export const App: React.FC<AppProps> = ({
     const navState = storage.getNavigationState();
 
     let targetCode: string | null = null;
-    if (navState.status === 'choosing_member' || navState.status === 'selected') {
+    if (
+      (navState.status === 'choosing_member' || navState.status === 'selected') &&
+      navState.householdCode
+    ) {
       targetCode = navState.householdCode;
     }
 
@@ -158,16 +157,19 @@ export const App: React.FC<AppProps> = ({
       setRestorationError(null);
       setDeletedNotice(null);
       setPendingVerification(null);
-    } else if (navState.status === 'choosing_member') {
+    } else if (navState.status === 'choosing_member' && navState.householdCode) {
       setHouseholdCode(navState.householdCode);
       setMember(null);
       setRestorationStatus('idle');
       setRestorationError(null);
       setDeletedNotice(null);
       setPendingVerification(null);
-    } else if (navState.status === 'selected') {
+    } else if (navState.status === 'selected' && navState.householdCode && navState.memberId) {
       setHouseholdCode(navState.householdCode);
       verifyMember(navState.householdCode, navState.memberId);
+    } else {
+      setHouseholdCode(null);
+      setMember(null);
     }
 
     setActiveTab('plan');
@@ -194,7 +196,6 @@ export const App: React.FC<AppProps> = ({
     setRestorationError(null);
     setDeletedNotice(null);
     setPendingVerification(null);
-    setIsSwitchingHousehold(true);
   };
 
   const handleSwitchMember = () => {
@@ -237,7 +238,6 @@ export const App: React.FC<AppProps> = ({
     setHouseholdCode(code);
     setMember(null);
     setActiveTab('plan');
-    setIsSwitchingHousehold(false);
     setIsShareModalOpen(false);
     setDeletedNotice(null);
     setRestorationStatus('idle');
@@ -285,7 +285,7 @@ export const App: React.FC<AppProps> = ({
               </div>
             </div>
           </div>
-        ) : !householdCode || isSwitchingHousehold ? (
+        ) : !householdCode ? (
           <OnboardingModal
             savedHouseholds={savedHouseholds}
             onHouseholdCreated={(code) => {
@@ -330,7 +330,6 @@ export const App: React.FC<AppProps> = ({
               householdCode={householdCode}
               memberName={member.name}
               activeTab={activeTab}
-              isOnline={activeIsOnline}
               onOpenShare={() => setIsShareModalOpen(true)}
               onChangeHousehold={activeTab === 'plan' ? handleSwitchHousehold : undefined}
               onChangeMember={activeTab === 'plan' ? handleSwitchMember : undefined}
