@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Cooking Plan · Bản đồ website và React</title><link rel="stylesheet" href="../assets/teaching.css"></head>
+<body><main>
+  <nav aria-label="Tài liệu học"><a href="../lessons/0001-tu-nut-menu-den-react.html">← Bài 01</a><a href="#ban-do">Bản đồ mã nguồn</a><a href="#du-lieu">Luồng dữ liệu</a><a href="#thuat-ngu">Tra thuật ngữ</a></nav>
+  <header><div class="eyebrow">Cooking Plan / Bản tra cứu / 11.10.2026</div><h1>Website của bạn,<br>từ màn hình đến dữ liệu.</h1><p class="lead">Dùng để tìm đúng file khi đọc code. Không cần học thuộc tất cả trong buổi đầu.</p></header>
+  <section id="ban-do"><h2>Website khởi động thế nào?</h2>
+    <ol class="steps">
+      <li><strong>index.html</strong> chứa <code>&lt;div id="root"&gt;</code> và nạp <code>src/main.tsx</code>.</li>
+      <li><strong>main.tsx</strong> dùng <code>createRoot(...).render(...)</code> để React dựng App vào vùng root. Ở chế độ phát triển, URL <code>?prototype=members</code> chọn prototype riêng.</li>
+      <li><strong>App.tsx</strong> đọc trạng thái đã lưu. Chưa chọn Gia đình → OnboardingModal; đã có Gia đình nhưng chưa chọn Thành viên → MemberSelection. Nếu có Thành viên đã nhớ, App xác minh với repository trước khi vào màn chính; có giao diện đang tải và thử lại khi lỗi.</li>
+      <li><strong>Khi đã chọn Thành viên</strong>, App ghép AppHeader, PlanView hoặc MenuView, BottomNav và ShareHouseholdModal. Tab ban đầu là Kế hoạch.</li>
+    </ol>
+    <p class="source">Nguồn hành vi: <code>index.html</code>, <code>src/main.tsx</code>, <code>src/App.tsx</code>. Cơ chế React: <a href="https://react.dev/learn/render-and-commit">Render and Commit</a>.</p>
+    <div class="table-scroll"><table><thead><tr><th>Nơi đọc</th><th>Trách nhiệm</th><th>Khi cần tìm</th></tr></thead><tbody>
+      <tr><td><code>src/App.tsx</code></td><td>Ghép màn hình; giữ Gia đình, Thành viên và tab đang chọn.</td><td>Vì sao hiện màn này?</td></tr>
+      <tr><td><code>src/components/</code></td><td>Các phần giao diện và tương tác: MenuView, PlanView, BottomNav, các hộp thoại.</td><td>Nút này gọi hàm nào?</td></tr>
+      <tr><td><code>src/domain/</code></td><td>Kiểu dữ liệu và quy tắc nghiệp vụ. Ví dụ dish.ts kiểm tra tên Món ăn, lọc theo tìm kiếm.</td><td>Quy tắc xử lý dữ liệu nằm đâu?</td></tr>
+      <tr><td><code>src/services/</code></td><td>Đọc, ghi và theo dõi thay đổi dữ liệu qua repository.</td><td>Dữ liệu được lưu ở đâu?</td></tr>
+      <tr><td><code>src/index.css</code><br><code>tailwind.config.js</code></td><td>Thiết lập kiểu hiển thị; component dùng nhiều class Tailwind trong className.</td><td>Màu, khoảng cách, kích thước?</td></tr>
+      <tr><td><code>vite.config.ts</code><br><code>package.json</code></td><td>Cấu hình chạy/build, PWA và các lệnh dự án.</td><td>Chạy website bằng lệnh nào?</td></tr>
+    </tbody></table></div>
+  </section>
+  <section id="du-lieu"><h2>Giao diện và dữ liệu nối với nhau thế nào?</h2>
+    <div class="grid"><article class="card"><h3>Đổi tab</h3><p>Bấm Menu → BottomNav gọi hàm App truyền xuống → App đổi activeTab → React chọn MenuView.</p><p class="small">Thao tác đổi tab không cần ghi một bản ghi vào database. MenuView xuất hiện rồi tải dữ liệu riêng.</p></article><article class="card"><h3>Thêm Món ăn</h3><p>Trong MenuView, lưu biểu mẫu → handleSaveDish gọi repository.addDish → sau khi lưu thành công, loadDishes đọc lại danh sách → setDishes(data) → React cập nhật giao diện.</p><p class="small">Ví dụ riêng của dự án, xem src/components/MenuView.tsx:113 và :57.</p></article></div>
+    <h3>Dữ liệu được lưu ở đâu?</h3>
+    <p><code>src/services/repositoryFactory.ts</code> chọn repository theo cấu hình Supabase. Với Menu và Kế hoạch: có client Supabase thì dùng repository Supabase; thiếu cấu hình thì dùng localStorage của trình duyệt. Đây là chọn theo cấu hình, không tự chuyển sang localStorage khi cloud đang lỗi.</p>
+    <p><strong>Thành viên là trường hợp riêng:</strong> cần database. Không có client Supabase thì factory trả UnavailableMemberRepository, báo lỗi thay vì tạo danh sách Thành viên cục bộ. Vì vậy không nên suy ra toàn bộ website luôn dùng được khi chưa cấu hình cloud.</p>
+    <p>Trong chế độ Supabase, repository nhận thông báo thay đổi theo Mã nhà; ví dụ MenuView đăng ký theo dõi rồi tải lại danh sách. Việc này giúp các thiết bị trong cùng Gia đình thấy dữ liệu mới khi kết nối hoạt động.</p>
+    <p class="source">Nguồn: <code>repositoryFactory.ts</code>, <code>memberRepository.ts</code>, <code>supabaseDishRepository.ts</code>, <code>MenuView.tsx</code>; ADR-0005 và ngoại lệ trong ADR-0006. Cách dùng effect: <a href="https://react.dev/learn/synchronizing-with-effects">Synchronizing with Effects</a>.</p>
+  </section>
+  <section id="thuat-ngu"><h2>Những từ sẽ gặp trong code</h2>
+    <dl>
+      <dt>React</dt><dd>Thư viện JavaScript để xây giao diện từ component. Dự án khai báo phiên bản <code>^18.3.1</code>.</dd>
+      <dt>Component</dt><dd>Một phần giao diện; ví dụ <code>BottomNav</code>. Function component trả về mô tả giao diện.</dd>
+      <dt>JSX</dt><dd>Cú pháp mô tả giao diện trong JavaScript, ví dụ <code>&lt;BottomNav /&gt;</code>.</dd>
+      <dt>Props</dt><dd>Đầu vào component nhận từ cha. Có thể là dữ liệu hoặc hàm; ví dụ <code>activeTab</code> và <code>onTabChange</code>.</dd>
+      <dt>State</dt><dd>Thông tin React nhớ cho component. Hàm setter yêu cầu cập nhật; ví dụ <code>setActiveTab('menu')</code>.</dd>
+      <dt>Render</dt><dd>React gọi component để tính giao diện. Sau đó bước commit cập nhật DOM cần thay đổi; không đồng nghĩa tải lại trang.</dd>
+      <dt>Repository</dt><dd>Trong dự án: phần cung cấp thao tác đọc/ghi dữ liệu, ví dụ <code>getDishes</code> và <code>addDish</code>.</dd>
+      <dt>Vite</dt><dd>Công cụ chạy môi trường phát triển và build dự án. React là phần thư viện giao diện được dùng trong dự án đó.</dd>
+    </dl>
+    <p class="source">Nguồn chính thức: <a href="https://react.dev/learn/your-first-component">Component và JSX</a> · <a href="https://react.dev/learn/passing-props-to-a-component">Props</a> · <a href="https://react.dev/learn/state-a-components-memory">State</a> · <a href="https://react.dev/learn/render-and-commit">Render</a> · <a href="https://vite.dev/guide/">Vite</a>. Repository và phiên bản lấy từ mã nguồn dự án.</p>
+  </section>
+  <section><h2>Bốn dòng để nhớ luồng Menu</h2><pre><code>// App: nhớ tab
+const [activeTab, setActiveTab] = useState&lt;NavigationTab&gt;('plan');
+// App: truyền giá trị và hàm xuống con
+&lt;BottomNav activeTab={activeTab} onTabChange={setActiveTab} /&gt;
+// BottomNav: nút Menu gọi hàm khi được bấm
+onClick={() =&gt; onTabChange('menu')}
+// App: chọn giao diện (đã lược props)
+{activeTab === 'plan' ? &lt;PlanView /&gt; : &lt;MenuView /&gt;}</code></pre></section>
+  <footer><p><a href="../lessons/0001-tu-nut-menu-den-react.html#tu-kiem-tra">Quay lại bài 01 để tự kiểm tra</a>. Có thể in tài liệu này bằng Ctrl+P. Hãy hỏi mình nếu thuật ngữ hoặc đường đi trong code chưa rõ.</p></footer>
+</main></body></html>

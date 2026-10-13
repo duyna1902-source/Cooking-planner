@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bài 01 · Từ nút Menu đến React</title>
+  <link rel="stylesheet" href="../assets/teaching.css">
+  <script defer src="../assets/teaching.js"></script>
+</head>
+<body>
+<main>
+  <nav aria-label="Tài liệu học"><a href="#thu">Thử tương tác</a><a href="#tu-kiem-tra">Tự kiểm tra</a><a href="../reference/website-va-react.html">Bản đồ website &amp; tra cứu</a></nav>
+  <header>
+    <div class="eyebrow">Cooking Plan / Bài 01 / Khoảng 7 phút</div>
+    <h1>Bấm “Menu”.<br>Điều gì xảy ra trong React?</h1>
+    <p class="lead">Sau bài này, bạn có thể lần theo một nút bấm từ giao diện đến mã nguồn của chính website mình.</p>
+    <p class="meta">Dành cho người mới bắt đầu, muốn hiểu trước khi tự sửa. Ví dụ lấy từ mã nguồn ngày 11/10/2026.</p>
+  </header>
+
+  <section id="nen-tang">
+    <h2>1. React ghép giao diện từ các phần nhỏ</h2>
+    <p><strong>React là thư viện JavaScript để xây giao diện.</strong> Một phần giao diện được viết thành <strong>component</strong>: một hàm trả về mô tả thứ cần hiển thị. Trong website của bạn, <code>App</code> ghép các phần như <code>AppHeader</code>, <code>PlanView</code>, <code>MenuView</code> và <code>BottomNav</code>.</p>
+    <p>Cú pháp <code>&lt;BottomNav /&gt;</code> là <strong>JSX</strong>: cách viết mô tả giao diện trong JavaScript. File <code>.tsx</code> của dự án dùng TypeScript cùng JSX; TypeScript bổ sung thông tin kiểu dữ liệu.</p>
+    <p class="source">Nguồn: <a href="https://react.dev/learn/your-first-component">React — Your First Component</a>. Ví dụ dự án: <code>src/App.tsx:329–353</code>.</p>
+    <div class="callout"><p><strong>Ba từ cần nhớ:</strong> component = phần giao diện; props = đầu vào cha truyền cho con; state = thông tin React nhớ trong component.</p></div>
+    <p class="source">Đọc thêm: <a href="https://react.dev/learn/passing-props-to-a-component">Props</a> · <a href="https://react.dev/learn/state-a-components-memory">State</a>.</p>
+  </section>
+
+  <section id="luong">
+    <h2>2. Lần theo ba chỗ trong code</h2>
+    <p>Giả sử bạn đã chọn Gia đình và Thành viên, đang ở Kế hoạch. Hãy đọc các đoạn trích theo thứ tự này.</p>
+    <div class="file">A · src/App.tsx:42 — App nhớ tab đang chọn</div>
+    <pre><code>const [activeTab, setActiveTab] = useState&lt;NavigationTab&gt;('plan');</code></pre>
+    <p><code>activeTab</code> là giá trị hiện tại. <code>setActiveTab</code> là hàm yêu cầu cập nhật giá trị đó. <code>'plan'</code> là giá trị ban đầu. Phần <code>&lt;NavigationTab&gt;</code> cho TypeScript biết chỉ nhận <code>'plan'</code> hoặc <code>'menu'</code>.</p>
+    <div class="file">B · src/App.tsx:353 — App truyền props xuống BottomNav</div>
+    <pre><code>&lt;BottomNav activeTab={activeTab} onTabChange={setActiveTab} /&gt;</code></pre>
+    <p><code>BottomNav</code> nhận giá trị để biết tab nào đang chọn, và nhận một hàm để báo yêu cầu đổi tab. Vì vậy, <code>onTabChange</code> ở đây chính là hàm <code>setActiveTab</code> do App truyền xuống.</p>
+    <div class="file">C · src/components/BottomNav.tsx:32 — nút Menu gọi hàm khi bấm</div>
+    <pre><code>onClick={() =&gt; onTabChange('menu')}</code></pre>
+    <p><code>() =&gt; ...</code> nghĩa là “một hàm sẽ làm việc này khi được gọi”. Khi bạn bấm, React gọi hàm xử lý đó; nó gọi <code>onTabChange('menu')</code>, tương ứng với <code>setActiveTab('menu')</code> trong App.</p>
+    <p class="source">Nguồn: <a href="https://react.dev/learn/state-a-components-memory">useState</a> · <a href="https://react.dev/learn/passing-props-to-a-component">Truyền props</a> · <a href="https://react.dev/learn/responding-to-events">Xử lý sự kiện</a>.</p>
+    <details>
+      <summary>React chọn màn hình mới bằng cách nào?</summary>
+      <p>App dùng điều kiện: nếu <code>activeTab</code> bằng <code>'plan'</code> thì hiện PlanView, nếu không thì hiện MenuView. Đoạn dưới rút gọn từ <code>src/App.tsx:338–351</code>, đã lược các props.</p>
+      <pre><code>{activeTab === 'plan' ? &lt;PlanView /&gt; : &lt;MenuView /&gt;}</code></pre>
+      <p><code>điều kiện ? A : B</code> nghĩa là “đúng thì chọn A, sai thì chọn B”. Sau cập nhật state, React gọi component để tính giao diện và cập nhật phần cần đổi trên trang.</p>
+      <p class="source"><a href="https://react.dev/learn/conditional-rendering">Conditional Rendering</a> · <a href="https://react.dev/learn/render-and-commit">Render and Commit</a>.</p>
+    </details>
+  </section>
+
+  <section id="thu">
+    <h2>3. Dự đoán trước, rồi bấm thử</h2>
+    <p>Trước khi bấm Menu, hãy nói: “Giá trị nào sẽ đổi? Component nào sẽ xuất hiện?” Sau đó đối chiếu với luồng bên phải.</p>
+    <div class="simulator" data-tab-trace>
+      <div class="phone">
+        <div class="phone-title">Mô hình nhỏ của Cooking Plan</div>
+        <div class="screen" data-screen="plan"><h3>Kế hoạch</h3><p>Bữa Tối · Thứ Hai</p><p>Canh rau · Cá kho</p><span class="small">Màn hình tương ứng PlanView</span></div>
+        <div class="screen" data-screen="menu" hidden><h3>Menu</h3><p>Canh rau</p><p>Cá kho</p><span class="small">Màn hình tương ứng MenuView</span></div>
+        <div class="tabs" aria-label="Tab mô phỏng"><button type="button" data-tab="plan" aria-pressed="true">Kế hoạch</button><button type="button" data-tab="menu" aria-pressed="false">Menu</button></div>
+      </div>
+      <div class="trace"><h3>Quan sát luồng</h3><output data-state aria-live="polite">activeTab = 'plan'</output><ol data-trace-log aria-live="polite"><li>Ban đầu App chọn 'plan'.</li><li>Bấm Menu để lần theo thay đổi.</li></ol></div>
+    </div>
+    <p class="small">Đây là mô phỏng giảng dạy bằng JavaScript thường, không chạy React thật. Dữ liệu mẫu không được lưu và không kết nối Gia đình của bạn.</p>
+    <noscript><p>Bật JavaScript để dùng mô phỏng. Luồng đọc được: bấm Menu → onTabChange('menu') → setActiveTab('menu') → App chọn MenuView.</p></noscript>
+    <p class="print-note">Luồng: bấm Menu → onTabChange('menu') → setActiveTab('menu') → App chọn MenuView.</p>
+    <div class="callout"><p><strong>Đổi state không đồng nghĩa với lưu dữ liệu.</strong> Riêng <code>activeTab</code> không được lưu bền vững trong App; khi tải lại và vào giao diện chính, tab được đặt về Kế hoạch.</p></div>
+    <p class="source">Đối chiếu: <code>src/App.tsx:42</code>, effect khởi tạo đặt <code>setActiveTab('plan')</code>. React state và việc lưu qua repository là hai bước riêng trong mã nguồn.</p>
+  </section>
+
+  <section id="tu-kiem-tra">
+    <h2>4. Che phần code, tự kiểm tra</h2>
+    <div class="quiz" data-quiz data-correct="app" data-success="Đúng. App giữ activeTab; BottomNav nhận giá trị và hàm qua props." data-retry="Thử lại: tìm component chứa useState cho activeTab ở phần A.">
+      <h3>State activeTab nằm ở đâu?</h3>
+      <div class="choices"><button type="button" data-answer="app" aria-pressed="false">Trong App</button><button type="button" data-answer="nav" aria-pressed="false">Trong BottomNav</button><button type="button" data-answer="db" aria-pressed="false">Trong Supabase</button></div>
+      <p class="feedback" data-feedback aria-live="polite"></p>
+    </div>
+    <div class="quiz" data-quiz data-correct="state" data-success="Đúng. setActiveTab yêu cầu cập nhật state; React tính lại giao diện từ giá trị mới." data-retry="Thử lại: hàm setActiveTab đến từ useState trong App.">
+      <h3>setActiveTab('menu') yêu cầu việc gì?</h3>
+      <div class="choices"><button type="button" data-answer="cloud" aria-pressed="false">Lưu cloud</button><button type="button" data-answer="state" aria-pressed="false">Đổi state</button><button type="button" data-answer="url" aria-pressed="false">Đổi URL</button></div>
+      <p class="feedback" data-feedback aria-live="polite"></p>
+    </div>
+    <div class="quiz" data-quiz data-correct="nav" data-success="Đúng. Bắt đầu ở onClick trong BottomNav.tsx, rồi lần theo onTabChange về App.tsx." data-retry="Thử lại: bắt đầu từ file có nút và onClick, sau đó tìm nơi truyền hàm cho nó.">
+      <h3>Muốn đọc hàm của nút Menu, mở file nào trước?</h3>
+      <div class="choices"><button type="button" data-answer="main" aria-pressed="false">main.tsx</button><button type="button" data-answer="app" aria-pressed="false">App.tsx</button><button type="button" data-answer="nav" aria-pressed="false">BottomNav.tsx</button></div>
+      <p class="feedback" data-feedback aria-live="polite"></p>
+    </div>
+    <p><strong>Ngày mai, dành một phút:</strong> không nhìn code, kể lại đường đi từ nút Menu đến MenuView. Nếu quên, chỉ mở lại phần còn thiếu rồi kể lại lần nữa.</p>
+  </section>
+
+  <footer>
+    <p>Nguồn đọc chính: <a href="https://react.dev/learn/state-a-components-memory">React — State: A Component’s Memory</a>, bắt đầu ở “Adding a state variable”.</p>
+    <p><a href="../reference/website-va-react.html">Mở bản đồ website và bảng tra cứu</a>. Bài tiếp theo sẽ nối luồng này với ô tìm Món ăn sau khi bạn nắm bài đầu.</p>
+    <p>Hỏi mình bất cứ chỗ nào chưa rõ. Bạn có thể gửi: “Mình hiểu luồng bấm Menu là…” để mình kiểm tra và giải thích tiếp bằng code thật.</p>
+  </footer>
+</main>
+</body>
+</html>
